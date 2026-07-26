@@ -1,0 +1,1975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 03 课 · 训练模型的方法论 | 缺陷检测课程</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" media="print" onload="this.media='all'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<style>
+:root {
+  /* Anthropic 官方 Token(来自 anthropic-style-cn skill) */
+  --bg: #ECE9E0;
+  --surface: #F5F3EC;
+  --surface2: #E7E3D8;
+  --border: #D8D5CC;
+  --text: #141413;
+  --text-dim: #6B6860;
+  --accent: #D97757;
+  --accent2: #6A9BCC;
+  --good: #6A8A4F;
+  --bad: #C0453A;
+  --ink: #141413;
+  --ink-text: #F0EEE6;
+  --font-display: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-heading: 'Poppins', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217,119,87,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 15%, rgba(106,155,204,0.05) 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.85;
+  font-size: 16.5px;
+  text-spacing-trim: trim-start allow-end;
+  overflow-wrap: break-word;
+}
+
+/* ---- Hero ---- */
+.hero {
+  padding: 88px 24px 56px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero .lesson-tag {
+  display: inline-block;
+  padding: 7px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-bottom: 26px;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.3;
+  margin-bottom: 18px;
+  word-break: keep-all;
+}
+.hero .subtitle {
+  color: var(--text-dim);
+  font-size: 17px;
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ---- Settings bar ---- */
+.settings-bar {
+  max-width: 860px;
+  margin: 20px auto 0;
+  padding: 0 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-dim);
+  user-select: none;
+}
+.toggle-track {
+  width: 40px; height: 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.25s var(--ease);
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: all 0.25s var(--ease);
+}
+.toggle-wrap.active .toggle-track { background: var(--accent); border-color: var(--accent); }
+.toggle-wrap.active .toggle-track::after { left: 20px; background: #fff; }
+.toggle-wrap.active { color: var(--text); }
+
+/* ---- Layout ---- */
+.container { max-width: 860px; margin: 0 auto; padding: 24px 24px 96px; }
+section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+section:last-of-type { border-bottom: none; }
+h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  word-break: keep-all;
+}
+h2 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 28px 0 12px;
+}
+p { margin-bottom: 15px; }
+strong { color: var(--text); font-weight: 700; }
+em { color: var(--accent); font-style: normal; font-weight: 500; }
+ul, ol { margin: 0 0 15px 24px; }
+li { margin-bottom: 8px; }
+
+/* ---- Story card ---- */
+.story-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 20px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.05);
+}
+.story-card .story-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent2);
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+.story-card p:last-child { margin-bottom: 0; }
+
+/* ---- Insight box ---- */
+.insight-box {
+  background: linear-gradient(135deg, rgba(217,119,87,0.09), rgba(217,119,87,0.04));
+  border: 1px solid rgba(217,119,87,0.35);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.insight-box .insight-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+.insight-box p:last-child { margin-bottom: 0; }
+
+/* ---- Code block ---- */
+.code-block {
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.9;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--ink-text);
+}
+.code-block .cm { color: #9C9A92; }
+.code-block .kw { color: #E8A188; }
+.code-block .st { color: #A8C090; }
+
+/* ---- Compare grid ---- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.compare-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.compare-box h4 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.compare-box p { font-size: 14.5px; color: var(--text-dim); margin-bottom: 6px; }
+.compare-box p:last-child { margin-bottom: 0; }
+
+/* ---- Pipeline ---- */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 22px 0;
+}
+.pipeline-step {
+  flex: 1 1 130px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+}
+.pipeline-step .step-num {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-title {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+.pipeline-arrow { display: flex; align-items: center; color: var(--accent); font-size: 18px; }
+
+/* ---- Interactive demo shell ---- */
+.demo-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.06);
+}
+.demo-box .demo-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.demo-box .demo-hint { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.8; }
+.demo-status {
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-family: var(--font-heading);
+}
+.demo-btns { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.demo-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.demo-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.demo-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.demo-btn.primary:hover { filter: brightness(1.07); color: #fff; }
+.demo-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ---- Matrix grids (conv stepper) ---- */
+.mat-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 16px 0;
+}
+.mat-block { text-align: center; }
+.mat-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.mat-grid { display: grid; gap: 4px; justify-content: center; }
+.mat-cell {
+  width: 42px; height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: all 0.2s var(--ease);
+}
+.mat-cell.v3 { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
+.mat-cell.kpos { background: rgba(217,119,87,0.14); color: #B05C3F; border-color: rgba(217,119,87,0.45); font-weight: 700; }
+.mat-cell.kneg { background: rgba(106,155,204,0.14); color: #4A7BA8; border-color: rgba(106,155,204,0.5); font-weight: 700; }
+.mat-cell.kzero { color: var(--text-dim); }
+.mat-cell.win { box-shadow: 0 0 0 3px var(--accent); }
+.mat-cell.filled { background: rgba(217,119,87,0.13); color: var(--text); font-weight: 700; border-color: rgba(217,119,87,0.4); }
+.mat-cell.cur-out { box-shadow: 0 0 0 3px var(--accent); }
+.mat-op {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--text-dim);
+  padding-top: 60px;
+}
+.conv-calc {
+  background: var(--ink);
+  color: var(--ink-text);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.9;
+  min-height: 46px;
+}
+.conv-calc .hl { color: #E8A188; font-weight: 700; }
+
+/* ---- Filter demo ---- */
+.filter-canvases {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 14px 0;
+}
+.fc-block { text-align: center; }
+.fc-block canvas {
+  width: 264px; height: 264px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+  image-rendering: pixelated;
+  display: block;
+}
+.fc-cap {
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+.fc-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+/* ---- Receptive field viz ---- */
+.rf-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.rf-block { text-align: center; }
+.rf-grid { display: grid; gap: 3px; justify-content: center; }
+.rf-cell {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.rf-cell:hover { border-color: var(--accent); }
+.rf-cell.src { background: var(--accent); border-color: var(--accent); }
+.rf-cell.mid { background: rgba(217,119,87,0.5); border-color: rgba(217,119,87,0.5); }
+.rf-cell.field { background: rgba(217,119,87,0.18); border-color: rgba(217,119,87,0.3); }
+.rf-arrow {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  min-width: 64px;
+  line-height: 1.5;
+}
+.rf-arrow b { color: var(--accent); font-size: 16px; display: block; }
+
+/* ---- Quiz ---- */
+.quiz {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 18px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.quiz .quiz-q { font-family: var(--font-heading); font-weight: 500; margin-bottom: 14px; }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  line-height: 1.7;
+}
+.quiz-option:hover { border-color: var(--accent); transform: translateY(-1px); }
+.quiz-option.correct { border-color: var(--good); background: rgba(106,138,79,0.1); }
+.quiz-option.wrong { border-color: var(--bad); background: rgba(192,69,58,0.08); }
+.quiz-feedback {
+  display: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  margin-top: 6px;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok { background: rgba(106,138,79,0.09); border: 1px solid rgba(106,138,79,0.4); color: #4F6A3B; }
+.quiz-feedback.no { background: rgba(192,69,58,0.07); border: 1px solid rgba(192,69,58,0.35); color: var(--bad); }
+
+/* ---- Further reading ---- */
+.further-reading { padding: 44px 0; }
+.reading-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.reading-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 22px;
+  transition: all 0.2s var(--ease);
+}
+.reading-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+.reading-title a {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 15.5px;
+}
+.reading-title a:hover { text-decoration: underline; }
+.reading-meta {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.reading-desc { font-size: 14.5px; color: var(--text-dim); margin-top: 6px; }
+.further-reading-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 14.5px;
+}
+.further-reading-inline .fr-icon { flex-shrink: 0; }
+.further-reading-inline a { color: var(--accent); font-weight: 500; }
+
+/* ---- Exercise section ---- */
+#code-exercise.hidden { display: none; }
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 16px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.exercise-card h3 { margin-top: 0; }
+.todo-list { margin-top: 10px; }
+.todo-list li { font-size: 15px; }
+.todo-list code, p code, li code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #B05C3F;
+}
+
+/* ---- Lesson nav ---- */
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+}
+.lesson-nav a, .lesson-nav span {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+}
+.lesson-nav span { color: var(--text-dim); }
+.lesson-nav a:hover { text-decoration: underline; }
+
+/* ---- Selection toolbar ---- */
+.selection-toolbar {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.15);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.selection-toolbar.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.sel-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.sel-btn:hover { border-color: var(--accent); background: var(--bg); }
+.sel-btn:active { transform: scale(0.96); }
+.sel-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(20,20,19,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sel-dialog-overlay.visible { opacity: 1; pointer-events: auto; }
+.sel-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(20,20,19,0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sel-dialog-title { font-family: var(--font-heading); font-size: 20px; font-weight: 500; margin-bottom: 20px; }
+.sel-dialog-field { margin-bottom: 16px; }
+.sel-dialog-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.sel-dialog-source {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.sel-dialog textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+}
+.sel-dialog textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,87,0.2); }
+.sel-dialog textarea::placeholder { color: var(--text-dim); }
+.sel-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.sel-btn-cancel {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+.sel-btn-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-confirm:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.sel-btn-confirm:active { transform: scale(0.97); }
+.sel-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 100001;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--ink-text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 24px rgba(20,20,19,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+}
+.sel-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.note-underline {
+  background: rgba(255, 212, 59, 0.45);
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.note-underline:hover { background: rgba(255, 212, 59, 0.65); }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 26px; }
+  .pipeline-arrow { display: none; }
+  .mat-cell { width: 34px; height: 34px; font-size: 12px; }
+  .rf-cell { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ==== 第 03 课新增:多项式拟合演示 ==== */
+.poly-canvas {
+  display: block;
+  width: 100%;
+  max-width: 680px;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+}
+.poly-slider-row { display: flex; align-items: center; gap: 14px; margin: 16px 0 4px; }
+.poly-slider-label { font-family: var(--font-heading); font-size: 13px; color: var(--text-dim); flex-shrink: 0; }
+.poly-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  outline: none;
+  cursor: pointer;
+}
+.poly-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 1px 6px rgba(20,20,19,0.25);
+}
+.poly-slider::-moz-range-thumb {
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+}
+.poly-deg { font-family: var(--font-mono); font-size: 16px; font-weight: 700; color: var(--accent); min-width: 30px; text-align: center; flex-shrink: 0; }
+.mse-bars { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.mse-row { display: flex; align-items: center; gap: 10px; }
+.mse-label { font-family: var(--font-heading); font-size: 12.5px; color: var(--text-dim); width: 70px; flex-shrink: 0; text-align: right; }
+.mse-track { flex: 1; height: 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; }
+.mse-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 999px; transition: width 0.25s var(--ease); }
+.mse-fill.val { background: var(--accent2); }
+.mse-num { font-family: var(--font-mono); font-size: 12.5px; color: var(--text); width: 84px; flex-shrink: 0; }
+
+/* ==== 第 03 课新增:训练曲线诊断 ==== */
+.diag-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 16px 0; }
+.diag-block { text-align: center; }
+.diag-block canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+}
+.diag-cap { font-family: var(--font-heading); font-size: 13px; color: var(--text-dim); margin-top: 8px; letter-spacing: 1px; }
+.diag-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-top: 16px; }
+.diag-options .quiz-option { margin-bottom: 0; text-align: center; }
+
+@media (max-width: 640px) {
+  .mse-label { width: 56px; font-size: 11.5px; }
+  .mse-num { width: 64px; font-size: 11.5px; }
+}
+
+/* ===== mobile adaptation (injected, uniform across course) ===== */
+@media (max-width: 640px) {
+  body { font-size: 15.5px; }
+  .container { padding: 16px 16px 72px; }
+  .hero { padding: 52px 18px 38px; }
+  .hero .subtitle { font-size: 15.5px; }
+  section { padding: 32px 0; }
+  h2 { font-size: 22px; }
+  h2 .num { width: 30px; height: 30px; font-size: 14px; }
+  .demo-box { padding: 16px 14px; }
+  canvas { max-width: 100%; height: auto !important; }
+  .fc-block canvas { width: 100% !important; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .code-block { font-size: 11.5px; padding: 13px 14px; line-height: 1.75; }
+  .slider-row { flex-wrap: wrap; }
+  .slider-row label { min-width: 0; flex: 1 1 100%; }
+  .lesson-nav { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .quiz { padding: 16px 16px; }
+  .quiz-option { font-size: 14px; padding: 11px 12px; }
+  .demo-btns .demo-btn, .demo-btn { padding: 9px 15px; font-size: 13px; }
+  .story-card, .insight-box, .exercise-card { padding: 16px 16px; }
+  .settings-bar { padding: 0 16px; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bp-diagram { font-size: 12px; }
+  .bp-node { min-width: 66px; padding: 8px 8px; }
+  .mat-op { padding-top: 40px; }
+  .selection-toolbar { max-width: calc(100vw - 16px); flex-wrap: wrap; }
+}
+@media (max-width: 400px) {
+  .mat-cell { width: 30px; height: 30px; font-size: 11px; }
+  .rf-cell { width: 17px; height: 17px; }
+  .mat-grid { gap: 3px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="lesson-tag">缺陷检测课程 · 第 03 课</div>
+  <h1>训练模型的方法论</h1>
+  <p class="subtitle">会搭网络只是开始——同一份模型代码,有人训出"考试满分、上线翻车"的复读机,有人训出能稳定面对明天产线的系统。训得好、判得准,才是工程能力。这一课讲的就是这套方法论。</p>
+</div>
+
+<div class="settings-bar">
+  <label class="toggle-wrap active" id="code-toggle">
+    <span>配套练习</span>
+    <div class="toggle-track"></div>
+  </label>
+</div>
+
+<div class="container">
+
+<!-- ============ §0 ============ -->
+<section>
+  <h2><span class="num">0</span> 快速回顾</h2>
+  <p>前两课攒下的家底,这一课全要用上:</p>
+  <ul>
+    <li><strong>训练循环四步</strong>(第 01 课):前向传播算预测 → 损失函数打分 → 反向传播算梯度 → 梯度下降更新参数,循环往复。</li>
+    <li><strong>CNN 结构</strong>(第 02 课):卷积捕捉局部模式、池化压缩、感受野逐层扩大;ImageNet 预训练骨干是一部现成的"视觉词典"。</li>
+  </ul>
+  <p>但会搭网络、会跑循环,只回答了"<strong>怎么训</strong>"。这一课回答两个更工程的问题:<strong>怎么知道训好了?训坏了怎么诊断、怎么救?</strong>答案会组装成一套可以直接照做的 checklist(§7),它将贯穿后面每一课的每一次训练。</p>
+</section>
+
+<!-- ============ §1 ============ -->
+<section>
+  <h2><span class="num">1</span> 泛化:训练的真正目标</h2>
+
+  <p>先立一条贯穿全课的判断标准:<strong>模型在训练集上分数高,不算本事。</strong>训练集是模型"见过答案"的题——梯度下降的每一步都在朝着压低训练集损失的方向走,分数高是理所当然的。真正值钱的能力叫<em>泛化</em>(generalization):<strong>在没见过的样本上,依然判得对。</strong></p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>背题的学生(记忆)</h4>
+      <p>把 500 道例题的答案一字不差背下来,例题考满分。</p>
+      <p>换一道数字不同的新题当场露馅——他记住的是<strong>题</strong>,不是<strong>解法</strong>。</p>
+    </div>
+    <div class="compare-box">
+      <h4>会解题的学生(规律)</h4>
+      <p>从 500 道例题里提炼出解法,例题成绩未必满分。</p>
+      <p>新题照样能解——他掌握的是<strong>规律</strong>,而规律对没见过的题同样成立。</p>
+    </div>
+  </div>
+
+  <p>神经网络两条路都走得通:参数足够多时,它完全有能力把训练集连同噪声<strong>逐条背下来</strong>(记忆);而我们要的是它<strong>提炼规律</strong>。训练方法论的全部内容,归结起来就一句话:<strong>逼模型放弃记忆,选择规律。</strong></p>
+
+  <div class="story-card">
+    <div class="story-label">工业现场</div>
+    <p>缺陷检测模型的处境比考试残酷得多:它今天在 800 张历史图片上训练,明天要面对的是产线上<strong>源源不断的新工件</strong>——新的批次、漂移的光照、形态微妙不同的划痕。训练集上 99.9% 的准确率一分钱不值,除非它能兑换成"明天的新零件也判得对"。本课后面的每一件工具——数据划分、正则化、增强、早停——都是为这一个目标服务的。</p>
+  </div>
+</section>
+
+<!-- ============ §2 ============ -->
+<section>
+  <h2><span class="num">2</span> 数据划分:先把考试制度设计好</h2>
+
+  <p>既然目标是"没见过的样本判得对",评估就绝不能用模型见过的数据。标准做法是训练开始<strong>之前</strong>就把数据切成三份,各司其职、互不越界:</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>训练集 train(约 60-80%)</h4>
+      <p>课本例题。梯度下降只在这份数据上跑,模型的全部参数由它塑造。</p>
+    </div>
+    <div class="compare-box">
+      <h4>验证集 val(约 10-20%)</h4>
+      <p>模拟考。<strong>不参与梯度更新</strong>,专门回答"现在泛化得怎么样"——凭它调超参、选模型、决定早停。可以反复考。</p>
+    </div>
+    <div class="compare-box">
+      <h4>测试集 test(约 10-20%)</h4>
+      <p>高考。<strong>只在一切决定尘埃落定之后考一次</strong>,成绩代表上线后的真实水平。</p>
+    </div>
+  </div>
+
+  <h3>为什么必须有 val?test 一份不够吗?</h3>
+  <p>因为"调超参"本身就是一种学习。你尝试 20 组学习率、深度、增强的组合,挑出在某份数据上分数最高的那组——这个"挑"的动作,就是在向那份数据拟合,只是拟合的不是网络权重,而是<em>你的决策</em>。如果拿来挑选的是 test,test 就悄悄变成了另一个训练集:20 组里总有一组恰好蒙对了它的脾气,分数虚高,<strong>而你手里再没有一份干净数据能戳穿它</strong>。所以要专设一份 val 来"被消耗",让 test 保持从未参与任何决定——只有这样的数据,才有资格宣布真实成绩。</p>
+
+  <div class="insight-box">
+    <div class="insight-label">工业数据的头号陷阱:泄漏</div>
+    <p>划分必须<strong>按工件切,不能按图片切</strong>。产线上常对同一个工件拍多张照片(不同工位、不同角度);如果按"图片"随机划分,同一工件的照片会同时落进 train 和 val——模型在 val 上认出的不是"缺陷的规律",而是"这个工件我见过"。这叫<em>数据泄漏</em>(data leakage):val 成绩漂亮,上线当场翻车,而且你排查代码永远查不出 bug,因为 bug 藏在划分那一步。同理,同一批次、同一卷钢材的样本也尽量分在同一侧。练习 TODO 1 会让你实现一个固定种子、可复现的划分函数——这是每个项目开工的第一行代码。</p>
+  </div>
+</section>
+
+<!-- ============ §3 ============ -->
+<section>
+  <h2><span class="num">3</span> 过拟合与欠拟合:两种病,两张脸</h2>
+
+  <p>有了 train / val 两块表,训练状态就能诊断了。核心变量是<em>模型容量</em>(capacity)——模型能表达的函数复杂程度,参数越多、网络越深,容量越大。容量太小,连训练集里的规律都装不下;容量太大,连训练集里的噪声都装得下。两种失衡,对应两种病:</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>欠拟合 underfit</h4>
+      <p><strong>症状:train 差,val 也差</strong>,两条曲线都停在高位。</p>
+      <p>病因:容量不够,或训练不充分——规律没学进去。</p>
+      <p>处方:加大模型、训久一点、换更强的特征。注意:<strong>加数据救不了欠拟合</strong>。</p>
+    </div>
+    <div class="compare-box">
+      <h4>过拟合 overfit</h4>
+      <p><strong>症状:train 很好,val 明显更差</strong>,两条曲线张开"剪刀差"。</p>
+      <p>病因:容量过剩,模型开始背题——把噪声当规律记了。</p>
+      <p>处方:更多数据、数据增强(§5)、正则化与早停(§4)。</p>
+    </div>
+  </div>
+
+  <p>光背症状不如亲手得一次病。下面的沙盘里,数据的<strong>真实规律是一条二次曲线</strong>(灰色虚线),散点 = 真实规律 + 随机噪声。你要用多项式去拟合散点,而"阶数"就是这个小模型的容量旋钮:</p>
+
+  <div class="demo-box" id="demo-poly">
+    <div class="demo-title">🎛 交互:亲手制造一次过拟合</div>
+    <div class="demo-hint"><span style="color:#B05C3F;font-weight:700">橙点</span>是训练集(12 个,拟合只用它们);<span style="color:#4A7BA8;font-weight:700">蓝点</span>是验证集(6 个留出点,从不参与拟合);灰色虚线是生成数据的真实二次规律,深色实线是当前拟合出的多项式。<strong>拖动滑块从 1 阶推到 11 阶</strong>,盯住两根误差条的走向——先一起降,然后分道扬镳。</div>
+    <canvas id="poly-canvas" class="poly-canvas" width="680" height="340"></canvas>
+    <div class="poly-slider-row">
+      <span class="poly-slider-label">多项式阶数(容量)</span>
+      <input type="range" id="poly-degree" class="poly-slider" min="1" max="11" step="1" value="1" aria-label="多项式阶数">
+      <span class="poly-deg" id="poly-deg-val">1</span>
+    </div>
+    <div class="mse-bars">
+      <div class="mse-row">
+        <div class="mse-label">训练 MSE</div>
+        <div class="mse-track"><div class="mse-fill" id="poly-train-bar"></div></div>
+        <div class="mse-num" id="poly-train-mse">–</div>
+      </div>
+      <div class="mse-row">
+        <div class="mse-label">验证 MSE</div>
+        <div class="mse-track"><div class="mse-fill val" id="poly-val-bar"></div></div>
+        <div class="mse-num" id="poly-val-mse">–</div>
+      </div>
+    </div>
+    <div class="demo-status" id="poly-status"></div>
+  </div>
+
+  <p>三个观察,对应三种状态:</p>
+  <ul>
+    <li><strong>1 阶(欠拟合)</strong>:直线压不住弯,train / val 误差双高——容量不足,这时候加多少数据都没用;</li>
+    <li><strong>2-3 阶(恰好)</strong>:曲线贴着灰色虚线走,两个误差都低且接近——容量与规律匹配,这就是泛化;</li>
+    <li><strong>10-11 阶(过拟合)</strong>:曲线几乎穿过每个训练点,训练 MSE 趋近 0;但为了迁就噪声,它在点与点之间疯狂摆动,验证 MSE 飙升成百上千倍——<strong>训练误差的"完美",恰恰是背题的铁证</strong>。</li>
+  </ul>
+  <p>把"多项式阶数"换成"网络深度与宽度",这个沙盘就是每一次深度学习训练的缩影。区别只在于:神经网络的容量常常天然过剩(动辄百万参数),所以实践中<strong>过拟合是常态,欠拟合是例外</strong>——而我们手里有比"调小模型"更聪明的手段。</p>
+</section>
+
+<!-- ============ §4 ============ -->
+<section>
+  <h2><span class="num">4</span> 正则化:给"背题"设阻力</h2>
+
+  <p>过拟合的直接解法是缩小模型,但容量缩过头连规律也装不下了。更聪明的思路是:<strong>保留大容量,但给"背题"这条路设置阻力</strong>,让梯度下降自然偏向更简单、更平滑的解。这类手段统称<em>正则化</em>(regularization)。工程里最常用的是三件半:</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>L2 正则 / weight decay</h4>
+      <p>在损失里加一项权重平方和的罚款:总损失 = 任务损失 + λ·Σw²。</p>
+      <p>回看交互 1:高阶曲线的疯狂摆动靠的是<strong>巨大的系数</strong>——罚大权重,就是压摆动、逼平滑。</p>
+    </div>
+    <div class="compare-box">
+      <h4>Dropout(随机失活)</h4>
+      <p>训练时每一步随机让一部分神经元(如 50%)临时下岗,预测时全员上岗。</p>
+      <p>任何神经元都可能缺席,网络就不敢把一条规律押在单个神经元身上——像随机点名的小组作业,逼每个成员都真的学会。</p>
+    </div>
+    <div class="compare-box">
+      <h4>早停 early stopping</h4>
+      <p>每个 epoch 看一眼 val loss:连续 patience 个 epoch 不再改善就停,并回到 val 最低那一刻的参数。</p>
+      <p>最朴素、零成本、几乎无副作用,<strong>实践中永远开着</strong>。练习 TODO 4 亲手实现它。</p>
+    </div>
+    <div class="compare-box">
+      <h4>BatchNorm(算半件)</h4>
+      <p>对每层的输入按批做标准化。主业是稳定训练、加速收敛,顺带有轻微正则效果——现代 CNN 的标配组件,一句带过。</p>
+    </div>
+  </div>
+
+  <p>它们的共同直觉:<strong>在"完美拟合训练集"和"保持函数简单"之间强行加一个折中</strong>。规律通常是简单的,噪声必然是复杂的——限制复杂度,牺牲掉的主要是背噪声的能力,留下的正是规律。</p>
+</section>
+
+<!-- ============ §5 ============ -->
+<section>
+  <h2><span class="num">5</span> 数据增强:免费的数据</h2>
+
+  <p>对付过拟合,最硬的通货永远是<strong>更多数据</strong>——而数据增强(data augmentation)是拿到更多数据最便宜的方式:对已有图片做<strong>不改变标签</strong>的随机变换,一张变十张。常用三类:</p>
+  <ul>
+    <li><strong>几何类</strong>:水平 / 垂直翻转、旋转、随机裁剪、平移——"缺陷出现在哪个方位,都还是缺陷";</li>
+    <li><strong>光度类</strong>:亮度、对比度小幅抖动——"车间灯光的波动,不改变工件的好坏";</li>
+    <li><strong>噪声 / 模糊类</strong>:轻微高斯噪声、轻度模糊——"相机的抖动,不改变事实"。</li>
+  </ul>
+  <p>它为什么能抗过拟合?因为每个 epoch 模型看到的都是同一批图的<strong>不同随机变体</strong>,逐像素背题从此背不胜背;而"划痕"这个规律在所有变体里恒定存在——背不了题,只好去学规律。</p>
+
+  <div class="demo-box" id="demo-aug">
+    <div class="demo-title">🔄 交互:给工件图做增强</div>
+    <div class="demo-hint">左边是程序生成的金属圆盘(带一道<strong>斜向划痕</strong>和一个<strong>定位孔</strong>)。点按钮看每种增强把它变成什么样——注意:无论怎么变,"这是一个带划痕的圆盘"这个标签始终成立。</div>
+    <div class="filter-canvases">
+      <div class="fc-block">
+        <canvas id="aug-src" width="64" height="64"></canvas>
+        <div class="fc-cap">原图(64×64 灰度)</div>
+      </div>
+      <div class="fc-arrow">→</div>
+      <div class="fc-block">
+        <canvas id="aug-dst" width="64" height="64"></canvas>
+        <div class="fc-cap" id="aug-cap">增强结果</div>
+      </div>
+    </div>
+    <div class="demo-btns" id="aug-btns">
+      <button class="demo-btn" data-k="orig">原图</button>
+      <button class="demo-btn" data-k="flip">水平翻转</button>
+      <button class="demo-btn" data-k="rot">旋转 90°</button>
+      <button class="demo-btn" data-k="bright">调亮</button>
+      <button class="demo-btn" data-k="noise">加噪</button>
+    </div>
+    <div class="demo-status" id="aug-status"></div>
+  </div>
+
+  <div class="insight-box">
+    <div class="insight-label">增强的底线:物理现实</div>
+    <p>增强的定义是"<strong>不改变标签</strong>的变换"——这条底线一旦破掉,增强就变成投毒。两个经典反例:① 手写数字 "6" 垂直翻转变成 "9",标签变了,这种增强在字符识别里是禁区;② 缺陷检测里把亮度拉到接近全白,划痕本身被冲掉,图里已经没有可见缺陷,标签却还写着"有缺陷"——这是在教模型说谎。所以每上一种增强前先问两句:<strong>变换后的图,真实产线上可能出现吗?标签还成立吗?</strong>最后记一笔伏笔:缺陷样本天然稀缺,增强只能变着花样复用已有的缺陷;第 10 课会走出更激进的一步——干脆"合成"缺陷。</p>
+  </div>
+</section>
+
+<!-- ============ §6 ============ -->
+<section>
+  <h2><span class="num">6</span> 学习率策略与优化器:步子怎么迈</h2>
+
+  <p>第 01 课讲过:学习率是梯度下降的步长,也是所有超参里<strong>影响最大的一个</strong>。固定一个值很难两全——大了在谷底两壁来回弹,小了半天走不到谷底。实践共识是<strong>先大后小</strong>:前期大步快速逼近,后期小步精细收敛。三种常见调度:</p>
+  <ul>
+    <li><strong>阶梯衰减(step decay)</strong>:每过固定 epoch 数把学习率乘一个系数(如 ×0.1),楼梯式往下掉——练习 TODO 5 就是它,一行公式;</li>
+    <li><strong>余弦退火(cosine)</strong>:学习率沿半条余弦曲线平滑滑向 0,免去"在哪掉、掉多少"的手工决定;</li>
+    <li><strong>预热(warmup)</strong>:最初几百步让学习率从 0 线性爬到目标值——参数还是一堆随机数时步子太大容易直接跑飞,先热身再起跑。</li>
+  </ul>
+  <p>优化器一句话定位:<strong>SGD(+动量)</strong>步子朴素,调好了上限高,是论文刷榜的常客;<strong>Adam / AdamW</strong> 为每个参数自适应步长,开箱即用、对超参宽容,是工程首选起点。拿不准就 AdamW + 余弦退火,先跑起来再说。</p>
+
+  <h3>训练曲线:模型的心电图</h3>
+  <p>调度和优化器最终都要靠<strong>看曲线</strong>验证。train / val 两条 loss 曲线是训练过程的心电图,绝大多数毛病在图上一眼可辨。来做一次读图诊断:</p>
+
+  <div class="demo-box" id="demo-diag">
+    <div class="demo-title">🩺 交互:训练曲线读图诊断</div>
+    <div class="demo-hint">四张图是四次不同训练的 loss 曲线(<span style="color:#B05C3F;font-weight:700">橙 = train</span>,<span style="color:#4A7BA8;font-weight:700">蓝 = val</span>,横轴 epoch,纵轴 loss)。先自己读图,再点下方按钮回答:<strong>哪一张是健康的训练?</strong>点错了没关系——每次点击都会告诉你那张图得的是什么病。</div>
+    <div class="diag-grid">
+      <div class="diag-block">
+        <canvas id="diag-a" width="280" height="170"></canvas>
+        <div class="diag-cap">图 A</div>
+      </div>
+      <div class="diag-block">
+        <canvas id="diag-b" width="280" height="170"></canvas>
+        <div class="diag-cap">图 B</div>
+      </div>
+      <div class="diag-block">
+        <canvas id="diag-c" width="280" height="170"></canvas>
+        <div class="diag-cap">图 C</div>
+      </div>
+      <div class="diag-block">
+        <canvas id="diag-d" width="280" height="170"></canvas>
+        <div class="diag-cap">图 D</div>
+      </div>
+    </div>
+    <div class="diag-options" id="diag-btns">
+      <button class="quiz-option" data-diag="a">图 A</button>
+      <button class="quiz-option" data-diag="b">图 B</button>
+      <button class="quiz-option" data-diag="c">图 C</button>
+      <button class="quiz-option" data-diag="d">图 D</button>
+    </div>
+    <div class="quiz-feedback" id="diag-status"></div>
+  </div>
+
+  <p>四种形态请刻进肌肉记忆:<strong>双高平台</strong>(欠拟合,§3)、<strong>剪刀差</strong>(过拟合,§3-§4,val 拐头处正是早停出手点)、<strong>剧烈震荡</strong>(学习率过大,先砍一个数量级)、<strong>同步平稳下降</strong>(健康)。以后每次训练,先画这两条曲线——<strong>不看曲线就调参,等于不做心电图就开药</strong>。</p>
+</section>
+
+<!-- ============ §7 ============ -->
+<section>
+  <h2><span class="num">7</span> 把方法论装进口袋:六步 checklist</h2>
+
+  <p>最后把全课收进一张可执行的清单——它是 Andrej Karpathy《A Recipe for Training Neural Networks》的浓缩版,顺序本身就是方法论:</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">STEP 1</div>
+      <div class="step-title">固定数据划分</div>
+      <div class="step-desc">按工件切 train/val/test,写死随机种子,之后不再动(§2)</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 2</div>
+      <div class="step-title">先跑通小基线</div>
+      <div class="step-desc">最小模型 + 默认超参,让流水线端到端跑起来再谈优化</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 3</div>
+      <div class="step-title">小样本过拟合</div>
+      <div class="step-desc">刻意在几十张图上把 train loss 压到 ≈0,验证代码没 bug</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 4</div>
+      <div class="step-title">加增强与正则</div>
+      <div class="step-desc">出现过拟合,再上增强 / weight decay / Dropout / 早停(§4-§5)</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 5</div>
+      <div class="step-title">调学习率</div>
+      <div class="step-desc">对着训练曲线调 lr 与衰减策略,一次只动一个旋钮(§6)</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 6</div>
+      <div class="step-title">最后碰 test</div>
+      <div class="step-desc">所有决定做完,test 只跑一次,报告真实成绩(§2)</div>
+    </div>
+  </div>
+
+  <p>最反直觉的是第 3 步:<strong>刻意制造一次过拟合</strong>。挑几十张图,关掉全部增强和正则,把 train loss 压到接近 0——这一步不是在训模型,是在<strong>测代码</strong>:大容量网络背题是本能(§3),连几十张图都背不下来,说明模型、损失或数据管道里必有 bug。先证明"能过拟合",再去治过拟合。</p>
+  <p>同样重要的是节奏:<strong>一次只动一个旋钮</strong>。同时改了增强、学习率和网络深度,val 涨了 2 个点,你永远不知道该谢谁——训练是实验科学,变量不控制,结论就不存在。</p>
+</section>
+
+<!-- ============ 测验 ============ -->
+<section>
+  <h2><span class="num">✓</span> 自我检验</h2>
+  <p>四道题,检查本课的方法论是否立住了。</p>
+
+  <div class="quiz" id="quiz1">
+    <div class="quiz-q">Q1 · 验证集(val)和测试集(test)的区别与各自用途是?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">A. val 用来训练参数,test 用来调超参数</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz1')">B. val 用来调超参、选模型,可以反复用;test 只在最后评估一次,代表上线后的真实水平</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">C. 两者没有本质区别,都可以反复用来挑出最好的结果</button>
+    <div class="quiz-feedback ok" id="quiz1-correct">✔ 正确。§2 的分工:val 是"模拟考",可以反复考、按成绩改策略,负责"被消耗";test 是"高考",只考一次——谁被反复用来做决定,谁就不再能代表真实水平。</div>
+    <div class="quiz-feedback no" id="quiz1-wrong">✘ 回看 §2:两者都不参与训练参数,区别在"被使用的次数"。调超参本身也是学习,反复用 test 挑结果会让它悄悄变成另一个训练集,成绩虚高——所以专设 val 被消耗,test 保持干净、只碰一次。</div>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-q">Q2 · 训练准确率 99%、验证准确率 70%——这是什么症状?第一反应该做什么?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">A. 欠拟合;把网络加深加宽</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz2')">B. 过拟合;加数据增强 / 正则化 / 早停,或想办法搞更多数据</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">C. 正常现象;可以直接上线</button>
+    <div class="quiz-feedback ok" id="quiz2-correct">✔ 正确。train 99% / val 70%,29 个点的剪刀差是典型过拟合(§3 的症状表):模型在背训练集。第一反应是加约束:增强(§5)、weight decay / Dropout / 早停(§4),或者收集更多数据。</div>
+    <div class="quiz-feedback no" id="quiz2-wrong">✘ train 都到 99% 了,容量绰绰有余,绝不是欠拟合;而 29 个点的 train-val 差距意味着上线后大概率只有 70% 的水平,更不能直接上线。回看 §3 的症状对照:train 好 val 差 = 过拟合,处方在 §4 和 §5。</div>
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-q">Q3 · 给"金属表面划痕检测"的训练集做增强,哪一种是<strong>不合理</strong>的?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">A. 水平翻转</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">B. 旋转一个角度</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz3')">C. 把图像亮度拉到接近全白</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">D. 加轻微高斯噪声</button>
+    <div class="quiz-feedback ok" id="quiz3-correct">✔ 正确。亮度拉到接近全白破坏了物理现实(§5 的底线):划痕本身被冲掉,图里已看不见缺陷,标签却还是"有缺陷"——等于教模型说谎。翻转、旋转、轻噪声都保持"带划痕的金属面"这一事实不变,是安全增强。</div>
+    <div class="quiz-feedback no" id="quiz3-wrong">✘ 划痕的方向本来就任意,翻转、旋转后仍是划痕;轻微噪声只是模拟相机抖动——这些都合理。真正的雷是把亮度拉到失真:缺陷被抹掉,图像和标签不再一致。回看 §5 insight 的"物理现实"两问。</div>
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-q">Q4 · 早停(early stopping)决定"什么时候停",看的是哪条曲线?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">A. 训练集 loss 曲线</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz4')">B. 验证集 loss 曲线</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">C. 学习率调度曲线</button>
+    <div class="quiz-feedback ok" id="quiz4-correct">✔ 正确。早停盯的是 val loss(§4):连续 patience 个 epoch 不再改善就停,并回到 val 最低那一刻的参数——§6 图 B 的剪刀差里,val 拐头向上处正是出手点。train loss 只要容量够就会一直降,看它只会越训越久。</div>
+    <div class="quiz-feedback no" id="quiz4-wrong">✘ train loss 几乎永远在降,不会告诉你"该停了";学习率曲线是你自己设定的调度,更不是信号。早停唯一的依据是 val loss 的拐点——回看 §4 的早停卡片和 §6 图 B 的剪刀差。</div>
+  </div>
+</section>
+
+<!-- ============ 延伸阅读 ============ -->
+<section class="further-reading">
+  <h2><span class="num">✦</span> 延伸阅读</h2>
+  <p>按"方法论 → 教材 → 讲义 → 实证"排序:</p>
+  <div class="reading-list">
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://karpathy.github.io/2019/04/25/recipe/" target="_blank" rel="noopener">A Recipe for Training Neural Networks</a></div>
+      <div class="reading-meta">Andrej Karpathy · 博客(英文)</div>
+      <div class="reading-desc">训练方法论的"圣经",§7 的 checklist 是它的浓缩版:先建立对数据的直觉、搭端到端骨架、刻意过拟合、再正则化、再调参——每一步都配着大量实战踩坑细节,值得每年重读一遍。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://zh.d2l.ai/chapter_multilayer-perceptrons/underfit-overfit.html" target="_blank" rel="noopener">《动手学深度学习》:模型选择、欠拟合和过拟合</a></div>
+      <div class="reading-meta">d2l.ai · 免费在线教材(中文)</div>
+      <div class="reading-desc">§2、§3 的教科书版本:训练误差与泛化误差、K 折交叉验证,以及和本课交互 1 同款的多项式拟合实验——公式与可运行代码并排,适合系统补齐。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://cs231n.github.io/neural-networks-3/" target="_blank" rel="noopener">CS231n 讲义:Neural Networks Part 3</a></div>
+      <div class="reading-meta">斯坦福 CS231n · 课程讲义(英文)</div>
+      <div class="reading-desc">训练动态与调参的权威讲义:怎么读 loss / 准确率曲线、梯度检查、学习率衰减与各种优化器(SGD、动量、Adam)的取舍——§6 的完整展开版。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/1812.01187" target="_blank" rel="noopener">Bag of Tricks for Image Classification with CNN</a></div>
+      <div class="reading-meta">He et al., 2018 · arXiv 论文(英文)</div>
+      <div class="reading-desc">把 warmup、余弦退火、label smoothing、mixup 等训练技巧逐一做消融实验:同一个 ResNet-50,只靠训练技巧从 75.3% 提到 79.3%——"训练方法论值多少个点"的量化证据。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 配套练习 ============ -->
+<section id="code-exercise">
+  <h2><span class="num">✎</span> 配套代码练习</h2>
+  <div class="exercise-card">
+    <h3>exercise.py:亲手搭一套训练方法论工具箱</h3>
+    <p>本课目录下的 <code>exercise.py</code> 用纯 Python(零依赖)把本课的五件工具各造一遍。运行 <code>python exercise.py</code>,完成 5 个递进的 TODO:</p>
+    <ol class="todo-list">
+      <li><strong>TODO 1</strong> · 可复现的数据划分 <code>train_val_test_split</code>(固定种子,三段无重叠)—— 对应 §2</li>
+      <li><strong>TODO 2</strong> · 症状诊断器 <code>diagnose</code>(underfit / overfit / ok)—— 对应 §3</li>
+      <li><strong>TODO 3</strong> · 两个增强算子 <code>flip_horizontal</code> 与 <code>rotate90</code> —— 对应 §5</li>
+      <li><strong>TODO 4</strong> · 早停 <code>early_stopping</code>(patience 规则,返回最优 epoch 与停止 epoch)—— 对应 §4</li>
+      <li><strong>TODO 5</strong> · 阶梯衰减 <code>step_decay</code>,并与早停串联成一次"训练复盘" —— 对应 §6</li>
+    </ol>
+    <p style="margin-top:12px">做完 TODO 5 你会得到一次完整的复盘:给定一条 val loss 曲线,程序自动告诉你早停停在哪、最佳 checkpoint 在 epoch 2、当时学习率还是 0.1——这正是每天发生在真实训练脚本里的逻辑,只是那里的曲线有几万个点。</p>
+  </div>
+</section>
+
+<div class="lesson-nav">
+  <a href="../02-cnn/lesson.html">← 上一课:卷积神经网络:让机器看见</a>
+  <a href="../04-defect-detection-landscape/lesson.html">下一课:缺陷检测全景地图 →</a>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ============ §3 多项式拟合:亲手制造一次过拟合 ============ */
+(function() {
+  var canvas = document.getElementById('poly-canvas');
+  if (!canvas) return;
+  var CW = 680, CH = 340;
+  var dpr = window.devicePixelRatio || 1;
+  canvas.width = CW * dpr;
+  canvas.height = CH * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  /* 确定性数据:真实规律 = 二次曲线,散点 = 规律 + 噪声 */
+  var seed = 9973;
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  function fTrue(x) { return 0.15 + 1.9 * x - 1.85 * x * x; }
+  function makePoints(n, jitter, noise) {
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      var x = (i + 0.5) / n + (rnd() - 0.5) * jitter;
+      x = Math.min(0.99, Math.max(0.01, x));
+      pts.push([x, fTrue(x) + (rnd() - 0.5) * noise]);
+    }
+    return pts;
+  }
+  var TRAIN = makePoints(12, 0.07, 0.18);
+  var VAL = makePoints(6, 0.07, 0.18);
+
+  /* 最小二乘:正规方程 (X^T X + λI) w = X^T y,高斯消元求解。
+     x 先映射到 [-1,1] 改善条件数;λ=1e-10 只为数值保稳。 */
+  function solve(A, b) {
+    var n = b.length;
+    for (var col = 0; col < n; col++) {
+      var piv = col;
+      for (var r = col + 1; r < n; r++) {
+        if (Math.abs(A[r][col]) > Math.abs(A[piv][col])) piv = r;
+      }
+      var tmpRow = A[col]; A[col] = A[piv]; A[piv] = tmpRow;
+      var tmpB = b[col]; b[col] = b[piv]; b[piv] = tmpB;
+      var p = A[col][col] || 1e-12;
+      for (var r2 = col + 1; r2 < n; r2++) {
+        var f = A[r2][col] / p;
+        for (var c2 = col; c2 < n; c2++) A[r2][c2] -= f * A[col][c2];
+        b[r2] -= f * b[col];
+      }
+    }
+    var w = new Array(n);
+    for (var i = n - 1; i >= 0; i--) {
+      var s = b[i];
+      for (var j = i + 1; j < n; j++) s -= A[i][j] * w[j];
+      w[i] = s / (A[i][i] || 1e-12);
+    }
+    return w;
+  }
+  function fitPoly(pts, deg) {
+    var m = deg + 1;
+    var A = [], b = [];
+    for (var i = 0; i < m; i++) {
+      var row = [];
+      for (var j = 0; j < m; j++) row.push(0);
+      A.push(row);
+      b.push(0);
+    }
+    pts.forEach(function(p) {
+      var t = 2 * p[0] - 1;
+      var pw = [1];
+      for (var k = 1; k < m; k++) pw.push(pw[k - 1] * t);
+      for (var r = 0; r < m; r++) {
+        b[r] += pw[r] * p[1];
+        for (var c = 0; c < m; c++) A[r][c] += pw[r] * pw[c];
+      }
+    });
+    for (var d = 0; d < m; d++) A[d][d] += 1e-10;
+    return solve(A, b);
+  }
+  function evalPoly(w, x) {
+    var t = 2 * x - 1;
+    var y = 0;
+    for (var i = w.length - 1; i >= 0; i--) y = y * t + w[i];
+    return y;
+  }
+  function mse(w, pts) {
+    var s = 0;
+    pts.forEach(function(p) {
+      var e = evalPoly(w, p[0]) - p[1];
+      s += e * e;
+    });
+    return s / pts.length;
+  }
+
+  var PAD = 26;
+  function toX(x) { return PAD + x * (CW - 2 * PAD); }
+  function toY(y) { return CH - PAD - y * (CH - 2 * PAD); }
+
+  function draw(w) {
+    ctx.clearRect(0, 0, CW, CH);
+    ctx.fillStyle = '#FAF9F5';
+    ctx.fillRect(0, 0, CW, CH);
+    /* 真实规律:灰虚线 */
+    ctx.strokeStyle = 'rgba(107,104,96,0.55)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 5]);
+    ctx.beginPath();
+    for (var i = 0; i <= 120; i++) {
+      var x = i / 120;
+      if (i === 0) ctx.moveTo(toX(x), toY(fTrue(x)));
+      else ctx.lineTo(toX(x), toY(fTrue(x)));
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+    /* 拟合曲线:深色实线 */
+    ctx.strokeStyle = '#141413';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (var j = 0; j <= 400; j++) {
+      var x2 = j / 400;
+      var y2 = evalPoly(w, x2);
+      if (j === 0) ctx.moveTo(toX(x2), toY(y2));
+      else ctx.lineTo(toX(x2), toY(y2));
+    }
+    ctx.stroke();
+    /* 散点 */
+    TRAIN.forEach(function(p) {
+      ctx.fillStyle = '#D97757';
+      ctx.beginPath();
+      ctx.arc(toX(p[0]), toY(p[1]), 5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    VAL.forEach(function(p) {
+      ctx.fillStyle = '#6A9BCC';
+      ctx.beginPath();
+      ctx.arc(toX(p[0]), toY(p[1]), 5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    /* 图例 */
+    ctx.font = '12px "Noto Sans SC", sans-serif';
+    var lx = CW - 128, ly = 20;
+    ctx.fillStyle = '#D97757';
+    ctx.beginPath(); ctx.arc(lx, ly, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#6B6860';
+    ctx.fillText('训练点 ×12', lx + 10, ly + 4);
+    ctx.fillStyle = '#6A9BCC';
+    ctx.beginPath(); ctx.arc(lx, ly + 20, 4.5, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#6B6860';
+    ctx.fillText('验证点 ×6', lx + 10, ly + 24);
+    ctx.strokeStyle = '#141413';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(lx - 6, ly + 40); ctx.lineTo(lx + 6, ly + 40); ctx.stroke();
+    ctx.fillText('拟合曲线', lx + 10, ly + 44);
+    ctx.strokeStyle = 'rgba(107,104,96,0.55)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(lx - 6, ly + 60); ctx.lineTo(lx + 6, ly + 60); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillText('真实规律', lx + 10, ly + 64);
+  }
+
+  function fmt(m) {
+    if (m >= 100) return '>100';
+    if (m >= 1) return m.toFixed(2);
+    if (m >= 0.001) return m.toFixed(4);
+    return m.toExponential(1);
+  }
+
+  var slider = document.getElementById('poly-degree');
+  var degVal = document.getElementById('poly-deg-val');
+  var trainBar = document.getElementById('poly-train-bar');
+  var valBar = document.getElementById('poly-val-bar');
+  var trainNum = document.getElementById('poly-train-mse');
+  var valNum = document.getElementById('poly-val-mse');
+  var statusEl = document.getElementById('poly-status');
+
+  function update() {
+    var deg = parseInt(slider.value, 10);
+    degVal.textContent = deg;
+    var w = fitPoly(TRAIN, deg);
+    draw(w);
+    var tm = mse(w, TRAIN), vm = mse(w, VAL);
+    var CAPV = 0.08;
+    trainBar.style.width = Math.max(1.5, Math.min(100, Math.sqrt(tm / CAPV) * 100)) + '%';
+    valBar.style.width = Math.max(1.5, Math.min(100, Math.sqrt(vm / CAPV) * 100)) + '%';
+    trainNum.textContent = fmt(tm);
+    valNum.textContent = fmt(vm);
+    var txt;
+    if (deg === 1) {
+      txt = '1 阶 · 欠拟合:直线压不住弯,train / val 误差双双高企且几乎相等——容量不够,加数据、训久一点都救不了它。';
+    } else if (deg <= 3) {
+      txt = deg + ' 阶 · 拟合良好:曲线贴着灰色虚线(真实规律)走,两个误差都低且接近——容量与规律匹配,这就是泛化。';
+    } else if (deg <= 7) {
+      txt = deg + ' 阶 · 容量开始过剩:train MSE 还在缓慢下降,val MSE 却已不再改善——模型开始迁就个别噪声点,过拟合在萌芽。';
+    } else if (deg <= 10) {
+      txt = deg + ' 阶 · 过拟合:为了穿过训练点,曲线开始扭曲,val MSE 明显抬头——它已经在背题了。';
+    } else {
+      txt = '11 阶 · 严重过拟合:12 个参数恰好把 12 个训练点全部"背下来",train MSE ≈ 0;曲线在点与点之间疯狂摆动,val MSE 飙升上千倍。这不是学习,是记忆。';
+    }
+    statusEl.textContent = txt;
+  }
+  slider.addEventListener('input', update);
+  update();
+})();
+
+/* ============ §5 数据增强演示 ============ */
+(function() {
+  var src = document.getElementById('aug-src');
+  if (!src) return;
+  var dst = document.getElementById('aug-dst');
+  var cap = document.getElementById('aug-cap');
+  var statusEl = document.getElementById('aug-status');
+  var W = 64, H = 64;
+
+  /* 程序生成"金属圆盘 + 斜向划痕 + 定位孔"灰度图 */
+  function genDisc() {
+    var img = [];
+    var seed = 7;
+    function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    for (var y = 0; y < H; y++) {
+      img.push([]);
+      for (var x = 0; x < W; x++) {
+        var v = 70 + (rnd() - 0.5) * 10;                      // 背景
+        var dx = x - 32, dy = y - 32;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 24) v = 170 - d * 0.8 + (rnd() - 0.5) * 12;   // 圆盘
+        if (d > 22 && d < 24) v -= 30;                        // 边缘暗环
+        img[y].push(v);
+      }
+    }
+    // 斜向划痕:从 (20,16) 到 (42,38)
+    for (var t = 0; t <= 1; t += 0.02) {
+      var sx = Math.round(20 + t * 22), sy = Math.round(16 + t * 22);
+      var dd = Math.sqrt((sx - 32) * (sx - 32) + (sy - 32) * (sy - 32));
+      if (dd < 23) {
+        img[sy][sx] = 42;
+        if (img[sy][sx + 1] !== undefined) img[sy][sx + 1] = 95;
+      }
+    }
+    // 定位孔 (40,20)
+    for (var py = -2; py <= 2; py++) {
+      for (var px = -2; px <= 2; px++) {
+        if (px * px + py * py <= 3) img[20 + py][40 + px] = 35;
+      }
+    }
+    return img;
+  }
+
+  function drawGray(canvas, mat) {
+    var c = canvas.getContext('2d');
+    var id = c.createImageData(W, H);
+    for (var y = 0; y < H; y++) {
+      for (var x = 0; x < W; x++) {
+        var v = Math.max(0, Math.min(255, mat[y][x]));
+        var i = (y * W + x) * 4;
+        id.data[i] = id.data[i + 1] = id.data[i + 2] = v;
+        id.data[i + 3] = 255;
+      }
+    }
+    c.putImageData(id, 0, 0);
+  }
+
+  function flipH(m) {
+    return m.map(function(row) { return row.slice().reverse(); });
+  }
+  function rot90(m) {
+    var n = m.length, out = [];
+    for (var r = 0; r < n; r++) {
+      out.push([]);
+      for (var c = 0; c < n; c++) out[r].push(m[n - 1 - c][r]);
+    }
+    return out;
+  }
+  function brighten(m) {
+    return m.map(function(row) { return row.map(function(v) { return v * 1.4; }); });
+  }
+  function addNoise(m) {
+    var s = 424242;
+    function nr() { s = (s * 16807) % 2147483647; return s / 2147483647; }
+    return m.map(function(row) { return row.map(function(v) { return v + (nr() - 0.5) * 70; }); });
+  }
+
+  var img = genDisc();
+  var AUGS = {
+    orig:   { f: function(m) { return m; }, name: '原图(不变换)',
+              tip: '一张 64×64 的金属圆盘:一道斜向划痕、一个定位孔。下面每种增强都会生成一个"新样本",而标签始终是同一个:带划痕的圆盘。' },
+    flip:   { f: flipH, name: '水平翻转',
+              tip: '划痕方向变了,定位孔换了边——但"带划痕的圆盘"这个事实纹丝不动。对方向本就任意的工业缺陷,翻转是最安全的增强。' },
+    rot:    { f: rot90, name: '旋转 90°',
+              tip: '工件在传送带上本来就可能以任意姿态出现——旋转增强只是提前替产线"预演"了这件事。' },
+    bright: { f: brighten, name: '调亮(×1.4)',
+              tip: '模拟车间灯光波动。注意幅度克制:亮度只是"抖动",划痕依然清晰可见。要是拉到过曝把缺陷抹掉,就越过底线了——见下方警告。' },
+    noise:  { f: addNoise, name: '加噪',
+              tip: '模拟传感器噪声。每个像素的值都变了,但结构没变——想逐像素死记硬背的模型从此背不胜背,只好去学结构。' }
+  };
+
+  drawGray(src, img);
+  var btns = document.getElementById('aug-btns').querySelectorAll('.demo-btn');
+  function apply(key) {
+    var a = AUGS[key];
+    drawGray(dst, a.f(img));
+    cap.textContent = a.name;
+    statusEl.textContent = a.tip;
+    btns.forEach(function(b) { b.classList.toggle('primary', b.dataset.k === key); });
+  }
+  btns.forEach(function(b) {
+    b.addEventListener('click', function() { apply(b.dataset.k); });
+  });
+  apply('flip');
+})();
+
+/* ============ §6 训练曲线读图诊断 ============ */
+(function() {
+  if (!document.getElementById('diag-a')) return;
+  var CW = 280, CH = 170, PAD = 16;
+  var seed = 8888;
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+
+  var DEFS = [
+    { id: 'diag-a',   /* 欠拟合:双高平台 */
+      train: function(t) { return 0.62 + 0.30 * Math.exp(-3.0 * t); },
+      val:   function(t) { return 0.67 + 0.29 * Math.exp(-2.8 * t); } },
+    { id: 'diag-b',   /* 过拟合:剪刀差 */
+      train: function(t) { return 0.05 + 0.85 * Math.exp(-4.5 * t); },
+      val:   function(t) { return 0.42 + 0.48 * Math.exp(-6 * t) + 0.33 * t * t; } },
+    { id: 'diag-c',   /* 学习率过大:震荡 */
+      train: function(t) { return 0.55 + 0.30 * Math.sin(26 * t + 1.2) * (0.75 + 0.25 * Math.sin(9 * t)); },
+      val:   function(t) { return 0.60 + 0.30 * Math.sin(26 * t + 2.3) * (0.75 + 0.25 * Math.sin(9 * t + 1)); } },
+    { id: 'diag-d',   /* 健康:同步平稳下降 */
+      train: function(t) { return 0.13 + 0.77 * Math.exp(-3.2 * t); },
+      val:   function(t) { return 0.20 + 0.75 * Math.exp(-3.0 * t); } }
+  ];
+
+  function plot(def) {
+    var c = document.getElementById(def.id);
+    var dpr = window.devicePixelRatio || 1;
+    c.width = CW * dpr;
+    c.height = CH * dpr;
+    var ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.fillStyle = '#FAF9F5';
+    ctx.fillRect(0, 0, CW, CH);
+    /* 坐标轴 */
+    ctx.strokeStyle = '#D8D5CC';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(PAD, PAD - 8);
+    ctx.lineTo(PAD, CH - PAD);
+    ctx.lineTo(CW - PAD + 8, CH - PAD);
+    ctx.stroke();
+    ctx.font = '10px "Noto Sans SC", sans-serif';
+    ctx.fillStyle = '#6B6860';
+    ctx.fillText('loss', PAD + 4, PAD + 2);
+    ctx.fillText('epoch →', CW - PAD - 42, CH - PAD + 12);
+    function line(fn, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      for (var i = 0; i <= 60; i++) {
+        var t = i / 60;
+        var v = fn(t) + (rnd() - 0.5) * 0.016;
+        v = Math.max(0.02, Math.min(0.98, v));
+        var x = PAD + t * (CW - 2 * PAD);
+        var y = CH - PAD - v * (CH - 2 * PAD);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+    line(def.train, '#D97757');
+    line(def.val, '#6A9BCC');
+    /* 图例 */
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#D97757';
+    ctx.beginPath(); ctx.moveTo(CW - 92, 14); ctx.lineTo(CW - 76, 14); ctx.stroke();
+    ctx.fillStyle = '#6B6860';
+    ctx.fillText('train', CW - 71, 17);
+    ctx.strokeStyle = '#6A9BCC';
+    ctx.beginPath(); ctx.moveTo(CW - 92, 28); ctx.lineTo(CW - 76, 28); ctx.stroke();
+    ctx.fillText('val', CW - 71, 31);
+  }
+  DEFS.forEach(plot);
+
+  var FEEDBACK = {
+    a: '✘ 图 A 是欠拟合:train 和 val 双双停在高位不再下降——模型根本没学动。该做的是加大容量或延长训练,而不是庆祝"曲线很平稳"。再选一次?',
+    b: '✘ 图 B 是过拟合的"剪刀差":train 一路下探,val 先降后升。val 拐头向上的那一刻,正是 §4 早停该出手的时刻。再选一次?',
+    c: '✘ 图 C 是学习率过大:loss 剧烈震荡、无法收敛——步子太大,在谷底两壁之间来回弹。先把学习率砍小一个数量级。再选一次?',
+    d: '✔ 正确!图 D 才是健康的训练:train / val 同步平稳下降,间距小而稳定。对照记忆:A 欠拟合双高、B 过拟合剪刀差、C 学习率过大震荡——这四种形态是你以后读一切训练曲线的底本。'
+  };
+  var fb = document.getElementById('diag-status');
+  var btns = document.getElementById('diag-btns').querySelectorAll('.quiz-option');
+  btns.forEach(function(b) {
+    b.addEventListener('click', function() {
+      var key = b.dataset.diag;
+      var ok = key === 'd';
+      fb.className = 'quiz-feedback show ' + (ok ? 'ok' : 'no');
+      fb.textContent = FEEDBACK[key];
+      if (ok) {
+        b.classList.add('correct');
+        btns.forEach(function(o) {
+          o.disabled = true;
+          o.style.pointerEvents = 'none';
+          if (o !== b) o.style.opacity = '0.5';
+        });
+      } else {
+        b.classList.add('wrong');
+        b.disabled = true;
+        b.style.pointerEvents = 'none';
+        b.style.opacity = '0.6';
+      }
+    });
+  });
+})();
+
+/* ============ 测验 ============ */
+function checkQuiz(btn, quizId) {
+  const quiz = document.getElementById(quizId);
+  const options = quiz.querySelectorAll('.quiz-option');
+  const isCorrect = btn.dataset.correct === 'true';
+  options.forEach(o => {
+    o.disabled = true;
+    o.style.pointerEvents = 'none';
+    o.style.opacity = '0.5';
+  });
+  btn.style.opacity = '1';
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  document.getElementById(
+    quizId + (isCorrect ? '-correct' : '-wrong')
+  ).classList.add('show');
+}
+
+/* ============ 配套练习开关 ============ */
+(function() {
+  const KEY = 'course-show-exercises';
+  const toggle = document.getElementById('code-toggle');
+  const section = document.getElementById('code-exercise');
+  if (!toggle || !section) return;
+  const saved = localStorage.getItem(KEY);
+  let show = saved === null ? true : saved === '1';
+  function apply() {
+    toggle.classList.toggle('active', show);
+    section.classList.toggle('hidden', !show);
+  }
+  apply();
+  toggle.addEventListener('click', () => {
+    show = !show;
+    localStorage.setItem(KEY, show ? '1' : '0');
+    apply();
+  });
+})();
+</script>
+
+<script>
+(function() {
+  'use strict';
+  var LESSON_TITLE = '第 03 课:训练模型的方法论';
+  var COURSE_NAME  = '缺陷检测:从深度学习基础到主流方法全景';
+  var toolbar, overlay, toastEl;
+  var hideToolbarTimer = null;
+  var selectedAnchorNode = null;
+  function init() {
+    createToolbar();
+    createDialog();
+    bindEvents();
+    restoreNotes();
+  }
+  function createToolbar() {
+    toolbar = document.createElement('div');
+    toolbar.className = 'selection-toolbar';
+    toolbar.innerHTML =
+      '<button class="sel-btn sel-btn-ask" data-action="ask">\u{1F4AC} 问 LLM</button>' +
+      '<button class="sel-btn sel-btn-modify" data-action="modify">\u{270F}\u{FE0F} 修改</button>' +
+      '<button class="sel-btn sel-btn-note" data-action="note">\u{1F4DD} 划线笔记</button>';
+    document.body.appendChild(toolbar);
+    toolbar.querySelector('[data-action="ask"]').onclick = onAsk;
+    toolbar.querySelector('[data-action="modify"]').onclick = onModify;
+    toolbar.querySelector('[data-action="note"]').onclick = onNote;
+  }
+  function createDialog() {
+    overlay = document.createElement('div');
+    overlay.className = 'sel-dialog-overlay';
+    overlay.innerHTML =
+      '<div class="sel-dialog">' +
+        '<h3 class="sel-dialog-title">\u{270F}\u{FE0F} 修改选中内容</h3>' +
+        '<div class="sel-dialog-field"><label class="sel-dialog-label">选中的原文:</label>' +
+          '<div class="sel-dialog-source" id="sel-source-text"></div></div>' +
+        '<div class="sel-dialog-field">' +
+          '<label class="sel-dialog-label" for="sel-modify-instruction">你希望改成什么样?</label>' +
+          '<textarea id="sel-modify-instruction" rows="4" placeholder="例如:把这段写得更容易理解一些 / 用更生动的比喻 / 补充细节…"></textarea></div>' +
+        '<div class="sel-dialog-actions">' +
+          '<button class="sel-btn-cancel" id="sel-cancel">取消</button>' +
+          '<button class="sel-btn-confirm" id="sel-copy-modify">\u{1F4CB} 复制到剪贴板</button></div></div>';
+    document.body.appendChild(overlay);
+    document.getElementById('sel-cancel').onclick = hideDialog;
+    document.getElementById('sel-copy-modify').onclick = onCopyModify;
+    overlay.onclick = function(e) { if (e.target === overlay) hideDialog(); };
+  }
+  function getSelectedText() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return '';
+    if (!document.body.contains(sel.getRangeAt(0).commonAncestorContainer)) return '';
+    return sel.toString().trim();
+  }
+  function getSectionLabel(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    while (el && el !== document.body) {
+      if (el.tagName === 'SECTION' || el.tagName === 'DIV') {
+        var h2 = el.querySelector(':scope > h2, :scope > h3');
+        if (h2) {
+          var txt = h2.textContent.replace(/\s+/g, ' ').trim();
+          return txt.length > 50 ? txt.substring(0, 50) + '…' : txt;
+        }
+      }
+      el = el.parentElement;
+    }
+    return '';
+  }
+  var NOTES_KEY = 'note-underlines::' + location.pathname;
+  function getContainerSections() {
+    return Array.prototype.slice.call(document.querySelectorAll('.container > section'));
+  }
+  function getSectionIndex(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    var container = document.querySelector('.container');
+    while (el && el.parentElement !== container) { el = el.parentElement; }
+    if (!el) return -1;
+    return getContainerSections().indexOf(el);
+  }
+  function loadNotes() {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveNoteEntry(entry) {
+    var notes = loadNotes();
+    notes.push(entry);
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function deleteNoteEntry(id) {
+    var notes = loadNotes().filter(function(n) { return n.id !== id; });
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function getTextNodesIn(root) {
+    var nodes = [];
+    (function walk(n) {
+      if (n.nodeType === Node.TEXT_NODE) { nodes.push(n); return; }
+      for (var i = 0; i < n.childNodes.length; i++) walk(n.childNodes[i]);
+    })(root);
+    return nodes;
+  }
+  function countOccurrenceIndex(root, range, text) {
+    var textNodes = getTextNodesIn(root);
+    var full = '', startAbs = -1, pos = 0;
+    for (var i = 0; i < textNodes.length; i++) {
+      if (textNodes[i] === range.startContainer) startAbs = pos + range.startOffset;
+      full += textNodes[i].nodeValue;
+      pos += textNodes[i].nodeValue.length;
+    }
+    if (startAbs === -1) return 0;
+    var idx = -1, count = 0;
+    while (true) {
+      var next = full.indexOf(text, idx + 1);
+      if (next === -1 || next >= startAbs) break;
+      idx = next;
+      count++;
+    }
+    return count;
+  }
+  function findRangeByOccurrence(root, text, occurrence) {
+    var textNodes = getTextNodesIn(root);
+    var full = textNodes.map(function(t) { return t.nodeValue; }).join('');
+    var idx = -1;
+    for (var c = 0; c <= occurrence; c++) {
+      idx = full.indexOf(text, idx + 1);
+      if (idx === -1) return null;
+    }
+    var startOffset = idx, endOffset = idx + text.length, pos = 0;
+    var range = document.createRange(), startSet = false, endSet = false;
+    for (var i = 0; i < textNodes.length; i++) {
+      var len = textNodes[i].nodeValue.length;
+      if (!startSet && startOffset <= pos + len) { range.setStart(textNodes[i], startOffset - pos); startSet = true; }
+      if (!endSet && endOffset <= pos + len) { range.setEnd(textNodes[i], endOffset - pos); endSet = true; break; }
+      pos += len;
+    }
+    return (startSet && endSet) ? range : null;
+  }
+  function wrapRangeAsNote(range, id) {
+    var span = document.createElement('span');
+    span.className = 'note-underline';
+    span.dataset.noteId = id;
+    var frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  function onNote() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (!document.body.contains(range.commonAncestorContainer)) return;
+    var text = getSelectedText();
+    if (!text) return;
+    var sectionIdx = selectedAnchorNode ? getSectionIndex(selectedAnchorNode) : -1;
+    var sections = getContainerSections();
+    var section = sectionIdx >= 0 ? sections[sectionIdx] : null;
+    var occurrence = section ? countOccurrenceIndex(section, range, text) : 0;
+    var id = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    try {
+      wrapRangeAsNote(range, id);
+      sel.removeAllRanges();
+      if (sectionIdx >= 0) saveNoteEntry({ id: id, sectionIdx: sectionIdx, text: text, occurrence: occurrence });
+      showToast('\u{1F4DD} 已添加划线笔记,再点一下可以取消');
+    } catch (e) {
+      showToast('⚠️ 这段选区暂时无法划线,换一段试试');
+    }
+    hideToolbar();
+  }
+  function removeNote(span) {
+    var id = span.dataset.noteId;
+    var parent = span.parentNode;
+    if (!parent) return;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
+    parent.normalize();
+    deleteNoteEntry(id);
+    showToast('\u{1F5D1}️ 已取消这条划线笔记');
+  }
+  function restoreNotes() {
+    var notes = loadNotes();
+    var sections = getContainerSections();
+    notes.forEach(function(n) {
+      var section = sections[n.sectionIdx];
+      if (!section) return;
+      var range = findRangeByOccurrence(section, n.text, n.occurrence);
+      if (!range) return;
+      try { wrapRangeAsNote(range, n.id); } catch (e) {}
+    });
+  }
+  function positionToolbar(cx, cy) {
+    clearTimeout(hideToolbarTimer);
+    toolbar.classList.add('visible');
+    var tw = toolbar.offsetWidth, th = toolbar.offsetHeight;
+    var left = cx - tw / 2, top = cy + 12;
+    if (left < 12) left = 12;
+    if (left + tw > innerWidth - 12) left = innerWidth - tw - 12;
+    if (top + th > innerHeight - 12) top = cy - th - 12;
+    toolbar.style.left = left + 'px';
+    toolbar.style.top = top + 'px';
+  }
+  function hideToolbar() {
+    clearTimeout(hideToolbarTimer);
+    hideToolbarTimer = setTimeout(function() { toolbar.classList.remove('visible'); }, 200);
+  }
+  function buildContext(section) {
+    var lines = ['## 课程上下文'];
+    lines.push('- 课程:' + COURSE_NAME);
+    lines.push('- 课时:' + LESSON_TITLE);
+    if (section) lines.push('- 章节:' + section);
+    lines.push('');
+    return lines.join('\n');
+  }
+  function onAsk() {
+    var text = getSelectedText();
+    if (!text) return;
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 我选中的内容\n\n' + text + '\n\n## 我的提问\n\n';
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并提问吧!');
+    hideToolbar();
+  }
+  function onModify() {
+    var text = getSelectedText();
+    if (!text) return;
+    document.getElementById('sel-source-text').textContent = text;
+    document.getElementById('sel-modify-instruction').value = '';
+    overlay.classList.add('visible');
+    hideToolbar();
+    setTimeout(function() { document.getElementById('sel-modify-instruction').focus(); }, 100);
+  }
+  function onCopyModify() {
+    var src = document.getElementById('sel-source-text').textContent;
+    var inst = document.getElementById('sel-modify-instruction').value.trim();
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 选中的原文\n\n' + src + '\n\n## 修改要求\n\n' +
+      (inst || '(用户未指定具体要求,请自行判断合理修改方向)');
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并请求修改吧!');
+    hideDialog();
+  }
+  function copyToClipboard(text, msg) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast(msg || '✅ 已复制到剪贴板'); }
+    catch (e) { showToast('⚠\u{FE0F} 未能自动复制,请按 Cmd+C 手动复制'); }
+    document.body.removeChild(ta);
+  }
+  function showToast(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'sel-toast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg;
+    toastEl.classList.add('visible');
+    clearTimeout(toastEl._hideTimer);
+    toastEl._hideTimer = setTimeout(function() { toastEl.classList.remove('visible'); }, 3500);
+  }
+  function hideDialog() { overlay.classList.remove('visible'); }
+  function bindEvents() {
+    document.addEventListener('mouseup', function(e) {
+      if (toolbar.contains(e.target) || overlay.contains(e.target)) return;
+      var text = getSelectedText();
+      if (text.length > 5) {
+        selectedAnchorNode = window.getSelection() ? window.getSelection().anchorNode : null;
+        positionToolbar(e.clientX, e.clientY);
+      } else { hideToolbar(); }
+    });
+    document.addEventListener('scroll', function() { toolbar.classList.remove('visible'); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { hideDialog(); toolbar.classList.remove('visible'); }
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!toolbar.contains(e.target) && !overlay.contains(e.target)) hideToolbar();
+    });
+    document.addEventListener('click', function(e) {
+      var note = e.target.closest && e.target.closest('.note-underline');
+      if (!note) return;
+      var sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().length > 0) return;
+      removeNote(note);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+</script>
+</body>
+</html>

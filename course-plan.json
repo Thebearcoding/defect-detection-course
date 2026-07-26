@@ -1,0 +1,206 @@
+{
+  "course_name": "缺陷检测:从深度学习基础到主流方法全景",
+  "topic": "工业缺陷检测主流方法(从深度学习基础讲起,原子粒度拆解概念,不做逐篇论文架构分析)",
+  "audience": "有 Python 编程基础、深度学习基础需要系统补齐、希望完整掌握缺陷检测所有主流方法族的学习者",
+  "language": "zh",
+  "lesson_count_target": 13,
+  "exercise_type": "code",
+  "output_path": "50_资源/互动课程/缺陷检测",
+  "visual_scheme": "light",
+  "accent_base": "#D97757",
+  "created_at": "2026-07-25",
+  "updated_at": "2026-07-26",
+  "lessons": [
+    {
+      "index": 1,
+      "slug": "01-neural-networks",
+      "title": "神经网络是怎么学会的",
+      "core_concepts": [
+        "神经元",
+        "激活函数",
+        "损失函数",
+        "梯度下降",
+        "反向传播"
+      ],
+      "presentation": "可调神经元模拟器 + 梯度下降动画 + 反向传播步进演示",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 2,
+      "slug": "02-cnn",
+      "title": "卷积神经网络:让机器看见",
+      "core_concepts": [
+        "卷积核",
+        "池化",
+        "感受野",
+        "特征层次",
+        "残差连接",
+        "预训练与迁移学习"
+      ],
+      "presentation": "卷积核滑动动画 + 实时滤波演示 + 感受野可视化",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 3,
+      "slug": "03-training-methodology",
+      "title": "训练模型的方法论",
+      "core_concepts": [
+        "数据划分",
+        "过拟合与欠拟合",
+        "正则化",
+        "数据增强",
+        "学习率策略"
+      ],
+      "presentation": "过拟合交互曲线 + 数据增强演示 + A/B 判断",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 4,
+      "slug": "04-defect-detection-landscape",
+      "title": "缺陷检测全景地图",
+      "core_concepts": [
+        "分类/检测/分割三种粒度",
+        "监督范式光谱",
+        "缺陷样本稀缺问题",
+        "MVTec AD 等数据集",
+        "AUROC/PRO/mAP 指标"
+      ],
+      "presentation": "方法族谱流程图 + 指标计算器 + 情境判断",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 5,
+      "slug": "05-object-detection",
+      "title": "有监督路线 I:目标检测",
+      "core_concepts": [
+        "IoU",
+        "anchor",
+        "two-stage 与 one-stage",
+        "YOLO 思想",
+        "NMS"
+      ],
+      "presentation": "IoU 交互演示 + NMS 步进动画 + 对比表",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 6,
+      "slug": "06-semantic-segmentation",
+      "title": "有监督路线 II:语义分割",
+      "core_concepts": [
+        "encoder-decoder",
+        "U-Net",
+        "skip connection",
+        "空洞卷积",
+        "类别不平衡损失"
+      ],
+      "presentation": "U-Net 结构管线 + mask 叠加演示",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 7,
+      "slug": "07-reconstruction-methods",
+      "title": "无监督入门与重构类方法",
+      "core_concepts": [
+        "异常检测思想",
+        "AutoEncoder",
+        "隐空间",
+        "重构误差热力图",
+        "VAE 与 GAN 直觉"
+      ],
+      "presentation": "重构误差模拟器 + 隐空间滑块",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 8,
+      "slug": "08-feature-embedding-methods",
+      "title": "特征嵌入类方法(工业界主流)",
+      "core_concepts": [
+        "预训练特征复用",
+        "patch 特征",
+        "高斯建模与马氏距离(PaDiM)",
+        "memory bank 与 coreset(PatchCore)"
+      ],
+      "presentation": "patch 网格热力图 + kNN 检索步进动画",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 9,
+      "slug": "09-teacher-student-distillation",
+      "title": "师生蒸馏类方法",
+      "core_concepts": [
+        "知识蒸馏",
+        "特征差异即异常(STFPM)",
+        "反向蒸馏",
+        "EfficientAD 思想"
+      ],
+      "presentation": "师生特征对比可视化 + 流程管线",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 10,
+      "slug": "10-synthetic-defects-self-supervised",
+      "title": "合成缺陷与自监督方法",
+      "core_concepts": [
+        "自监督学习",
+        "伪缺陷生成(CutPaste)",
+        "重构+判别联合(DRAEM 思想)"
+      ],
+      "presentation": "Canvas 伪缺陷生成演示 + 对比表",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 11,
+      "slug": "11-normalizing-flows",
+      "title": "归一化流类方法",
+      "core_concepts": [
+        "概率密度估计",
+        "可逆变换",
+        "对数似然",
+        "FastFlow/CFLOW 思想"
+      ],
+      "presentation": "分布变换步进动画 + 概率条",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 12,
+      "slug": "12-zero-shot-clip-era",
+      "title": "零样本时代:CLIP 与大模型",
+      "core_concepts": [
+        "对比学习",
+        "图文对齐",
+        "prompt 设计(WinCLIP/AnomalyCLIP)",
+        "SAM 与多模态大模型"
+      ],
+      "presentation": "图文匹配模拟器 + prompt 对比实验",
+      "exercise_type_override": null,
+      "status": "done"
+    },
+    {
+      "index": 13,
+      "slug": "13-engineering-practice",
+      "title": "工程实践与方法选型",
+      "core_concepts": [
+        "anomalib",
+        "选型决策树",
+        "阈值选择",
+        "部署考量",
+        "逻辑异常等前沿方向"
+      ],
+      "presentation": "交互式选型决策树 + 代码块",
+      "exercise_type_override": null,
+      "status": "done"
+    }
+  ],
+  "style_skill": "anthropic-style-cn(Claude 官网风格:暖米色 #ECE9E0 底、Lora+LXGW WenKai 衬线混排、Poppins+Noto Sans SC UI、橙色 #D97757 唯一强调色、雾蓝 #6A9BCC 辅助、深色 #141413 代码块;字体资源在课程根目录 assets/,skill 装于 .claude/skills/anthropic-style-cn)"
+}

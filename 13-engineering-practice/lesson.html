@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 13 课 · 工程实践与方法选型 | 缺陷检测课程</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" media="print" onload="this.media='all'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<style>
+:root {
+  /* Anthropic 官方 Token(来自 anthropic-style-cn skill) */
+  --bg: #ECE9E0;
+  --surface: #F5F3EC;
+  --surface2: #E7E3D8;
+  --border: #D8D5CC;
+  --text: #141413;
+  --text-dim: #6B6860;
+  --accent: #D97757;
+  --accent2: #6A9BCC;
+  --good: #6A8A4F;
+  --bad: #C0453A;
+  --ink: #141413;
+  --ink-text: #F0EEE6;
+  --font-display: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-heading: 'Poppins', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217,119,87,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 15%, rgba(106,155,204,0.05) 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.85;
+  font-size: 16.5px;
+  text-spacing-trim: trim-start allow-end;
+  overflow-wrap: break-word;
+}
+
+/* ---- Hero ---- */
+.hero {
+  padding: 88px 24px 56px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero .lesson-tag {
+  display: inline-block;
+  padding: 7px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-bottom: 26px;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.3;
+  margin-bottom: 18px;
+  word-break: keep-all;
+}
+.hero .subtitle {
+  color: var(--text-dim);
+  font-size: 17px;
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ---- Settings bar ---- */
+.settings-bar {
+  max-width: 860px;
+  margin: 20px auto 0;
+  padding: 0 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-dim);
+  user-select: none;
+}
+.toggle-track {
+  width: 40px; height: 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.25s var(--ease);
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: all 0.25s var(--ease);
+}
+.toggle-wrap.active .toggle-track { background: var(--accent); border-color: var(--accent); }
+.toggle-wrap.active .toggle-track::after { left: 20px; background: #fff; }
+.toggle-wrap.active { color: var(--text); }
+
+/* ---- Layout ---- */
+.container { max-width: 860px; margin: 0 auto; padding: 24px 24px 96px; }
+section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+section:last-of-type { border-bottom: none; }
+h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  word-break: keep-all;
+}
+h2 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 28px 0 12px;
+}
+p { margin-bottom: 15px; }
+strong { color: var(--text); font-weight: 700; }
+em { color: var(--accent); font-style: normal; font-weight: 500; }
+ul, ol { margin: 0 0 15px 24px; }
+li { margin-bottom: 8px; }
+
+/* ---- Story card ---- */
+.story-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 20px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.05);
+}
+.story-card .story-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent2);
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+.story-card p:last-child { margin-bottom: 0; }
+
+/* ---- Insight box ---- */
+.insight-box {
+  background: linear-gradient(135deg, rgba(217,119,87,0.09), rgba(217,119,87,0.04));
+  border: 1px solid rgba(217,119,87,0.35);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.insight-box .insight-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+.insight-box p:last-child { margin-bottom: 0; }
+
+/* ---- Code block ---- */
+.code-block {
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.9;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--ink-text);
+}
+.code-block .cm { color: #9C9A92; }
+.code-block .kw { color: #E8A188; }
+.code-block .st { color: #A8C090; }
+
+/* ---- Compare grid ---- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.compare-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.compare-box h4 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.compare-box p { font-size: 14.5px; color: var(--text-dim); margin-bottom: 6px; }
+.compare-box p:last-child { margin-bottom: 0; }
+
+/* ---- Pipeline ---- */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 22px 0;
+}
+.pipeline-step {
+  flex: 1 1 130px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+}
+.pipeline-step .step-num {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-title {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+.pipeline-arrow { display: flex; align-items: center; color: var(--accent); font-size: 18px; }
+
+/* ---- Interactive demo shell ---- */
+.demo-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.06);
+}
+.demo-box .demo-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.demo-box .demo-hint { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.8; }
+.demo-status {
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-family: var(--font-heading);
+}
+.demo-btns { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.demo-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.demo-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.demo-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.demo-btn.primary:hover { filter: brightness(1.07); color: #fff; }
+.demo-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ---- Matrix grids (conv stepper) ---- */
+.mat-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 16px 0;
+}
+.mat-block { text-align: center; }
+.mat-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.mat-grid { display: grid; gap: 4px; justify-content: center; }
+.mat-cell {
+  width: 42px; height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: all 0.2s var(--ease);
+}
+.mat-cell.v3 { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
+.mat-cell.kpos { background: rgba(217,119,87,0.14); color: #B05C3F; border-color: rgba(217,119,87,0.45); font-weight: 700; }
+.mat-cell.kneg { background: rgba(106,155,204,0.14); color: #4A7BA8; border-color: rgba(106,155,204,0.5); font-weight: 700; }
+.mat-cell.kzero { color: var(--text-dim); }
+.mat-cell.win { box-shadow: 0 0 0 3px var(--accent); }
+.mat-cell.filled { background: rgba(217,119,87,0.13); color: var(--text); font-weight: 700; border-color: rgba(217,119,87,0.4); }
+.mat-cell.cur-out { box-shadow: 0 0 0 3px var(--accent); }
+.mat-op {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--text-dim);
+  padding-top: 60px;
+}
+.conv-calc {
+  background: var(--ink);
+  color: var(--ink-text);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.9;
+  min-height: 46px;
+}
+.conv-calc .hl { color: #E8A188; font-weight: 700; }
+
+/* ---- Filter demo ---- */
+.filter-canvases {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 14px 0;
+}
+.fc-block { text-align: center; }
+.fc-block canvas {
+  width: 264px; height: 264px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+  image-rendering: pixelated;
+  display: block;
+}
+.fc-cap {
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+.fc-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+/* ---- Receptive field viz ---- */
+.rf-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.rf-block { text-align: center; }
+.rf-grid { display: grid; gap: 3px; justify-content: center; }
+.rf-cell {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.rf-cell:hover { border-color: var(--accent); }
+.rf-cell.src { background: var(--accent); border-color: var(--accent); }
+.rf-cell.mid { background: rgba(217,119,87,0.5); border-color: rgba(217,119,87,0.5); }
+.rf-cell.field { background: rgba(217,119,87,0.18); border-color: rgba(217,119,87,0.3); }
+.rf-arrow {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  min-width: 64px;
+  line-height: 1.5;
+}
+.rf-arrow b { color: var(--accent); font-size: 16px; display: block; }
+
+/* ---- Quiz ---- */
+.quiz {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 18px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.quiz .quiz-q { font-family: var(--font-heading); font-weight: 500; margin-bottom: 14px; }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  line-height: 1.7;
+}
+.quiz-option:hover { border-color: var(--accent); transform: translateY(-1px); }
+.quiz-option.correct { border-color: var(--good); background: rgba(106,138,79,0.1); }
+.quiz-option.wrong { border-color: var(--bad); background: rgba(192,69,58,0.08); }
+.quiz-feedback {
+  display: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  margin-top: 6px;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok { background: rgba(106,138,79,0.09); border: 1px solid rgba(106,138,79,0.4); color: #4F6A3B; }
+.quiz-feedback.no { background: rgba(192,69,58,0.07); border: 1px solid rgba(192,69,58,0.35); color: var(--bad); }
+
+/* ---- Further reading ---- */
+.further-reading { padding: 44px 0; }
+.reading-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.reading-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 22px;
+  transition: all 0.2s var(--ease);
+}
+.reading-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+.reading-title a {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 15.5px;
+}
+.reading-title a:hover { text-decoration: underline; }
+.reading-meta {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.reading-desc { font-size: 14.5px; color: var(--text-dim); margin-top: 6px; }
+.further-reading-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 14.5px;
+}
+.further-reading-inline .fr-icon { flex-shrink: 0; }
+.further-reading-inline a { color: var(--accent); font-weight: 500; }
+
+/* ---- Exercise section ---- */
+#code-exercise.hidden { display: none; }
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 16px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.exercise-card h3 { margin-top: 0; }
+.todo-list { margin-top: 10px; }
+.todo-list li { font-size: 15px; }
+.todo-list code, p code, li code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #B05C3F;
+}
+
+/* ---- Lesson nav ---- */
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+}
+.lesson-nav a, .lesson-nav span {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+}
+.lesson-nav span { color: var(--text-dim); }
+.lesson-nav a:hover { text-decoration: underline; }
+
+/* ---- Selection toolbar ---- */
+.selection-toolbar {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.15);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.selection-toolbar.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.sel-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.sel-btn:hover { border-color: var(--accent); background: var(--bg); }
+.sel-btn:active { transform: scale(0.96); }
+.sel-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(20,20,19,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sel-dialog-overlay.visible { opacity: 1; pointer-events: auto; }
+.sel-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(20,20,19,0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sel-dialog-title { font-family: var(--font-heading); font-size: 20px; font-weight: 500; margin-bottom: 20px; }
+.sel-dialog-field { margin-bottom: 16px; }
+.sel-dialog-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.sel-dialog-source {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.sel-dialog textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+}
+.sel-dialog textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,87,0.2); }
+.sel-dialog textarea::placeholder { color: var(--text-dim); }
+.sel-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.sel-btn-cancel {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+.sel-btn-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-confirm:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.sel-btn-confirm:active { transform: scale(0.97); }
+.sel-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 100001;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--ink-text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 24px rgba(20,20,19,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+}
+.sel-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.note-underline {
+  background: rgba(255, 212, 59, 0.45);
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.note-underline:hover { background: rgba(255, 212, 59, 0.65); }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 26px; }
+  .pipeline-arrow { display: none; }
+  .mat-cell { width: 34px; height: 34px; font-size: 12px; }
+  .rf-cell { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ======== 以下为第 13 课新增样式(仅新增,不改上方任何已有类) ======== */
+
+/* ---- §0 方法速查表 ---- */
+.table-scroll {
+  overflow-x: auto;
+  margin: 20px 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.compare-table {
+  width: 100%;
+  min-width: 780px;
+  border-collapse: collapse;
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+}
+.compare-table th {
+  background: var(--surface2);
+  text-align: left;
+  font-weight: 500;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  color: var(--text);
+}
+.compare-table td {
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-dim);
+  line-height: 1.65;
+  vertical-align: top;
+}
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table td:first-child { color: var(--text); font-weight: 500; white-space: nowrap; }
+.compare-table .ct-yes { color: var(--good); font-weight: 500; }
+.compare-table .ct-no { color: var(--bad); }
+.compare-table .ct-part { color: #B05C3F; }
+.compare-table a { color: var(--accent); text-decoration: none; font-weight: 500; white-space: nowrap; }
+.compare-table a:hover { text-decoration: underline; }
+
+/* ---- §2 选型决策树 ---- */
+.dt-trail { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.dt-trail-chip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+  color: var(--text-dim);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 14px;
+}
+.dt-trail-chip b { color: var(--text); font-weight: 500; }
+.dt-trail-chip .dt-ans { color: var(--accent); font-weight: 500; }
+.dt-step {
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  animation: dtSlideIn 0.45s var(--ease);
+}
+.dt-question {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 14px;
+  line-height: 1.7;
+}
+.dt-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  line-height: 1.7;
+}
+.dt-option:last-child { margin-bottom: 0; }
+.dt-option:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.dt-card {
+  background: linear-gradient(135deg, rgba(106,138,79,0.10), rgba(106,138,79,0.03));
+  border: 1px solid rgba(106,138,79,0.45);
+  border-radius: 14px;
+  padding: 22px 24px;
+  animation: dtSlideIn 0.45s var(--ease);
+}
+.dt-card-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  color: var(--good);
+  margin-bottom: 8px;
+}
+.dt-card-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  margin-bottom: 10px;
+  word-break: keep-all;
+}
+.dt-card p { font-size: 14.5px; margin-bottom: 10px; }
+.dt-card p:last-of-type { margin-bottom: 0; }
+.dt-card-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.dt-meta-chip {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+  color: #B05C3F;
+}
+.dt-meta-link {
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid rgba(217,119,87,0.45);
+  border-radius: 999px;
+  padding: 5px 12px;
+  color: var(--accent);
+  text-decoration: none;
+}
+.dt-meta-link:hover { background: rgba(217,119,87,0.09); }
+@keyframes dtSlideIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- §5 翻车清单 ---- */
+.pitfall-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--bad);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 12px 0;
+}
+.pitfall-sym {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.pitfall-sym .pf-no {
+  color: var(--bad);
+  font-family: var(--font-heading);
+  margin-right: 6px;
+}
+.pitfall-cause { font-size: 14.5px; color: var(--text-dim); line-height: 1.8; }
+
+@media (max-width: 640px) {
+  .dt-card-title { font-size: 19px; }
+  .compare-table { font-size: 12.5px; }
+}
+
+/* ===== mobile adaptation (injected, uniform across course) ===== */
+@media (max-width: 640px) {
+  body { font-size: 15.5px; }
+  .container { padding: 16px 16px 72px; }
+  .hero { padding: 52px 18px 38px; }
+  .hero .subtitle { font-size: 15.5px; }
+  section { padding: 32px 0; }
+  h2 { font-size: 22px; }
+  h2 .num { width: 30px; height: 30px; font-size: 14px; }
+  .demo-box { padding: 16px 14px; }
+  canvas { max-width: 100%; height: auto !important; }
+  .fc-block canvas { width: 100% !important; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .code-block { font-size: 11.5px; padding: 13px 14px; line-height: 1.75; }
+  .slider-row { flex-wrap: wrap; }
+  .slider-row label { min-width: 0; flex: 1 1 100%; }
+  .lesson-nav { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .quiz { padding: 16px 16px; }
+  .quiz-option { font-size: 14px; padding: 11px 12px; }
+  .demo-btns .demo-btn, .demo-btn { padding: 9px 15px; font-size: 13px; }
+  .story-card, .insight-box, .exercise-card { padding: 16px 16px; }
+  .settings-bar { padding: 0 16px; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bp-diagram { font-size: 12px; }
+  .bp-node { min-width: 66px; padding: 8px 8px; }
+  .mat-op { padding-top: 40px; }
+  .selection-toolbar { max-width: calc(100vw - 16px); flex-wrap: wrap; }
+}
+@media (max-width: 400px) {
+  .mat-cell { width: 30px; height: 30px; font-size: 11px; }
+  .rf-cell { width: 17px; height: 17px; }
+  .mat-grid { gap: 3px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="lesson-tag">缺陷检测课程 · 第 13 课 · 收官</div>
+  <h1>工程实践与方法选型</h1>
+  <p class="subtitle">十二课的方法都在手里了——最后一课回答真正的问题:在你的产线上,今天该用哪个、怎么落地、怎么不翻车。</p>
+</div>
+
+<div class="settings-bar">
+  <label class="toggle-wrap active" id="code-toggle">
+    <span>配套练习</span>
+    <div class="toggle-track"></div>
+  </label>
+</div>
+
+<div class="container">
+
+<!-- ============ §0 ============ -->
+<section>
+  <h2><span class="num">0</span> 快速回顾:方法全家福</h2>
+  <p>第 4 课画过一张全景地图,当时上面还都是待填的空格。第 5 到 12 课,我们把八条路线逐一走完;现在把它们收进一张速查表——这就是那张地图的<strong>完成态</strong>。往后忘了哪个方法的定位,回这张表看一眼就够。</p>
+
+  <div class="table-scroll">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>方法族</th><th>需要什么数据</th><th>能否像素级</th><th>推理速度</th><th>内存</th><th>代表方法</th><th>对应课次</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>目标检测</td><td>缺陷框标注,几百张起步</td><td><span class="ct-no">✘</span> 框级定位</td><td>快</td><td>小</td><td>YOLO 系列</td><td><a href="../05-object-detection/lesson.html">第 5 课</a></td>
+        </tr>
+        <tr>
+          <td>语义分割</td><td>像素级 mask 标注(最贵)</td><td><span class="ct-yes">✔</span> 精确轮廓</td><td>中</td><td>小</td><td>U-Net</td><td><a href="../06-semantic-segmentation/lesson.html">第 6 课</a></td>
+        </tr>
+        <tr>
+          <td>重构类</td><td>仅正常样本</td><td><span class="ct-yes">✔</span> 重构误差图</td><td>中</td><td>小</td><td>AutoEncoder / VAE</td><td><a href="../07-reconstruction-methods/lesson.html">第 7 课</a></td>
+        </tr>
+        <tr>
+          <td>特征嵌入</td><td>仅正常样本,零训练</td><td><span class="ct-yes">✔</span> patch 距离图</td><td>中-慢,取决于库大小</td><td>大(memory bank)</td><td>PaDiM / PatchCore</td><td><a href="../08-feature-embedding-methods/lesson.html">第 8 课</a></td>
+        </tr>
+        <tr>
+          <td>师生蒸馏</td><td>仅正常样本</td><td><span class="ct-yes">✔</span> 师生差异图</td><td>极快</td><td>小</td><td>STFPM / EfficientAD</td><td><a href="../09-teacher-student-distillation/lesson.html">第 9 课</a></td>
+        </tr>
+        <tr>
+          <td>合成缺陷自监督</td><td>仅正常样本 + 自动伪缺陷</td><td><span class="ct-yes">✔</span> 判别 mask</td><td>中</td><td>小</td><td>CutPaste / DRAEM</td><td><a href="../10-synthetic-defects-self-supervised/lesson.html">第 10 课</a></td>
+        </tr>
+        <tr>
+          <td>归一化流</td><td>仅正常样本</td><td><span class="ct-yes">✔</span> 似然热力图</td><td>中</td><td>中(参数化,不建库)</td><td>FastFlow / CFLOW</td><td><a href="../11-normalizing-flows/lesson.html">第 11 课</a></td>
+        </tr>
+        <tr>
+          <td>零样本</td><td>无需样本,只要文字描述</td><td><span class="ct-part">△</span> 窗口级,较粗</td><td>慢(大模型)</td><td>大</td><td>WinCLIP / AnomalyCLIP</td><td><a href="../12-zero-shot-clip-era/lesson.html">第 12 课</a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight-box">
+    <div class="insight-label">读表的顺序</div>
+    <p>看这张表的正确姿势不是从"哪个精度高"开始,而是从<strong>第二列</strong>开始:你手里有什么数据,直接淘汰掉大半张表。这正是第 4 课的老结论——工业缺陷检测的分水岭是<em>缺陷样本稀缺</em>:有标注走上两行(有监督),只有正常样本走中间五行(one-class 无监督),什么都没有走最后一行兜底。本课 §2 的决策树,就是把"读表"变成"问答"。</p>
+  </div>
+</section>
+
+<!-- ============ §1 ============ -->
+<section>
+  <h2><span class="num">1</span> anomalib:工业落地的瑞士军刀</h2>
+
+  <p>课程里讲过的无监督方法,绝大多数<strong>不需要你从论文开始复现</strong>。OpenVINO 团队(Intel)维护的开源库 <em>anomalib</em>,把 PatchCore、PaDiM、FastFlow、EfficientAD、DRAEM、WinCLIP 等主流方法全部做成了开箱即用的实现,而且共享同一套 API:数据模块(datamodule)+ 模型(model)+ 引擎(engine)三件套。换方法 = 换一行代码,这让"多跑几个方法对比再定"从奢侈变成日常。</p>
+
+  <p>第一步,安装(注意版本:本课代码按 anomalib v1.x 编写,细节以官方文档为准):</p>
+
+  <div class="code-block"><span class="cm"># anomalib v1.x,Python 3.10+(版本与依赖细节以官方文档为准)</span>
+pip install anomalib
+<span class="cm"># 训练依赖 PyTorch;首次运行会自动下载预训练骨干网络权重</span></div>
+
+  <p>第二步,在 MVTec AD 上训练一个 PatchCore——第 8 课的主角,不到十行:</p>
+
+  <div class="code-block"><span class="cm"># anomalib v1.x,Python 3.10+;API 以官方文档为准</span>
+<span class="kw">from</span> anomalib.data <span class="kw">import</span> MVTecAD      <span class="cm"># 数据模块:自动下载/组织 MVTec AD</span>
+<span class="kw">from</span> anomalib.models <span class="kw">import</span> Patchcore  <span class="cm"># 第 8 课的 PatchCore,开箱即用</span>
+<span class="kw">from</span> anomalib.engine <span class="kw">import</span> Engine     <span class="cm"># 统一封装训练 / 评估 / 推理</span>
+
+datamodule = MVTecAD(category=<span class="st">"bottle"</span>)  <span class="cm"># 15 个类别,先拿 bottle 练手</span>
+model = Patchcore()                        <span class="cm"># 换方法只改这一行:Padim() / Fastflow() / EfficientAd() / Draem()</span>
+engine = Engine()
+
+engine.fit(model=model, datamodule=datamodule)   <span class="cm"># "训练":抽特征、coreset 采样、建 memory bank</span>
+engine.test(model=model, datamodule=datamodule)  <span class="cm"># 输出图像级 / 像素级 AUROC 等指标</span></div>
+
+  <p>第三步,推理与导出。工控机上通常不跑 Python 训练环境,把模型导出成 OpenVINO / ONNX 格式,交给部署侧的推理引擎:</p>
+
+  <div class="code-block"><span class="cm"># 推理单张图,并导出 OpenVINO 用于边缘部署(以官方文档为准)</span>
+<span class="kw">from</span> anomalib.deploy <span class="kw">import</span> ExportType
+
+preds = engine.predict(model=model, data_path=<span class="st">"my_part.png"</span>)
+<span class="cm"># 预测结果包含:异常分数 pred_score、热力图 anomaly_map、判定 pred_label</span>
+
+engine.export(model=model, export_type=ExportType.OPENVINO)
+<span class="cm"># 换自己的数据:把 MVTecAD 换成 Folder 数据模块,</span>
+<span class="cm"># 指定 normal_dir="正常样本文件夹" 即可,其余代码一行不动</span></div>
+
+  <div class="insight-box">
+    <div class="insight-label">落地节奏:先复现,再换数据</div>
+    <p>推荐的动手顺序:<strong>先在 MVTec AD 上原样跑通</strong>,确认环境、指标都对(PatchCore 在多数类别上图像级 AUROC 应到 99% 上下)——这一步排除掉一切环境问题;<strong>然后只换数据模块</strong>,把 <code>MVTecAD</code> 换成指向你自己文件夹的 <code>Folder</code>,其余不动。任何时候出了问题,你都知道变量只有一个:数据。</p>
+  </div>
+</section>
+
+<!-- ============ §2 ============ -->
+<section>
+  <h2><span class="num">2</span> 选型决策树:四个问题定方法</h2>
+
+  <p>方法选型听起来玄,其实骨架就是四个问题,按重要性排序:<strong>① 数据可得性</strong>(有没有缺陷标注?有没有正常样本?)→ <strong>② 输出粒度</strong>(要不要像素级轮廓?)→ <strong>③ 时延预算</strong>(几毫秒还是几十毫秒?)→ <strong>④ 内存与样本规模</strong>。数据问题永远排第一——它直接决定你能走哪半张地图;后面三问只是在可行集合里挑最合适的。</p>
+
+  <p>下面这棵决策树不是让你看的,是让你<strong>答的</strong>。把你产线的真实情况代进去,一路点下来,终点是一张推荐卡:方法、理由、对应课次、anomalib 里的模型名。选错了没关系,「重新开始」随时重来——真实的选型本来就要多走几遍。</p>
+
+  <div class="demo-box" id="dt-root">
+    <div class="demo-title">🧭 交互:回答问题,走到你的方法</div>
+    <div class="demo-hint">每答一题,下一问滑入;走过的路径会留在上方,方便回看你是在哪一步被分流的。</div>
+    <div class="dt-trail" id="dt-trail"></div>
+    <div id="dt-stage"></div>
+    <div class="demo-btns">
+      <button class="demo-btn" id="dt-restart">↺ 重新开始</button>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    <div class="insight-label">立场先亮明:默认答案是 PatchCore</div>
+    <p>这棵树的走向背后有一个明确立场:<strong>如果没有硬约束把你推向别处,先选 PatchCore(第 8 课)。</strong>理由:只要正常样本、零训练、自带像素级热力图、MVTec AD 上 ~99% AUROC、anomalib 一行即用——它是"精度 / 数据要求 / 工程复杂度"三角里最均衡的点,也是工业界事实上的基线。其他路线都是在回答"什么时候<em>不</em>选 PatchCore":时延卡到毫秒级 → EfficientAD;内存紧或样本上万 → FastFlow(参数化,不建库);有标注且要监督精度 → YOLO / U-Net;什么样本都没有 → WinCLIP 先顶上。</p>
+  </div>
+</section>
+
+<!-- ============ §3 ============ -->
+<section>
+  <h2><span class="num">3</span> 阈值:从分数到判决</h2>
+
+  <p>课程里所有无监督方法输出的都是<em>异常分数</em>——一个连续值。但产线要的是判决:这个工件,<strong>放行还是报警</strong>。从分数到判决,中间隔着一个阈值,而阈值怎么定,是离线指标和上线效果之间最常见的断裂带。</p>
+
+  <h3>上线之前:在验证集上选阈值</h3>
+  <p>第 4 课的方法论直接搬来用:准备一个带标签的验证集(正常 + 各类缺陷都要有),扫描候选阈值,按业务目标选:</p>
+  <ul>
+    <li><strong>最大 F1</strong>:误杀与漏检同等看待时,取 F1 最高的阈值——本课练习 TODO 2 就是它;</li>
+    <li><strong>按误杀率上限反推</strong>:更贴近产线的定法。业务说"误杀率不得超过 1%",就在验证集上找到恰好满足这条线的阈值,漏检率是多少就接受多少——阈值是业务约束的产物,不是模型的属性。</li>
+  </ul>
+
+  <h3>两个容易踩的工程细节</h3>
+  <ul>
+    <li><strong>分数归一化漂移</strong>:很多实现会把异常分数按训练/验证集的最小最大值归一化到 0-1。一旦换了数据重建了库,归一化基准就变了——<em>0.5 这个数字在两次部署里含义完全不同</em>。阈值必须和产生它的那套分数基准绑定存档。</li>
+    <li><strong>按产品型号分阈值</strong>:不同型号的工件,正常分数分布天然不同。A 产品调好的阈值直接用到 B 产品,大概率不是误杀爆炸就是漏检成筛子——一个型号一套阈值,写进配置而不是写进代码。</li>
+  </ul>
+
+  <h3>上线之后:阈值不是一劳永逸</h3>
+  <p>最隐蔽的坑在上线之后。模型权重不会自己变,但<strong>输入分布会</strong>:换了一批原料、镜头脏了、车间灯管老化、季节光照变化——正常样本的异常分数整体抬高,老阈值就开始成片误杀;反过来分布下移,则悄悄漏检。这叫<em>分布漂移</em>,它不报错、不崩溃,只在质检报表上慢慢显形。</p>
+  <p>对策是把分数分布本身当成被监控对象:上线时留存一段"基线分数"(确认正常时期的分数),之后持续对比近期分数与基线:</p>
+
+  <div class="code-block"><span class="cm"># 漂移报警的最小实现(本课练习 TODO 4 会亲手写)</span>
+报警条件:mean(近期分数) &gt; mean(基线分数) + 3 × std(基线分数)
+<span class="cm"># 均值越过基线 3σ → 分布大概率变了:先查相机/光照/原料,</span>
+<span class="cm"># 再用近期数据重新标定阈值;都救不回来才考虑重建库/重训</span></div>
+
+  <p>注意这个顺序:漂移报警的第一动作是<strong>查环境、重标定阈值</strong>,不是立刻重训模型。大多数漂移是光学和物料层面的,把镜头擦干净比重训便宜一万倍。</p>
+</section>
+
+<!-- ============ §4 ============ -->
+<section>
+  <h2><span class="num">4</span> 部署考量:速度、边缘与三件比模型更重要的事</h2>
+
+  <h3>速度量级:先对齐数量级,再谈优化</h3>
+  <p>选型时不需要记精确毫秒数,记住量级排序就够(<em>以下为量级示意,随硬件、分辨率、实现变化很大</em>):</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>EfficientAD:~1-5ms</h4>
+      <p>轻量学生网络,为在线全检而生。</p>
+      <p>毫秒级预算下基本是唯一解(第 9 课)。</p>
+    </div>
+    <div class="compare-box">
+      <h4>FastFlow:~10-40ms</h4>
+      <p>骨干抽特征 + 流模型算似然,参数化前向。</p>
+      <p>速度与内存都不随样本数增长(第 11 课)。</p>
+    </div>
+    <div class="compare-box">
+      <h4>PatchCore:~30-100ms</h4>
+      <p>要在 memory bank 里做最近邻检索,<strong>耗时取决于库大小</strong>。</p>
+      <p>coreset 采样率是速度旋钮(第 8 课)。</p>
+    </div>
+  </div>
+
+  <p>边缘部署一句话:训练侧用 PyTorch,部署侧把模型导出为 <strong>ONNX / OpenVINO</strong>(§1 的 <code>engine.export</code>),交给工控机或边缘盒子的推理引擎跑——这一步 anomalib 已经替你打通。</p>
+
+  <h3>比模型更重要的三件事</h3>
+  <p>产线项目失败,败在模型的其实是少数。下面三件"光学与机械"的事,任何一件没做好,换什么模型都救不回来:</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>① 分辨率匹配缺陷尺寸</h4>
+      <p>要检的最小缺陷,在图像里得占足够多的像素(经验上至少几个像素宽)。0.1mm 的划痕配 2 个像素,神仙模型也检不出——<strong>先算光学放大倍率,再谈算法</strong>。</p>
+    </div>
+    <div class="compare-box">
+      <h4>② 光照稳定性</h4>
+      <p>打光是玄学也是科学:同一道划痕,顺光下不可见、侧光下刺眼。光源要恒定(遮环境光、用频闪同步),否则光照变化本身就是最大的"异常"来源,§3 的漂移报警会先于缺陷响起来。</p>
+    </div>
+    <div class="compare-box">
+      <h4>③ 工件定位一致性</h4>
+      <p>第 8 课讲过 PaDiM 逐位置建模、对对齐敏感——工装夹具把工件摆到同一位置、同一角度,比给模型加对齐模块便宜且可靠。位置乱飞的产线,先修机械再修算法。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §5 ============ -->
+<section>
+  <h2><span class="num">5</span> 常见翻车 checklist</h2>
+
+  <p>下面五条,每一条都是真实项目里反复出现的事故模式。上线前对着清单过一遍,便宜且救命——格式统一为"<strong>症状 → 病因</strong>"。</p>
+
+  <div class="pitfall-item">
+    <div class="pitfall-sym"><span class="pf-no">①</span> 离线指标好得可疑 → 测试集泄漏</div>
+    <div class="pitfall-cause">同一个工件拍的多张照片,被随机划分进了训练集和测试集(第 3 课的老坑)。模型"认得这个工件"而不是"懂缺陷",AUROC 虚高。<strong>划分必须按工件/批次切,不能按图片切。</strong></div>
+  </div>
+  <div class="pitfall-item">
+    <div class="pitfall-sym"><span class="pf-no">②</span> 某类缺陷成片漏检 → 训练集里混入了缺陷样本</div>
+    <div class="pitfall-cause">one-class 方法的隐形杀手:训练集号称"全正常",实际混进了没被发现的缺陷品。模型认真地把这类缺陷学成了"正常"(进了 memory bank / 被学生网络拟合),同类缺陷分数被拉低——而且离线指标上很难第一时间看出来。<strong>建库前的数据要人工复核,宁可少不可脏。</strong></div>
+  </div>
+  <div class="pitfall-item">
+    <div class="pitfall-sym"><span class="pf-no">③</span> 新产品上线误杀/漏检失控 → 阈值跨产品复用</div>
+    <div class="pitfall-cause">A 产品调好的阈值直接搬给 B 产品。不同型号的正常分数分布天然不同(§3),阈值必须每个型号在各自验证集上重新标定,并与分数归一化基准一起存档。</div>
+  </div>
+  <div class="pitfall-item">
+    <div class="pitfall-sym"><span class="pf-no">④</span> 离线 AUROC 很高,上线误杀爆炸 → 域漂移 / 阈值失配</div>
+    <div class="pitfall-cause">离线数据和产线实况不是同一个分布:光照、镜头、物料批次都变了(§3 的分布漂移),或者阈值定在了离线分数基准上。先比对线上分数分布与离线基线,重标定阈值;必要时用产线现场数据重建正常库。</div>
+  </div>
+  <div class="pitfall-item">
+    <div class="pitfall-sym"><span class="pf-no">⑤</span> 指标全绿却总在错的位置报警 → 只看图像级分数,不看热力图</div>
+    <div class="pitfall-cause">图像级分数对了,不代表定位对了:模型可能因为边角的反光把图判成异常,"分对了,理由是错的"。这颗雷平时不响,分布一变就炸。<strong>验收时抽样核对热力图与真实缺陷位置(第 4 课的 PRO 指标就是干这个的),别只看 AUROC。</strong></div>
+  </div>
+</section>
+
+<!-- ============ §6 ============ -->
+<section>
+  <h2><span class="num">6</span> 前沿方向:这个领域正往哪走</h2>
+
+  <p>收官之前,把四个正在发生的方向各用一段讲清楚——不吹,只说它们分别补上了课程方法的哪块短板。</p>
+
+  <h3>逻辑异常:零件都好,装配错了</h3>
+  <p>课程里的方法都在回答"这块<em>长得</em>正常吗",但有一类缺陷每个局部都完美:螺丝少了一颗、保险丝插错了槽、数量不对、顺序颠倒。MVTec 为此专门发布了 <strong>MVTec LOCO</strong> 基准,把异常分成结构异常(划痕、污染)与<em>逻辑异常</em>(成分、数量、位置的约束被破坏)。patch 级"查词典"对后者无能为力——需要成分级的全局理解。GCAD 一类的思路是双分支:局部分支照旧抓结构异常,全局分支学习"这张图该由哪些成分、以什么布局构成",装配错误在全局分支现形。</p>
+
+  <h3>3D 缺陷检测:深度里藏着 RGB 看不见的</h3>
+  <p>同色的凹陷、平面度超差、深度方向的变形——灰度和颜色完全正常,只有几何变了。<strong>MVTec 3D-AD</strong> 基准为此提供 RGB + 点云/深度数据,方法上大多是把课程里的套路(重构、特征嵌入、师生)搬到深度模态,再做 RGB 与 3D 的融合。如果你的产线在检结构件的形位公差,这条线值得跟。</p>
+
+  <h3>多类统一模型:一个模型管所有产品</h3>
+  <p>课程里的 one-class 范式默认"一个类别一套模型":15 种产品就是 15 套权重、15 套阈值、15 份维护成本。NeurIPS 2022 的 <strong>UniAD</strong> 证明一个 Transformer 模型可以同时学所有类别的"正常",精度接近单类模型——代价是要专门抑制"恒等捷径"(模型学会原样复读输入,重构误差失效)。对多产品小批量的工厂,维护成本直接除以 N,这条线的工程价值非常直接。</p>
+
+  <h3>基础模型持续渗透:第 12 课的延长线</h3>
+  <p>WinCLIP / AnomalyCLIP 只是开头:SAM 把"分割一切"的能力带进缺陷轮廓提取,多模态大模型开始能用自然语言描述缺陷、生成质检报告。冷启动会越来越便宜,"文字定义缺陷"会越来越可用。但落地判断标准不变,还是第 4 课那三问:数据从哪来、指标怎么算、时延扛不扛得住——新模型只是给这三问换了答案,没有取消这三问。</p>
+</section>
+
+<!-- ============ §7 ============ -->
+<section>
+  <h2><span class="num">7</span> 课程总结与行动清单</h2>
+
+  <p>十三课,一条线走完:第 1-3 课打地基(神经元与梯度下降 → 卷积与预训练特征 → 数据划分与过拟合的方法论);第 4 课摊开地图(粒度 × 监督范式 × 指标);第 5-6 课走完有监督路线(YOLO 检测、U-Net 分割);第 7-11 课穿过无监督家族(重构、特征嵌入、师生蒸馏、合成缺陷、归一化流)——它们全都站在第 2 课"预训练特征"那颗种子上;第 12 课抵达零样本时代(CLIP 与提示词);今天,这最后一课把所有方法拧成一条<strong>产线决策链:选型 → 阈值 → 部署 → 监控</strong>。</p>
+
+  <p>知识变成能力只差动手。行动清单,五步,今天就能开始:</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">STEP 1</div>
+      <div class="step-title">装 anomalib</div>
+      <div class="step-desc">pip install anomalib<br>(§1,十分钟)</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 2</div>
+      <div class="step-title">下载 MVTec AD</div>
+      <div class="step-desc">datamodule 首次运行<br>自动下载(第 4 课)</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 3</div>
+      <div class="step-title">复现 PatchCore</div>
+      <div class="step-desc">跑通训练+测试<br>对齐 ~99% AUROC(第 8 课)</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 4</div>
+      <div class="step-title">换自己的数据</div>
+      <div class="step-desc">MVTecAD → Folder<br>只动数据模块(§1)</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 5</div>
+      <div class="step-title">val / 阈值 / 监控</div>
+      <div class="step-desc">按第 3-4 课方法论建验证集<br>定阈值、上漂移报警(§3)</div>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    <div class="insight-label">结语</div>
+    <p>从第 1 课的一个神经元,到今天一条完整的产线决策链——这门课教的从来不是十几个孤立的模型名,而是一套判断力:<strong>看到任何新方法,先问它吃什么数据、输出什么粒度、付什么代价。</strong>这个领域仍在快速演化,明年一定会有新的 SOTA、新的范式;但读懂它们所需要的全部地基——卷积与预训练特征、训练与评测方法论、八条路线各自的取舍——你已经全部拥有。收官,开工。</p>
+  </div>
+</section>
+
+<!-- ============ 测验 ============ -->
+<section>
+  <h2><span class="num">✓</span> 自我检验</h2>
+  <p>四道题,全部是"产线上真会遇到"的判断题。</p>
+
+  <div class="quiz" id="quiz1">
+    <div class="quiz-q">Q1 · 手头只有 200 张正常样本、没有任何缺陷标注;需要像素级热力图辅助复检;时延要求宽松。选什么?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">A. YOLO 目标检测,精度有保障</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz1')">B. PatchCore:零训练建库,自带像素级热力图</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">C. WinCLIP 零样本,连正常样本都不用</button>
+    <div class="quiz-feedback ok" id="quiz1-correct">✔ 正确。走一遍 §2 决策树:没有缺陷标注 → 有监督出局;正常样本管够 → 轮不到零样本兜底;时延宽松、常规内存 → 落在默认答案 PatchCore(第 8 课):零训练、像素级热力图、MVTec AD ~99% AUROC。</div>
+    <div class="quiz-feedback no" id="quiz1-wrong">✘ 回到 §2 的决策树亲手点一遍:第一问"有缺陷标注吗"就把 YOLO 挡在门外;而正常样本明明管够,放着 one-class 主力不用去选精度有限的零样本(WinCLIP 是"什么都没有"时的过渡方案),是把兜底当了主力。答案是默认选项 PatchCore。</div>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-q">Q2 · 产线要求毫秒级在线全检,时延预算 &lt; 5ms。选什么?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">A. PatchCore,精度最稳</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz2')">B. EfficientAD,为毫秒级全检而生</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">C. U-Net 分割,输出最精细</button>
+    <div class="quiz-feedback ok" id="quiz2-correct">✔ 正确。§4 的速度量级表:EfficientAD ~1-5ms,是 5ms 预算下基本唯一的选项(第 9 课);PatchCore 要查 memory bank,几十毫秒量级;U-Net 是有监督路线,这里也没提有标注。硬时延约束一出现,决策树(§2 第 ④ 问)直接分流。</div>
+    <div class="quiz-feedback no" id="quiz2-wrong">✘ 回看 §4 的速度量级表:PatchCore 的最近邻检索几十毫秒起步,挤不进 5ms;U-Net 需要像素级标注且这里没有。毫秒级预算下只有师生蒸馏路线的 EfficientAD 满足——这正是 §2 决策树把"时延预算"单独列为一问的原因。</div>
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-q">Q3 · 系统上线三个月,误杀率悄悄上升。最可能的原因与第一动作是?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">A. 模型"遗忘"了,立刻用新数据重新训练</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz3')">B. 分布漂移(原料批次 / 镜头 / 光照变了);先查分数分布,重新标定阈值</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">C. 阈值太灵敏,直接调高到不再报警为止</button>
+    <div class="quiz-feedback ok" id="quiz3-correct">✔ 正确。§3 讲得很清楚:上线后模型权重不会自己变,变的是输入分布——分数整体抬高,老阈值开始成片误杀。第一动作是对比近期分数与基线(均值超 3σ 即漂移报警)、排查相机/光照/物料、用近期数据重标定阈值;重训是最后的手段,不是第一反应。</div>
+    <div class="quiz-feedback no" id="quiz3-wrong">✘ 回看 §3"上线之后:阈值不是一劳永逸"。权重不会自己坏,先怀疑分布漂移(换原料、镜头脏了、光照变化);而盲目把阈值调到"不报警为止"只是把误杀换成看不见的漏检,更危险。正确顺序:查分数分布 → 查环境 → 重标定阈值 → 必要时才重建库。</div>
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-q">Q4 · 训练集号称"全正常",实际混入了少量缺陷样本。这对 one-class 方法意味着什么?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">A. 影响不大,模型会自动把少数异常当噪声忽略</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz4')">B. 缺陷被当成"正常"学进档案 → 同类缺陷上线漏检,且指标上很难第一时间发现</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">C. 训练会直接报错,无法收敛,所以很容易发现</button>
+    <div class="quiz-feedback ok" id="quiz4-correct">✔ 正确。§5 第 ② 条"隐形杀手":one-class 的全部前提是训练集纯净。混入的缺陷会进 memory bank / 被学生网络当正常拟合,同类缺陷的异常分数被拉低 → 系统性漏检;而如果离线测试集恰好没覆盖这类缺陷,AUROC 看不出任何异样——它不报错,只在产线上安静地放行坏品。</div>
+    <div class="quiz-feedback no" id="quiz4-wrong">✘ 回看 §5 第 ② 条:one-class 方法既不会"自动忽略"(它没有缺陷的概念,只会把见过的都当正常),也不会报错(数值上一切正常)。它会认真地把缺陷学成正常,然后漏检——这正是它被称为"隐形杀手"的原因:建库前的数据必须人工复核。</div>
+  </div>
+</section>
+
+<!-- ============ 延伸阅读 ============ -->
+<section class="further-reading">
+  <h2><span class="num">✦</span> 延伸阅读</h2>
+  <p>按"动手 → 前沿 → 全景"排序:</p>
+  <div class="reading-list">
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2202.08341" target="_blank" rel="noopener">Anomalib: A Deep Learning Library for Anomaly Detection</a></div>
+      <div class="reading-meta">Akcay et al. · ICIP 2022 · arXiv 2202.08341</div>
+      <div class="reading-desc">本课 §1 主角的出生证明:统一 API 之下如何组织数据模块、模型与部署导出。读它能理解 anomalib 的设计取舍,但动手不必从论文开始——从下面的文档开始。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://anomalib.readthedocs.io/" target="_blank" rel="noopener">anomalib 官方文档</a></div>
+      <div class="reading-meta">OpenVINO 团队 · 在线文档</div>
+      <div class="reading-desc">动手就从这里开始:安装、快速上手、全部模型的训练与导出示例、自定义 Folder 数据模块的写法。本课 §1 三段代码的权威出处,API 有出入时一律以它为准。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://www.mvtec.com/company/research/datasets/mvtec-loco" target="_blank" rel="noopener">MVTec LOCO 数据集官方页</a></div>
+      <div class="reading-meta">MVTec · 数据集官方页面</div>
+      <div class="reading-desc">逻辑异常基准(§6):零件都完好但装配错了——缺件、错位、数量不对。看一遍它的样例图,你会立刻明白 patch 级方法为什么在这里失灵。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2112.09045" target="_blank" rel="noopener">The MVTec 3D-AD Dataset for Unsupervised 3D Anomaly Detection and Localization</a></div>
+      <div class="reading-meta">Bergmann et al. · VISAPP 2022 · arXiv 2112.09045</div>
+      <div class="reading-desc">3D 缺陷检测基准(§6):RGB + 点云,专抓平面图看不见的凹陷与形变。检结构件形位公差的读者重点关注。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2206.03687" target="_blank" rel="noopener">UniAD: A Unified Model for Multi-class Anomaly Detection</a></div>
+      <div class="reading-meta">You et al. · NeurIPS 2022 · arXiv 2206.03687</div>
+      <div class="reading-desc">一个模型管所有产品类别(§6),维护成本除以 N;重点看它如何抑制"恒等捷径"——多类统一场景下重构范式的核心难题。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2301.11514" target="_blank" rel="noopener">Deep Industrial Image Anomaly Detection: A Survey</a></div>
+      <div class="reading-meta">Liu et al. · 综述 · arXiv 2301.11514</div>
+      <div class="reading-desc">全景综述,课程结束后你读论文的地图:本课 §0 那张速查表的"加长版",几乎每个方法族都能在里面找到谱系与后续工作。用它定位任何一篇新论文属于哪条路线。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 配套练习 ============ -->
+<section id="code-exercise">
+  <h2><span class="num">✎</span> 配套代码练习</h2>
+  <div class="exercise-card">
+    <h3>exercise.py:把十三课装进一个决策引擎(难度 ⭐⭐)</h3>
+    <p>本课目录下的 <code>exercise.py</code> 用纯 Python(零依赖)把本课的工程判断写成代码。运行 <code>python exercise.py</code>,完成 5 个递进的 TODO:</p>
+    <ol class="todo-list">
+      <li><strong>TODO 1</strong> · <code>recommend</code>:把 §2 的选型决策树写成一条 if 规则链 —— 对应 §2</li>
+      <li><strong>TODO 2</strong> · <code>best_f1_threshold</code>:在验证集分数上扫描最大 F1 阈值(回收第 4 课)—— 对应 §3</li>
+      <li><strong>TODO 3</strong> · <code>within_latency</code>:留 20% 安全余量的时延预算判断 —— 对应 §4</li>
+      <li><strong>TODO 4</strong> · <code>drift_alarm</code>:均值超基线 3σ 的分数漂移报警 —— 对应 §3</li>
+      <li><strong>TODO 5</strong> · <code>production_pipeline</code>:选型 → 定阈值 → 出判定,串成完整的产线决策链 —— 对应 §2-§4</li>
+    </ol>
+    <p style="margin-top:12px">做完 TODO 5,"该用哪个方法、阈值定在哪、这一批工件放行还是报警"这条产线决策链,你就完整亲手写过一遍了——课程收官的最后一块拼图。</p>
+  </div>
+</section>
+
+<div class="lesson-nav">
+  <a href="../12-zero-shot-clip-era/lesson.html">← 上一课:零样本时代:CLIP 与大模型</a>
+  <span>课程完结 🎓</span>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ============ §2 选型决策树 ============ */
+(function() {
+  var TREE = {
+    q1: {
+      q: '① 手上有带标注的缺陷样本吗?(框或像素 mask,几十张以上)',
+      opts: [
+        { label: '有,缺陷样本和标注都管够', next: 'q2' },
+        { label: '没有——缺陷太少,或根本没人标', next: 'q3' }
+      ]
+    },
+    q2: {
+      q: '② 需要像素级的缺陷轮廓吗?(要量面积 / 形状,还是框出位置就行)',
+      opts: [
+        { label: '要精确轮廓与面积', result: 'unet' },
+        { label: '框出位置和类别就够了', result: 'yolo' }
+      ]
+    },
+    q3: {
+      q: '③ 那正常样本呢?',
+      opts: [
+        { label: '正常样本也没有(新产品 / 产线冷启动)', result: 'winclip' },
+        { label: '正常样本管够——产线上随手就能拍几百张', next: 'q4' }
+      ]
+    },
+    q4: {
+      q: '④ 推理时延预算多少?',
+      opts: [
+        { label: '严苛:毫秒级在线全检(< 5ms)', result: 'efficientad' },
+        { label: '宽松:几十毫秒可以接受', next: 'q5' }
+      ]
+    },
+    q5: {
+      q: '⑤ 内存敏感,或正常样本特别多(上万张)?',
+      opts: [
+        { label: '是:边缘盒子内存紧,或样本量巨大', result: 'fastflow' },
+        { label: '不算:常规工控机,几百上千张样本', result: 'patchcore' }
+      ]
+    }
+  };
+  var RESULTS = {
+    unet: {
+      name: '语义分割:U-Net',
+      lesson: '第 6 课 · 语义分割',
+      link: '../06-semantic-segmentation/lesson.html',
+      anomalib: 'anomalib:—(监督分割用 segmentation 生态实现)',
+      reason: '有像素级标注是最奢侈的处境——直接上有监督分割,把每个像素的判断都学到位。缺陷的形状与面积可精确量化,复检与判级规则最好写。代价:标注贵,出现新缺陷类型要补标注再训练。'
+    },
+    yolo: {
+      name: '目标检测:YOLO',
+      lesson: '第 5 课 · 目标检测',
+      link: '../05-object-detection/lesson.html',
+      anomalib: 'anomalib:—(用 YOLO 系检测生态实现)',
+      reason: '框级标注比像素 mask 便宜一个量级,推理快、工程生态成熟。"知道缺陷长什么样、要位置和类别、不必抠轮廓"的场景,它是性价比最高的选择。'
+    },
+    winclip: {
+      name: '零样本起步:WinCLIP',
+      lesson: '第 12 课 · 零样本时代',
+      link: '../12-zero-shot-clip-era/lesson.html',
+      anomalib: 'anomalib 模型名:WinClip',
+      reason: '冷启动方案:一张训练图都不需要,用文字提示描述缺陷即可开检。精度有限、定位较粗,把它当"第一周的过渡方案":先顶上,同时在产线上攒正常样本,攒够几百张就迁移到 PatchCore 等 one-class 路线。'
+    },
+    efficientad: {
+      name: '师生蒸馏:EfficientAD',
+      lesson: '第 9 课 · 师生蒸馏',
+      link: '../09-teacher-student-distillation/lesson.html',
+      anomalib: 'anomalib 模型名:EfficientAd',
+      reason: '毫秒级预算下的首选:轻量学生网络 + 精简的师生结构,~1-5ms 量级,为在线全检而生。精度略让于 PatchCore,但硬时延约束面前,能跑完才有资格谈精度。'
+    },
+    fastflow: {
+      name: '归一化流:FastFlow',
+      lesson: '第 11 课 · 归一化流',
+      link: '../11-normalizing-flows/lesson.html',
+      anomalib: 'anomalib 模型名:Fastflow',
+      reason: '参数化建模,不建样本库:内存占用固定,不随正常样本数量增长,几万张样本也不怕;推理是纯前向,几十毫秒量级。内存敏感或样本规模大时,用它替换 PatchCore。'
+    },
+    patchcore: {
+      name: '默认答案:PatchCore',
+      lesson: '第 8 课 · 特征嵌入',
+      link: '../08-feature-embedding-methods/lesson.html',
+      anomalib: 'anomalib 模型名:Patchcore',
+      reason: '工业界的默认答案:只要正常样本、零训练、自带像素级热力图,MVTec AD 图像级 AUROC ~99%。coreset 把 memory bank 压到原始 patch 的 1-10%,常规产线内存完全扛得住。不确定选什么时,先跑它做基线,再看有没有约束逼你换。'
+    }
+  };
+  var trailEl = document.getElementById('dt-trail');
+  var stageEl = document.getElementById('dt-stage');
+  var restartBtn = document.getElementById('dt-restart');
+  function esc(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function addTrail(question, answer) {
+    var chip = document.createElement('div');
+    chip.className = 'dt-trail-chip';
+    chip.innerHTML = '<b>' + esc(question) + '</b><span class="dt-ans">→ ' + esc(answer) + '</span>';
+    trailEl.appendChild(chip);
+  }
+  function showQuestion(key) {
+    var node = TREE[key];
+    var step = document.createElement('div');
+    step.className = 'dt-step';
+    var q = document.createElement('div');
+    q.className = 'dt-question';
+    q.textContent = node.q;
+    step.appendChild(q);
+    node.opts.forEach(function(opt) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'dt-option';
+      btn.textContent = opt.label;
+      btn.addEventListener('click', function() {
+        addTrail(node.q, opt.label);
+        if (opt.result) { showResult(opt.result); }
+        else { showQuestion(opt.next); }
+      });
+      step.appendChild(btn);
+    });
+    stageEl.innerHTML = '';
+    stageEl.appendChild(step);
+  }
+  function showResult(key) {
+    var r = RESULTS[key];
+    var card = document.createElement('div');
+    card.className = 'dt-card';
+    card.innerHTML =
+      '<div class="dt-card-label">推荐方案</div>' +
+      '<div class="dt-card-title">' + esc(r.name) + '</div>' +
+      '<p>' + esc(r.reason) + '</p>' +
+      '<div class="dt-card-meta">' +
+        '<a class="dt-meta-link" href="' + r.link + '">回看 ' + esc(r.lesson) + ' →</a>' +
+        '<span class="dt-meta-chip">' + esc(r.anomalib) + '</span>' +
+      '</div>';
+    stageEl.innerHTML = '';
+    stageEl.appendChild(card);
+  }
+  function restart() {
+    trailEl.innerHTML = '';
+    showQuestion('q1');
+  }
+  restartBtn.addEventListener('click', restart);
+  restart();
+})();
+
+/* ============ 测验 ============ */
+function checkQuiz(btn, quizId) {
+  const quiz = document.getElementById(quizId);
+  const options = quiz.querySelectorAll('.quiz-option');
+  const isCorrect = btn.dataset.correct === 'true';
+  options.forEach(o => {
+    o.disabled = true;
+    o.style.pointerEvents = 'none';
+    o.style.opacity = '0.5';
+  });
+  btn.style.opacity = '1';
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  document.getElementById(
+    quizId + (isCorrect ? '-correct' : '-wrong')
+  ).classList.add('show');
+}
+
+/* ============ 配套练习开关 ============ */
+(function() {
+  const KEY = 'course-show-exercises';
+  const toggle = document.getElementById('code-toggle');
+  const section = document.getElementById('code-exercise');
+  if (!toggle || !section) return;
+  const saved = localStorage.getItem(KEY);
+  let show = saved === null ? true : saved === '1';
+  function apply() {
+    toggle.classList.toggle('active', show);
+    section.classList.toggle('hidden', !show);
+  }
+  apply();
+  toggle.addEventListener('click', () => {
+    show = !show;
+    localStorage.setItem(KEY, show ? '1' : '0');
+    apply();
+  });
+})();
+</script>
+
+<script>
+(function() {
+  'use strict';
+  var LESSON_TITLE = '第 13 课:工程实践与方法选型';
+  var COURSE_NAME  = '缺陷检测:从深度学习基础到主流方法全景';
+  var toolbar, overlay, toastEl;
+  var hideToolbarTimer = null;
+  var selectedAnchorNode = null;
+  function init() {
+    createToolbar();
+    createDialog();
+    bindEvents();
+    restoreNotes();
+  }
+  function createToolbar() {
+    toolbar = document.createElement('div');
+    toolbar.className = 'selection-toolbar';
+    toolbar.innerHTML =
+      '<button class="sel-btn sel-btn-ask" data-action="ask">\u{1F4AC} 问 LLM</button>' +
+      '<button class="sel-btn sel-btn-modify" data-action="modify">\u{270F}\u{FE0F} 修改</button>' +
+      '<button class="sel-btn sel-btn-note" data-action="note">\u{1F4DD} 划线笔记</button>';
+    document.body.appendChild(toolbar);
+    toolbar.querySelector('[data-action="ask"]').onclick = onAsk;
+    toolbar.querySelector('[data-action="modify"]').onclick = onModify;
+    toolbar.querySelector('[data-action="note"]').onclick = onNote;
+  }
+  function createDialog() {
+    overlay = document.createElement('div');
+    overlay.className = 'sel-dialog-overlay';
+    overlay.innerHTML =
+      '<div class="sel-dialog">' +
+        '<h3 class="sel-dialog-title">\u{270F}\u{FE0F} 修改选中内容</h3>' +
+        '<div class="sel-dialog-field"><label class="sel-dialog-label">选中的原文:</label>' +
+          '<div class="sel-dialog-source" id="sel-source-text"></div></div>' +
+        '<div class="sel-dialog-field">' +
+          '<label class="sel-dialog-label" for="sel-modify-instruction">你希望改成什么样?</label>' +
+          '<textarea id="sel-modify-instruction" rows="4" placeholder="例如:把这段写得更容易理解一些 / 用更生动的比喻 / 补充细节…"></textarea></div>' +
+        '<div class="sel-dialog-actions">' +
+          '<button class="sel-btn-cancel" id="sel-cancel">取消</button>' +
+          '<button class="sel-btn-confirm" id="sel-copy-modify">\u{1F4CB} 复制到剪贴板</button></div></div>';
+    document.body.appendChild(overlay);
+    document.getElementById('sel-cancel').onclick = hideDialog;
+    document.getElementById('sel-copy-modify').onclick = onCopyModify;
+    overlay.onclick = function(e) { if (e.target === overlay) hideDialog(); };
+  }
+  function getSelectedText() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return '';
+    if (!document.body.contains(sel.getRangeAt(0).commonAncestorContainer)) return '';
+    return sel.toString().trim();
+  }
+  function getSectionLabel(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    while (el && el !== document.body) {
+      if (el.tagName === 'SECTION' || el.tagName === 'DIV') {
+        var h2 = el.querySelector(':scope > h2, :scope > h3');
+        if (h2) {
+          var txt = h2.textContent.replace(/\s+/g, ' ').trim();
+          return txt.length > 50 ? txt.substring(0, 50) + '…' : txt;
+        }
+      }
+      el = el.parentElement;
+    }
+    return '';
+  }
+  var NOTES_KEY = 'note-underlines::' + location.pathname;
+  function getContainerSections() {
+    return Array.prototype.slice.call(document.querySelectorAll('.container > section'));
+  }
+  function getSectionIndex(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    var container = document.querySelector('.container');
+    while (el && el.parentElement !== container) { el = el.parentElement; }
+    if (!el) return -1;
+    return getContainerSections().indexOf(el);
+  }
+  function loadNotes() {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveNoteEntry(entry) {
+    var notes = loadNotes();
+    notes.push(entry);
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function deleteNoteEntry(id) {
+    var notes = loadNotes().filter(function(n) { return n.id !== id; });
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function getTextNodesIn(root) {
+    var nodes = [];
+    (function walk(n) {
+      if (n.nodeType === Node.TEXT_NODE) { nodes.push(n); return; }
+      for (var i = 0; i < n.childNodes.length; i++) walk(n.childNodes[i]);
+    })(root);
+    return nodes;
+  }
+  function countOccurrenceIndex(root, range, text) {
+    var textNodes = getTextNodesIn(root);
+    var full = '', startAbs = -1, pos = 0;
+    for (var i = 0; i < textNodes.length; i++) {
+      if (textNodes[i] === range.startContainer) startAbs = pos + range.startOffset;
+      full += textNodes[i].nodeValue;
+      pos += textNodes[i].nodeValue.length;
+    }
+    if (startAbs === -1) return 0;
+    var idx = -1, count = 0;
+    while (true) {
+      var next = full.indexOf(text, idx + 1);
+      if (next === -1 || next >= startAbs) break;
+      idx = next;
+      count++;
+    }
+    return count;
+  }
+  function findRangeByOccurrence(root, text, occurrence) {
+    var textNodes = getTextNodesIn(root);
+    var full = textNodes.map(function(t) { return t.nodeValue; }).join('');
+    var idx = -1;
+    for (var c = 0; c <= occurrence; c++) {
+      idx = full.indexOf(text, idx + 1);
+      if (idx === -1) return null;
+    }
+    var startOffset = idx, endOffset = idx + text.length, pos = 0;
+    var range = document.createRange(), startSet = false, endSet = false;
+    for (var i = 0; i < textNodes.length; i++) {
+      var len = textNodes[i].nodeValue.length;
+      if (!startSet && startOffset <= pos + len) { range.setStart(textNodes[i], startOffset - pos); startSet = true; }
+      if (!endSet && endOffset <= pos + len) { range.setEnd(textNodes[i], endOffset - pos); endSet = true; break; }
+      pos += len;
+    }
+    return (startSet && endSet) ? range : null;
+  }
+  function wrapRangeAsNote(range, id) {
+    var span = document.createElement('span');
+    span.className = 'note-underline';
+    span.dataset.noteId = id;
+    var frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  function onNote() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (!document.body.contains(range.commonAncestorContainer)) return;
+    var text = getSelectedText();
+    if (!text) return;
+    var sectionIdx = selectedAnchorNode ? getSectionIndex(selectedAnchorNode) : -1;
+    var sections = getContainerSections();
+    var section = sectionIdx >= 0 ? sections[sectionIdx] : null;
+    var occurrence = section ? countOccurrenceIndex(section, range, text) : 0;
+    var id = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    try {
+      wrapRangeAsNote(range, id);
+      sel.removeAllRanges();
+      if (sectionIdx >= 0) saveNoteEntry({ id: id, sectionIdx: sectionIdx, text: text, occurrence: occurrence });
+      showToast('\u{1F4DD} 已添加划线笔记,再点一下可以取消');
+    } catch (e) {
+      showToast('⚠️ 这段选区暂时无法划线,换一段试试');
+    }
+    hideToolbar();
+  }
+  function removeNote(span) {
+    var id = span.dataset.noteId;
+    var parent = span.parentNode;
+    if (!parent) return;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
+    parent.normalize();
+    deleteNoteEntry(id);
+    showToast('\u{1F5D1}️ 已取消这条划线笔记');
+  }
+  function restoreNotes() {
+    var notes = loadNotes();
+    var sections = getContainerSections();
+    notes.forEach(function(n) {
+      var section = sections[n.sectionIdx];
+      if (!section) return;
+      var range = findRangeByOccurrence(section, n.text, n.occurrence);
+      if (!range) return;
+      try { wrapRangeAsNote(range, n.id); } catch (e) {}
+    });
+  }
+  function positionToolbar(cx, cy) {
+    clearTimeout(hideToolbarTimer);
+    toolbar.classList.add('visible');
+    var tw = toolbar.offsetWidth, th = toolbar.offsetHeight;
+    var left = cx - tw / 2, top = cy + 12;
+    if (left < 12) left = 12;
+    if (left + tw > innerWidth - 12) left = innerWidth - tw - 12;
+    if (top + th > innerHeight - 12) top = cy - th - 12;
+    toolbar.style.left = left + 'px';
+    toolbar.style.top = top + 'px';
+  }
+  function hideToolbar() {
+    clearTimeout(hideToolbarTimer);
+    hideToolbarTimer = setTimeout(function() { toolbar.classList.remove('visible'); }, 200);
+  }
+  function buildContext(section) {
+    var lines = ['## 课程上下文'];
+    lines.push('- 课程:' + COURSE_NAME);
+    lines.push('- 课时:' + LESSON_TITLE);
+    if (section) lines.push('- 章节:' + section);
+    lines.push('');
+    return lines.join('\n');
+  }
+  function onAsk() {
+    var text = getSelectedText();
+    if (!text) return;
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 我选中的内容\n\n' + text + '\n\n## 我的提问\n\n';
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并提问吧!');
+    hideToolbar();
+  }
+  function onModify() {
+    var text = getSelectedText();
+    if (!text) return;
+    document.getElementById('sel-source-text').textContent = text;
+    document.getElementById('sel-modify-instruction').value = '';
+    overlay.classList.add('visible');
+    hideToolbar();
+    setTimeout(function() { document.getElementById('sel-modify-instruction').focus(); }, 100);
+  }
+  function onCopyModify() {
+    var src = document.getElementById('sel-source-text').textContent;
+    var inst = document.getElementById('sel-modify-instruction').value.trim();
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 选中的原文\n\n' + src + '\n\n## 修改要求\n\n' +
+      (inst || '(用户未指定具体要求,请自行判断合理修改方向)');
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并请求修改吧!');
+    hideDialog();
+  }
+  function copyToClipboard(text, msg) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast(msg || '✅ 已复制到剪贴板'); }
+    catch (e) { showToast('⚠\u{FE0F} 未能自动复制,请按 Cmd+C 手动复制'); }
+    document.body.removeChild(ta);
+  }
+  function showToast(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'sel-toast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg;
+    toastEl.classList.add('visible');
+    clearTimeout(toastEl._hideTimer);
+    toastEl._hideTimer = setTimeout(function() { toastEl.classList.remove('visible'); }, 3500);
+  }
+  function hideDialog() { overlay.classList.remove('visible'); }
+  function bindEvents() {
+    document.addEventListener('mouseup', function(e) {
+      if (toolbar.contains(e.target) || overlay.contains(e.target)) return;
+      var text = getSelectedText();
+      if (text.length > 5) {
+        selectedAnchorNode = window.getSelection() ? window.getSelection().anchorNode : null;
+        positionToolbar(e.clientX, e.clientY);
+      } else { hideToolbar(); }
+    });
+    document.addEventListener('scroll', function() { toolbar.classList.remove('visible'); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { hideDialog(); toolbar.classList.remove('visible'); }
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!toolbar.contains(e.target) && !overlay.contains(e.target)) hideToolbar();
+    });
+    document.addEventListener('click', function(e) {
+      var note = e.target.closest && e.target.closest('.note-underline');
+      if (!note) return;
+      var sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().length > 0) return;
+      removeNote(note);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+</script>
+</body>
+</html>

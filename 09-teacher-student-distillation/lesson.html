@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 09 课 · 师生蒸馏类方法 | 缺陷检测课程</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" media="print" onload="this.media='all'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<style>
+:root {
+  /* Anthropic 官方 Token(来自 anthropic-style-cn skill) */
+  --bg: #ECE9E0;
+  --surface: #F5F3EC;
+  --surface2: #E7E3D8;
+  --border: #D8D5CC;
+  --text: #141413;
+  --text-dim: #6B6860;
+  --accent: #D97757;
+  --accent2: #6A9BCC;
+  --good: #6A8A4F;
+  --bad: #C0453A;
+  --ink: #141413;
+  --ink-text: #F0EEE6;
+  --font-display: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-heading: 'Poppins', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217,119,87,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 15%, rgba(106,155,204,0.05) 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.85;
+  font-size: 16.5px;
+  text-spacing-trim: trim-start allow-end;
+  overflow-wrap: break-word;
+}
+
+/* ---- Hero ---- */
+.hero {
+  padding: 88px 24px 56px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero .lesson-tag {
+  display: inline-block;
+  padding: 7px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-bottom: 26px;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.3;
+  margin-bottom: 18px;
+  word-break: keep-all;
+}
+.hero .subtitle {
+  color: var(--text-dim);
+  font-size: 17px;
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ---- Settings bar ---- */
+.settings-bar {
+  max-width: 860px;
+  margin: 20px auto 0;
+  padding: 0 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-dim);
+  user-select: none;
+}
+.toggle-track {
+  width: 40px; height: 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.25s var(--ease);
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: all 0.25s var(--ease);
+}
+.toggle-wrap.active .toggle-track { background: var(--accent); border-color: var(--accent); }
+.toggle-wrap.active .toggle-track::after { left: 20px; background: #fff; }
+.toggle-wrap.active { color: var(--text); }
+
+/* ---- Layout ---- */
+.container { max-width: 860px; margin: 0 auto; padding: 24px 24px 96px; }
+section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+section:last-of-type { border-bottom: none; }
+h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  word-break: keep-all;
+}
+h2 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 28px 0 12px;
+}
+p { margin-bottom: 15px; }
+strong { color: var(--text); font-weight: 700; }
+em { color: var(--accent); font-style: normal; font-weight: 500; }
+ul, ol { margin: 0 0 15px 24px; }
+li { margin-bottom: 8px; }
+
+/* ---- Story card ---- */
+.story-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 20px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.05);
+}
+.story-card .story-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent2);
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+.story-card p:last-child { margin-bottom: 0; }
+
+/* ---- Insight box ---- */
+.insight-box {
+  background: linear-gradient(135deg, rgba(217,119,87,0.09), rgba(217,119,87,0.04));
+  border: 1px solid rgba(217,119,87,0.35);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.insight-box .insight-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+.insight-box p:last-child { margin-bottom: 0; }
+
+/* ---- Code block ---- */
+.code-block {
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.9;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--ink-text);
+}
+.code-block .cm { color: #9C9A92; }
+.code-block .kw { color: #E8A188; }
+.code-block .st { color: #A8C090; }
+
+/* ---- Compare grid ---- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.compare-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.compare-box h4 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.compare-box p { font-size: 14.5px; color: var(--text-dim); margin-bottom: 6px; }
+.compare-box p:last-child { margin-bottom: 0; }
+
+/* ---- Pipeline ---- */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 22px 0;
+}
+.pipeline-step {
+  flex: 1 1 130px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+}
+.pipeline-step .step-num {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-title {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+.pipeline-arrow { display: flex; align-items: center; color: var(--accent); font-size: 18px; }
+
+/* ---- Interactive demo shell ---- */
+.demo-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.06);
+}
+.demo-box .demo-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.demo-box .demo-hint { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.8; }
+.demo-status {
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-family: var(--font-heading);
+}
+.demo-btns { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.demo-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.demo-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.demo-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.demo-btn.primary:hover { filter: brightness(1.07); color: #fff; }
+.demo-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ---- Matrix grids (conv stepper) ---- */
+.mat-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 16px 0;
+}
+.mat-block { text-align: center; }
+.mat-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.mat-grid { display: grid; gap: 4px; justify-content: center; }
+.mat-cell {
+  width: 42px; height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: all 0.2s var(--ease);
+}
+.mat-cell.v3 { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
+.mat-cell.kpos { background: rgba(217,119,87,0.14); color: #B05C3F; border-color: rgba(217,119,87,0.45); font-weight: 700; }
+.mat-cell.kneg { background: rgba(106,155,204,0.14); color: #4A7BA8; border-color: rgba(106,155,204,0.5); font-weight: 700; }
+.mat-cell.kzero { color: var(--text-dim); }
+.mat-cell.win { box-shadow: 0 0 0 3px var(--accent); }
+.mat-cell.filled { background: rgba(217,119,87,0.13); color: var(--text); font-weight: 700; border-color: rgba(217,119,87,0.4); }
+.mat-cell.cur-out { box-shadow: 0 0 0 3px var(--accent); }
+.mat-op {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--text-dim);
+  padding-top: 60px;
+}
+.conv-calc {
+  background: var(--ink);
+  color: var(--ink-text);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.9;
+  min-height: 46px;
+}
+.conv-calc .hl { color: #E8A188; font-weight: 700; }
+
+/* ---- Filter demo ---- */
+.filter-canvases {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 14px 0;
+}
+.fc-block { text-align: center; }
+.fc-block canvas {
+  width: 264px; height: 264px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+  image-rendering: pixelated;
+  display: block;
+}
+.fc-cap {
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+.fc-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+/* ---- Receptive field viz ---- */
+.rf-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.rf-block { text-align: center; }
+.rf-grid { display: grid; gap: 3px; justify-content: center; }
+.rf-cell {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.rf-cell:hover { border-color: var(--accent); }
+.rf-cell.src { background: var(--accent); border-color: var(--accent); }
+.rf-cell.mid { background: rgba(217,119,87,0.5); border-color: rgba(217,119,87,0.5); }
+.rf-cell.field { background: rgba(217,119,87,0.18); border-color: rgba(217,119,87,0.3); }
+.rf-arrow {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  min-width: 64px;
+  line-height: 1.5;
+}
+.rf-arrow b { color: var(--accent); font-size: 16px; display: block; }
+
+/* ---- Quiz ---- */
+.quiz {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 18px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.quiz .quiz-q { font-family: var(--font-heading); font-weight: 500; margin-bottom: 14px; }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  line-height: 1.7;
+}
+.quiz-option:hover { border-color: var(--accent); transform: translateY(-1px); }
+.quiz-option.correct { border-color: var(--good); background: rgba(106,138,79,0.1); }
+.quiz-option.wrong { border-color: var(--bad); background: rgba(192,69,58,0.08); }
+.quiz-feedback {
+  display: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  margin-top: 6px;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok { background: rgba(106,138,79,0.09); border: 1px solid rgba(106,138,79,0.4); color: #4F6A3B; }
+.quiz-feedback.no { background: rgba(192,69,58,0.07); border: 1px solid rgba(192,69,58,0.35); color: var(--bad); }
+
+/* ---- Further reading ---- */
+.further-reading { padding: 44px 0; }
+.reading-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.reading-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 22px;
+  transition: all 0.2s var(--ease);
+}
+.reading-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+.reading-title a {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 15.5px;
+}
+.reading-title a:hover { text-decoration: underline; }
+.reading-meta {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.reading-desc { font-size: 14.5px; color: var(--text-dim); margin-top: 6px; }
+.further-reading-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 14.5px;
+}
+.further-reading-inline .fr-icon { flex-shrink: 0; }
+.further-reading-inline a { color: var(--accent); font-weight: 500; }
+
+/* ---- Exercise section ---- */
+#code-exercise.hidden { display: none; }
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 16px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.exercise-card h3 { margin-top: 0; }
+.todo-list { margin-top: 10px; }
+.todo-list li { font-size: 15px; }
+.todo-list code, p code, li code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #B05C3F;
+}
+
+/* ---- Lesson nav ---- */
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+}
+.lesson-nav a, .lesson-nav span {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+}
+.lesson-nav span { color: var(--text-dim); }
+.lesson-nav a:hover { text-decoration: underline; }
+
+/* ---- Selection toolbar ---- */
+.selection-toolbar {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.15);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.selection-toolbar.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.sel-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.sel-btn:hover { border-color: var(--accent); background: var(--bg); }
+.sel-btn:active { transform: scale(0.96); }
+.sel-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(20,20,19,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sel-dialog-overlay.visible { opacity: 1; pointer-events: auto; }
+.sel-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(20,20,19,0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sel-dialog-title { font-family: var(--font-heading); font-size: 20px; font-weight: 500; margin-bottom: 20px; }
+.sel-dialog-field { margin-bottom: 16px; }
+.sel-dialog-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.sel-dialog-source {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.sel-dialog textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+}
+.sel-dialog textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,87,0.2); }
+.sel-dialog textarea::placeholder { color: var(--text-dim); }
+.sel-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.sel-btn-cancel {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+.sel-btn-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-confirm:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.sel-btn-confirm:active { transform: scale(0.97); }
+.sel-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 100001;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--ink-text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 24px rgba(20,20,19,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+}
+.sel-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.note-underline {
+  background: rgba(255, 212, 59, 0.45);
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.note-underline:hover { background: rgba(255, 212, 59, 0.65); }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 26px; }
+  .pipeline-arrow { display: none; }
+  .mat-cell { width: 34px; height: 34px; font-size: 12px; }
+  .rf-cell { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ==== 本课新增:师生双塔示意(§3) ==== */
+.st-towers {
+  display: grid;
+  grid-template-columns: 1fr minmax(96px, 132px) 1fr;
+  gap: 10px 8px;
+  align-items: stretch;
+  margin: 22px 0;
+}
+.st-span { grid-column: 1 / -1; }
+.st-node {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 13px 12px;
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+}
+.st-node.frozen { background: rgba(106,155,204,0.10); border-color: rgba(106,155,204,0.55); }
+.st-node.train { background: rgba(217,119,87,0.08); border-color: rgba(217,119,87,0.5); }
+.st-sub {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-dim);
+  margin-top: 4px;
+  line-height: 1.6;
+}
+.st-tower-head {
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 14.5px;
+  font-weight: 500;
+  padding: 4px 0;
+}
+.st-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.st-link::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  border-top: 2px dashed rgba(192,69,58,0.55);
+}
+.st-link span {
+  position: relative;
+  background: #FAF9F5;
+  border: 1px solid rgba(192,69,58,0.4);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--bad);
+  white-space: nowrap;
+}
+.st-down {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1.3;
+  font-family: var(--font-heading);
+}
+
+/* ==== 本课新增:师生曲线交互(§6) ==== */
+.ts-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #FAF9F5;
+}
+.ts-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  margin: 4px 0 14px;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.ts-legend-item { display: inline-flex; align-items: center; gap: 7px; }
+.ts-dot {
+  display: inline-block;
+  width: 13px; height: 13px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.ts-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 16px;
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+  color: var(--text-dim);
+}
+.ts-slider {
+  flex: 1;
+  min-width: 160px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  outline: none;
+  cursor: pointer;
+}
+.ts-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 5px rgba(20,20,19,0.3);
+  cursor: pointer;
+}
+.ts-slider::-moz-range-thumb {
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 5px rgba(20,20,19,0.3);
+  cursor: pointer;
+}
+.ts-readout {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3px 10px;
+  min-width: 54px;
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .st-towers { grid-template-columns: 1fr 72px 1fr; }
+  .st-link span { font-size: 11px; padding: 2px 5px; }
+}
+
+/* ===== mobile adaptation (injected, uniform across course) ===== */
+@media (max-width: 640px) {
+  body { font-size: 15.5px; }
+  .container { padding: 16px 16px 72px; }
+  .hero { padding: 52px 18px 38px; }
+  .hero .subtitle { font-size: 15.5px; }
+  section { padding: 32px 0; }
+  h2 { font-size: 22px; }
+  h2 .num { width: 30px; height: 30px; font-size: 14px; }
+  .demo-box { padding: 16px 14px; }
+  canvas { max-width: 100%; height: auto !important; }
+  .fc-block canvas { width: 100% !important; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .code-block { font-size: 11.5px; padding: 13px 14px; line-height: 1.75; }
+  .slider-row { flex-wrap: wrap; }
+  .slider-row label { min-width: 0; flex: 1 1 100%; }
+  .lesson-nav { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .quiz { padding: 16px 16px; }
+  .quiz-option { font-size: 14px; padding: 11px 12px; }
+  .demo-btns .demo-btn, .demo-btn { padding: 9px 15px; font-size: 13px; }
+  .story-card, .insight-box, .exercise-card { padding: 16px 16px; }
+  .settings-bar { padding: 0 16px; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bp-diagram { font-size: 12px; }
+  .bp-node { min-width: 66px; padding: 8px 8px; }
+  .mat-op { padding-top: 40px; }
+  .selection-toolbar { max-width: calc(100vw - 16px); flex-wrap: wrap; }
+}
+@media (max-width: 400px) {
+  .mat-cell { width: 30px; height: 30px; font-size: 11px; }
+  .rf-cell { width: 17px; height: 17px; }
+  .mat-grid { gap: 3px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="lesson-tag">缺陷检测课程 · 第 09 课</div>
+  <h1>师生蒸馏类方法</h1>
+  <p class="subtitle">让学生只跟老师学"正常"——遇到没学过的东西,师生答案分歧的地方就是缺陷。</p>
+</div>
+
+<div class="settings-bar">
+  <label class="toggle-wrap active" id="code-toggle">
+    <span>配套练习</span>
+    <div class="toggle-track"></div>
+  </label>
+</div>
+
+<div class="container">
+
+<!-- ============ §0 ============ -->
+<section>
+  <h2><span class="num">0</span> 快速回顾</h2>
+  <p>本课的三块地基,分别埋在第 2、7、8 课:</p>
+  <ul>
+    <li><strong>第 2 课 · 姿势③(纯特征提取)</strong>:ImageNet 预训练骨干的中间层特征,是一部不用再训练的"视觉词典"。第 8 课拿它<em>建档案查库</em>;本课换一种用法——请一位"老师"直接照着词典讲课。</li>
+    <li><strong>第 7 课 · 重构类</strong>:AutoEncoder 只学过正常样本,缺陷"画不出来",重构误差就是异常分数。记住那一课的<strong>恒等映射陷阱</strong>——本课 §4 会遇到它换了个空间的双胞胎。</li>
+    <li><strong>第 8 课 · 特征嵌入类</strong>:给正常 patch 特征建档案(高斯统计 / memory bank),推理时逐 patch 查库。检测很强,但要<strong>存库、查库</strong>。本课用的是<strong>同一份素材(预训练特征)</strong>,却走了另一条路:不建任何库,训练第二个网络把"正常的特征"直接背进参数里——推理时不查库,只做两次前向传播,然后对答案。</li>
+  </ul>
+</section>
+
+<!-- ============ §1 ============ -->
+<section>
+  <h2><span class="num">1</span> 知识蒸馏的本义:大模型教小模型</h2>
+
+  <p>2015 年,Hinton 等人在《Distilling the Knowledge in a Neural Network》中提出<em>知识蒸馏</em>:让一个笨重但强大的<strong>老师模型</strong>对每个输入产出完整的概率分布,把这个分布当作"软标签"去训练一个小巧的<strong>学生模型</strong>。软标签比 one-hot 硬标签含金量高得多——"这张图 90% 是猫、9% 是狗、0.0001% 是卡车"这句话里,藏着"猫和狗长得像、猫和卡车无关"的类间结构,行话叫<strong>暗知识</strong>(dark knowledge)。学生同时向软标签和真值学习,就能用零头大小的参数量逼近老师的判断力。它的初衷是<strong>模型压缩</strong>:训练时用大模型攒本事,部署时只带小模型上岗。</p>
+
+  <p>注意这套玩法的一个隐含假设:老师和学生面对的是<strong>同一个数据分布</strong>,学生的全部本事都来自"在这些数据上模仿老师"。那么——如果推理时来了一个训练分布<em>之外</em>的输入呢?学生的模仿还灵吗?<em>不灵。而这个"不灵",就是下一节的全部内容。</em>缺陷检测把蒸馏反过来用:别人拼命想消除的"学生学不会",在这里恰恰是我们最想要的信号。</p>
+</section>
+
+<!-- ============ §2 ============ -->
+<section>
+  <h2><span class="num">2</span> 反转:让"学不会"变成检测信号</h2>
+
+  <h3>角色分配</h3>
+  <p><strong>老师:一个 ImageNet 预训练网络</strong>(第 2 课的姿势③,权重全程冻结,一步都不训练)。它在 130 万张自然图像上见过世面,不管你喂什么——正常工件、划痕、异物、压根没见过的怪东西——它都会给出<strong>稳定而丰富的特征描述</strong>。它不判断好坏,只负责如实描述。</p>
+  <p><strong>学生:一个小网络,只在正常样本上训练。</strong>训练目标简单到一句话:在特征图的<strong>每一个空间位置</strong>上,让自己的特征向量尽可能贴近老师在同一位置的特征向量。没有标签、没有分类头,就是一场逐位置的"听写":老师说什么,学生记什么。几轮训练下来,学生把"正常工件在老师眼里长什么样"一字一句背进了自己的参数里——它没有见识,只有背功。</p>
+
+  <div class="story-card">
+    <div class="story-label">一场暴露一切的考试</div>
+    <p>把推理想象成师生同考一张卷子。卷子上大部分题目来自学生背熟的课本(正常区域),师生答案几乎逐字一致;但卷子里混进了几道超纲题(缺陷区域)——老师见多识广,照样落笔如常;学生没学过,只能硬着头皮往"课本里最像的内容"上凑。<strong>把两份答卷逐题对一遍,答案分道扬镳的题号,就是缺陷的位置。</strong>妙处在于:学生不需要知道什么是缺陷,它只要诚实地"没学会",检测就成立。</p>
+  </div>
+
+  <h3>推理:分歧即异常</h3>
+  <p>推理时,同一张测试图分别过一遍老师和学生,取出两张特征图,逐位置计算差异:</p>
+
+  <div class="code-block">训练(只见正常样本):  L    = Σ_p ‖ F_T(p) − F_S(p) ‖²   <span class="cm"># 逐位置把老师的特征"背下来"</span>
+推理(任意样本):      A(p) =    ‖ F_T(p) − F_S(p) ‖²   <span class="cm"># 同一个量,换了身份:</span>
+<span class="cm">                                                    # 训练时是作业得分,推理时是异常分数</span>
+<span class="cm"># 也常用 1 − cos(F_T(p), F_S(p)):只比方向、不比长度,对特征幅值更稳(练习 TODO 2)</span></div>
+
+  <p><strong>正常区域</strong>:训练时见过千百遍,学生模仿得惟妙惟肖,师生特征几乎重合,差异趋零。<strong>缺陷区域</strong>:老师如实给出"这里有个没见过的东西"的特征;学生却从没学过这种输入,只能输出些"正常应有的样子"或者干脆混乱的特征——<strong>模仿失灵,师生特征分道扬镳</strong>。把逐位置差异铺回原图,就是一张天生与像素对齐的<em>异常热力图</em>,一个额外的定位模块都不需要。</p>
+
+  <h3>和第 7 课重构类摆在一起看</h3>
+  <p>两者共享同一条无监督逻辑——"只学正常,靠'做不到'暴露异常"——但动手的空间不同。重构类在<strong>像素空间</strong>较劲:模型画不出缺陷,像素误差报警;代价是像素误差很"轴",光照变化、纹理噪声、轻微对不齐都会冒充误差。蒸馏类把战场挪进<strong>特征空间</strong>:比的是语义描述,而不是每个像素的颜色,天然对这些低层扰动更稳;而且骨干特征本来就分多层——浅层管细节、深层管语义——为下一节的多尺度匹配铺好了路。</p>
+
+  <div class="insight-box">
+    <div class="insight-label">本课核心一句话</div>
+    <p>老师见多识广,学生只背过"正常"。<strong>逐位置对比师生特征,分歧大的地方就是缺陷:A(p) = ‖F_T(p) − F_S(p)‖²。</strong>重构类找的是"画不出",蒸馏类找的是"学不会"——像素空间与特征空间,各自用"做不到"给异常画像。</p>
+  </div>
+</section>
+
+<!-- ============ §3 ============ -->
+<section>
+  <h2><span class="num">3</span> STFPM:在特征金字塔上逐层对答案</h2>
+
+  <p>只挑一层特征做师生匹配,会立刻遇到第 2 课 §6(感受野)的老问题:<strong>选哪层?</strong>浅层分辨率高、视野小,擅长毫米级的细划痕、小毛刺,却看不懂大局;深层视野大、语义强,能发现大面积污染或部件错装,却在降采样里把小缺陷平均没了。第 6 课的 U-Net 用"多尺度 + 跳连"回答过一次这个问题;STFPM(Student-Teacher Feature Pyramid Matching)把同样的答案搬进师生框架:<strong>不选了,全都要。</strong></p>
+
+  <p>做法:老师与学生采用同一个骨干结构(如 ResNet-18),在特征金字塔的浅、中、深三个层级<strong>同时</strong>做逐位置匹配。训练时,三层的模仿损失加在一起优化;推理时,得到三张分辨率不同的差异图,各自上采样回输入尺寸后逐像素融合(相乘或相加)——小缺陷靠浅层那张图捕捉,大缺陷靠深层那张兜底,融合后两头都不漏:</p>
+
+  <div class="st-towers">
+    <div class="st-node st-span">输入图像(同一张,同时喂给两座塔)</div>
+    <div class="st-down">↓</div><div></div><div class="st-down">↓</div>
+    <div class="st-tower-head">❄ 老师塔(冻结)<span class="st-sub">ImageNet 预训练,只前向、不更新</span></div>
+    <div></div>
+    <div class="st-tower-head">🔥 学生塔(可训)<span class="st-sub">同构网络,只在正常样本上训练</span></div>
+    <div class="st-node frozen">浅层特征 T₁<span class="st-sub">高分辨率 · 小视野<br>负责细小缺陷</span></div>
+    <div class="st-link"><span>d₁ = T₁ vs S₁</span></div>
+    <div class="st-node train">浅层特征 S₁<span class="st-sub">逐位置模仿 T₁</span></div>
+    <div class="st-down">↓</div><div></div><div class="st-down">↓</div>
+    <div class="st-node frozen">中层特征 T₂<span class="st-sub">中分辨率 · 中视野</span></div>
+    <div class="st-link"><span>d₂ = T₂ vs S₂</span></div>
+    <div class="st-node train">中层特征 S₂<span class="st-sub">逐位置模仿 T₂</span></div>
+    <div class="st-down">↓</div><div></div><div class="st-down">↓</div>
+    <div class="st-node frozen">深层特征 T₃<span class="st-sub">低分辨率 · 大视野<br>负责大面积缺陷</span></div>
+    <div class="st-link"><span>d₃ = T₃ vs S₃</span></div>
+    <div class="st-node train">深层特征 S₃<span class="st-sub">逐位置模仿 T₃</span></div>
+    <div class="st-down st-span">↓ 三张差异图上采样到同一尺寸,逐像素融合 ↓</div>
+    <div class="st-node st-span" style="border-color: rgba(192,69,58,0.5); background: rgba(192,69,58,0.06);">像素级异常图:哪里分歧大,哪里是缺陷</div>
+  </div>
+
+  <p>注意这套结构里的分工:<strong>老师塔全程冻结</strong>(❄),它只是一台"标准答案发生器";<strong>真正在学习的只有学生塔</strong>(🔥)。整个训练是一个纯回归任务——没有分类头、没有负样本、没有对抗,稳定得近乎乏味。而"乏味"在工业现场是一种美德:超参数不敏感、几百张正常图就能训、跑一次是一次。</p>
+</section>
+
+<!-- ============ §4 ============ -->
+<section>
+  <h2><span class="num">4</span> 失败模式与反向蒸馏 RD</h2>
+
+  <h3>失败模式:学生太像老师</h3>
+  <p>师生蒸馏的信号来自"学生学不会缺陷"。但如果学生和老师<strong>结构完全相同、容量旗鼓相当</strong>,危险就来了:学生可能不是老老实实背"正常长什么样",而是把老师的"解题套路"整体抄走——毕竟,让一个同构网络逐位置模仿另一个网络,损失最低的捷径往往是<em>长成它的样子</em>。后果:推理时遇到从没见过的缺陷,学生也能"顺手"给出和老师几乎一样的特征——<strong>泛化过度</strong>,师生差异处处趋零,异常图变平,缺陷漏检。</p>
+  <p>这个病你在第 7 课见过:AutoEncoder 容量太大时学成恒等映射,连缺陷都原样重构出来。<strong>同一个病,换了空间复发</strong>——第 7 课发作在像素空间,这一次发作在特征空间。病根也相同:给了模型一条<em>不需要理解"正常"</em>就能把训练损失做低的近道。</p>
+
+  <h3>反向蒸馏(Reverse Distillation):把近道拆掉</h3>
+  <p>CVPR 2022 的 RD 开出的药方是<strong>不对称</strong>:师生不再平行排列,而是首尾相接。老师照旧正向编码(图像 → 逐层特征);随后把老师的深层特征压缩成一个紧凑的<strong>单类嵌入</strong>(one-class embedding)——可以理解为"这张图的正常要点摘要";学生则换成一个<strong>解码器</strong>,从这份摘要出发,<strong>反向</strong>逐层重建老师的各层特征。"反向"指的就是这个:学生不再顺着图像正向抄,而是从压缩摘要往回推。</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">输入</div>
+      <div class="step-title">测试图像</div>
+      <div class="step-desc">正常或带缺陷</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">正向 ❄</div>
+      <div class="step-title">老师编码器</div>
+      <div class="step-desc">图像 → 多层特征<br>如实描述一切</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">瓶颈</div>
+      <div class="step-title">单类嵌入</div>
+      <div class="step-desc">压缩摘要<br>只装得下"正常"</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">反向 🔥</div>
+      <div class="step-title">学生解码器</div>
+      <div class="step-desc">从摘要反向重建<br>老师的各层特征</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">对答案</div>
+      <div class="step-title">逐层差异</div>
+      <div class="step-desc">重建特征 vs 老师特征<br>分歧大处 = 缺陷</div>
+    </div>
+  </div>
+
+  <p>两道保险同时生效:① <strong>信息瓶颈</strong>——嵌入是在正常样本上训练的,只装得下"正常"的要点,缺陷信息在压缩这一步就被挤掉了,学生想抄近道也拿不到原材料;② <strong>结构不对称</strong>——编码器与解码器的"解题路径"天然不同,学生长不成老师的样子。于是推理时遇到缺陷:老师的特征里如实带着异常,学生却只能从"正常摘要"里重建出<em>这里本该正常的样子</em>——一对比,分歧最大的位置就是缺陷。像"根据摘要复述课文":摘要里压根没记的内容,复述出来只会是标准正常版。</p>
+
+  <div class="insight-box">
+    <div class="insight-label">同一个病,同一类药</div>
+    <p>第 7 课治恒等映射:掐窄隐空间、给输入加噪。本课治学生泛化过度:掐窄信息瓶颈、打破结构对称。手法不同,思想一致:<strong>逼模型只能靠"理解正常"来完成任务,把所有不需要理解就能得分的近道拆干净。</strong>下一课(合成缺陷)会给出第三种拆法:干脆自己造缺陷,让模型提前见一见"不正常"。</p>
+  </div>
+</section>
+
+<!-- ============ §5 ============ -->
+<section>
+  <h2><span class="num">5</span> EfficientAD:把这条路线推到毫秒级</h2>
+
+  <p>产线上的缺陷检测不是离线跑分:一条<strong>在线全检</strong>的产线,每分钟可能过几十上百件产品,分给单件的推理预算常常只有<strong>几十毫秒甚至更少</strong>,还得跑在车间的工控机或边缘设备上,而不是机房里的大 GPU。前面的方法在这条硬约束面前各有难处:PatchCore 推理要查库,重构类和 STFPM 拖着一个不小的骨干。EfficientAD(WACV 2024)把师生路线沿着"快"这个方向推到了极致。</p>
+
+  <p>它的两个关键动作都和"蒸馏"有关,而且首尾呼应:</p>
+  <ul>
+    <li><strong>轻量老师</strong>:先用 §1 的"正向蒸馏"本义,把一个大预训练网络的特征能力蒸馏进一个只有四层卷积的小网络(PDN),让"老师"本身就跑得飞快——蒸馏在这条路线里绕了一圈,回到了它 2015 年的老本行:模型压缩;</li>
+    <li><strong>学生一人分饰两角</strong>:学生除了照常模仿老师(负责划痕、凹坑、异物这类<strong>结构异常</strong>),还额外兼任一个自编码器分支的搭档,用重构信号粗检<strong>逻辑异常</strong>——比如每个零件都完好、但少装了一颗螺丝这种"局部处处正常、全局不对劲"的问题。</li>
+  </ul>
+
+  <p>压缩到极致的收益:论文报告在桌面级 GPU 上<strong>单图延迟约 1~2 毫秒、每秒六百余张</strong>的吞吐——检测速度第一次快过了产线本身。这让"每一件产品都在线检一遍"从奢望变成默认配置。速度、精度、内存三本账在真实产线上怎么一起算,方法选型怎么落地,第 13 课的工程实践会专门展开。</p>
+</section>
+
+<!-- ============ §6 ============ -->
+<section>
+  <h2><span class="num">6</span> 亲眼看:师生分歧就是缺陷</h2>
+
+  <p>把 §2 的机制放到一条一维"特征带"上,亲眼确认一遍。想象沿着工件表面横切一刀,取出 32 个空间位置;每个位置画出老师和学生的特征响应强度(真实方法里每个位置是几百维向量,这里各用一个数代表,机制完全相同):</p>
+
+  <div class="demo-box" id="ts-demo">
+    <div class="demo-title">📉 交互:师生特征对比可视化</div>
+    <div class="demo-hint">上图:<strong>蓝线 = 老师</strong>的特征响应,<strong>橙线 = 学生</strong>的模仿。默认是「缺陷样本」:位置 18–24 是学生从没学过的图案,模仿当场失灵,两线分道扬镳,红色区域就是师生分歧。下图把分歧画成<strong>逐位置异常分数</strong>(已做 3 点滑动平均,练习 TODO 4 同款):拖动阈值滑块,超线的段落会被标为「检出区间」——拖太高会漏检缺陷边缘,拖太低连正常噪声都被误检。再点「正常样本」对照:两线全程紧贴,差异曲线趴地。</div>
+    <div class="demo-btns" style="margin-top: 0; margin-bottom: 14px;">
+      <button class="demo-btn primary" id="ts-btn-defect">缺陷样本</button>
+      <button class="demo-btn" id="ts-btn-normal">正常样本</button>
+    </div>
+    <div class="ts-legend">
+      <span class="ts-legend-item"><span class="ts-dot" style="background: #6A9BCC;"></span>老师响应(冻结,见多识广)</span>
+      <span class="ts-legend-item"><span class="ts-dot" style="background: #D97757;"></span>学生响应(只背过正常)</span>
+      <span class="ts-legend-item"><span class="ts-dot" style="background: rgba(192,69,58,0.35);"></span>师生分歧区域</span>
+    </div>
+    <div class="mat-label">① 师生特征响应曲线(32 个空间位置)</div>
+    <canvas id="ts-main" class="ts-canvas" width="720" height="240"></canvas>
+    <div class="mat-label" style="margin-top: 16px;">② 逐位置差异 = 异常分数曲线</div>
+    <canvas id="ts-diff" class="ts-canvas" width="720" height="170"></canvas>
+    <div class="ts-slider-row">
+      <span>判定阈值</span>
+      <input type="range" class="ts-slider" id="ts-thr" min="0.01" max="0.50" step="0.01" value="0.15">
+      <span class="ts-readout" id="ts-thr-val">0.15</span>
+    </div>
+    <div class="demo-status" id="ts-status"></div>
+  </div>
+
+  <p>三个值得亲手确认的现象:</p>
+  <ul>
+    <li><strong>正常段两线咬得很紧</strong>——不是学生聪明,是这些图案在训练集里出现过成千上万次,背熟了;</li>
+    <li><strong>缺陷段学生不是"报警",而是"露馅"</strong>——它照常输出自以为的答案,只是答案错了。真正报警的是从旁边伸过来的那把尺子:师生差异;</li>
+    <li><strong>阈值是一场权衡</strong>——拖低框得全但开始误检噪声,拖高干净但漏掉缺陷边缘(缺陷边缘的分歧天生比中心小)。这不是本课私有的难题:任何输出连续分数的检测器都要过这一关。第 4 课的 AUROC 用"扫遍所有阈值"绕开了单点选择,而产线上这一刀到底切在哪,是第 13 课的正题。</li>
+  </ul>
+</section>
+
+<!-- ============ §7 ============ -->
+<section>
+  <h2><span class="num">7</span> 三族横评:重构、嵌入、蒸馏</h2>
+
+  <p>到这一课为止,无监督缺陷检测的三大主力族全部亮相。把它们放在同一张桌上,按工程师最关心的四个问题过一遍:</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>重构类(第 7 课)</h4>
+      <p><strong>要训练吗?</strong>要,从零训一个 AE / GAN。</p>
+      <p><strong>推理速度:</strong>快——一次前向 + 一次逐像素比较。</p>
+      <p><strong>内存:</strong>小,只有网络参数。</p>
+      <p><strong>命门:</strong>恒等映射陷阱;像素误差对光照、纹理噪声敏感,异常图偏"毛"。</p>
+    </div>
+    <div class="compare-box">
+      <h4>嵌入类(第 8 课)</h4>
+      <p><strong>要训练吗?</strong>几乎不用——预训练特征直接建库,"零训练"起步。</p>
+      <p><strong>推理速度:</strong>要查库,kNN 检索随库变大而变慢(coreset 只能缓解)。</p>
+      <p><strong>内存:</strong>memory bank 随训练集增长,是三族中最重的。</p>
+      <p><strong>命门:</strong>内存与检索开销;库没收录的正常变体容易误报。</p>
+    </div>
+    <div class="compare-box">
+      <h4>蒸馏类(本课)</h4>
+      <p><strong>要训练吗?</strong>要,但只训学生——一个稳定的轻量回归任务。</p>
+      <p><strong>推理速度:</strong>快——两次前向 + 逐位置相减,没有任何检索。</p>
+      <p><strong>内存:</strong>两套网络参数,无库,占用固定不随数据涨。</p>
+      <p><strong>命门:</strong>学生泛化过度(§4),要靠不对称结构 / 信息瓶颈压制。</p>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    <div class="insight-label">蒸馏类的定位</div>
+    <p><strong>肯花一次训练的钱,换推理时的轻快</strong>:无 memory bank、显存占用固定、两次前向就出结果,而且差异图逐位置对齐,<strong>天生就是像素级异常图</strong>。当"推理快 + 内存省 + 要定位"三个要求同时出现时,蒸馏族往往是第一个被拿出来试的——EfficientAD 更是把"快"做成了招牌。三族不是互相取代,而是三种买卖:第 13 课会把这套选型账算到具体场景里。</p>
+  </div>
+</section>
+
+<!-- ============ 测验 ============ -->
+<section>
+  <h2><span class="num">✓</span> 自我检验</h2>
+  <p>四道题,检查本课的核心概念是否立住了。</p>
+
+  <div class="quiz" id="quiz1">
+    <div class="quiz-q">Q1 · 推理时遇到缺陷区域,学生网络为什么"模仿失灵"?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">A. 学生网络容量太小,连正常样本都没背熟</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz1')">B. 学生只在正常样本上训练过,缺陷是分布外输入,模仿必然失灵——而这正是我们要的信号</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">C. 缺陷太小,学生的感受野覆盖不到</button>
+    <div class="quiz-feedback ok" id="quiz1-correct">✔ 正确。回看 §2 的角色分配:学生的训练分布里根本没有缺陷,它对"超纲题"泛化很差。在别的任务里这叫缺点;在这里,失灵得越彻底,师生分歧越大,异常信号越亮。</div>
+    <div class="quiz-feedback no" id="quiz1-wrong">✘ 回看 §2:学生不是容量不够,也不是看不见——是训练时从没见过缺陷。"没学过所以答不上"这个分布外泛化差的特性,才是整个方法的机制核心。</div>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-q">Q2 · 如果学生网络和老师结构完全相同、容量相当,最大的风险是?</div>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz2')">A. 学生泛化过度,把没见过的异常也"顺手"模仿了,师生差异消失,异常图变平</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">B. 两个网络会互相干扰,训练无法收敛</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">C. 参数量翻倍,一定会过拟合</button>
+    <div class="quiz-feedback ok" id="quiz2-correct">✔ 正确。§4 的失败模式:同构 + 同容量时,学生最省事的解是把老师的"解题套路"整体抄走,对分布外输入也给出和老师一样的特征——分歧信号消失。这是第 7 课恒等映射陷阱在特征空间的复发。</div>
+    <div class="quiz-feedback no" id="quiz2-wrong">✘ 风险不在收敛或参数量——回看 §4:真正要命的是学生<strong>泛化过度</strong>,连异常都模仿得惟妙惟肖,异常图变平、缺陷漏检。</div>
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-q">Q3 · 反向蒸馏(RD)里的"反向",指的是什么?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">A. 把训练图像上下翻转后再喂给学生</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">B. 让学生反过来当老师,把知识蒸馏回大网络</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz3')">C. 学生不再正向抄图像,而是从老师特征压缩成的单类嵌入出发,反向逐层重建老师的特征</button>
+    <div class="quiz-feedback ok" id="quiz3-correct">✔ 正确。§4 的管线:老师正向编码 → 压缩成单类嵌入(信息瓶颈)→ 学生解码器反向重建。瓶颈掐掉了异常信息,结构不对称拆掉了"长成老师"的近道,两道保险同时生效。</div>
+    <div class="quiz-feedback no" id="quiz3-wrong">✘ "反向"既不是翻转图像,也不是学生教老师——回看 §4 的流程图:被反过来的是<strong>编码方向</strong>,学生从压缩摘要出发往回重建老师的各层特征。</div>
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-q">Q4 · EfficientAD 最核心的卖点是?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">A. 在所有数据集上精度全场最高</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">B. 完全不需要训练,开箱即用</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz4')">C. 毫秒级单图推理,满足在线全检产线的硬时延预算</button>
+    <div class="quiz-feedback ok" id="quiz4-correct">✔ 正确。§5:轻量老师(PDN)+ 学生兼任 AE 分支,单图约 1~2 ms——在线全检产线分给每件产品的时延预算只有几十毫秒,速度本身就是硬指标。这本部署账,第 13 课细算。</div>
+    <div class="quiz-feedback no" id="quiz4-wrong">✘ 回看 §5:EfficientAD 的招牌不是精度登顶,更不是免训练(它照样要训学生和 AE)——是<strong>毫秒级推理</strong>,让"每一件产品都在线检一遍"成为可能。</div>
+  </div>
+</section>
+
+<!-- ============ 延伸阅读 ============ -->
+<section class="further-reading">
+  <h2><span class="num">✦</span> 延伸阅读</h2>
+  <p>按"概念原点 → 开山之作 → 多尺度 → 反向蒸馏 → 工业落地"排序:</p>
+  <div class="reading-list">
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/1503.02531" target="_blank" rel="noopener">Distilling the Knowledge in a Neural Network</a></div>
+      <div class="reading-meta">Hinton, Vinyals & Dean · 2015 · arXiv 1503.02531</div>
+      <div class="reading-desc">知识蒸馏的概念原点:软标签、温度与"暗知识"都出自这篇短文。本课 §1 的一段式介绍在这里有完整版——读它能体会"学生模仿老师"这个设定最初是为压缩而生的。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/1911.02357" target="_blank" rel="noopener">Uninformed Students: Student-Teacher Anomaly Detection with Discriminative Latent Embeddings</a></div>
+      <div class="reading-meta">Bergmann et al. · CVPR 2020 · arXiv 1911.02357</div>
+      <div class="reading-desc">师生范式用于异常检测的开山之作:一群"没见过世面"的学生模仿老师的 patch 特征,用模仿误差加学生间分歧打分。§2 的反转机制在这里第一次成型,标题本身就是方法论。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2103.04257" target="_blank" rel="noopener">Student-Teacher Feature Pyramid Matching for Anomaly Detection</a></div>
+      <div class="reading-meta">Wang et al. · BMVC 2021 · arXiv 2103.04257</div>
+      <div class="reading-desc">§3 的主角 STFPM:把师生匹配搬上特征金字塔,浅中深三层同时对答案再融合,一次前向兼顾大小缺陷。结构简单、代码极短,适合当作第一个亲手复现的无监督方法。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2201.10703" target="_blank" rel="noopener">Anomaly Detection via Reverse Distillation from One-Class Embedding</a></div>
+      <div class="reading-meta">Deng & Li · CVPR 2022 · arXiv 2201.10703</div>
+      <div class="reading-desc">§4 的药方原文:老师正向编码、学生从单类嵌入反向重建,"不对称结构 + 信息瓶颈"治学生泛化过度。读它时留意作者如何论证"同构师生为什么会失效"。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2303.14535" target="_blank" rel="noopener">EfficientAD: Accurate Visual Anomaly Detection at Millisecond-Level Latencies</a></div>
+      <div class="reading-meta">Batzner et al. · WACV 2024 · arXiv 2303.14535</div>
+      <div class="reading-desc">§5 的毫秒级方案:蒸馏出的轻量老师 PDN、学生兼任自编码器搭档、结构异常与逻辑异常双通道。工业部署路线的代表作,也是第 13 课选型讨论的常客。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 配套练习 ============ -->
+<section id="code-exercise">
+  <h2><span class="num">✎</span> 配套代码练习</h2>
+  <div class="exercise-card">
+    <h3>exercise.py:亲手实现师生差异检测器</h3>
+    <p>本课目录下的 <code>exercise.py</code> 用纯 Python(零依赖)把 §2 和 §6 的机制写成代码。运行 <code>python exercise.py</code>,完成 5 个递进的 TODO(难度 ⭐⭐,比前几课轻——概念新,算子却都很短):</p>
+    <ol class="todo-list">
+      <li><strong>TODO 1</strong> · 逐位置平方差 <code>sq_diff</code> —— §2 里最朴素的分歧度量</li>
+      <li><strong>TODO 2</strong> · 余弦相似度 <code>cosine_sim</code>(零向量返回 0)—— §2 "只比方向"的分歧度量</li>
+      <li><strong>TODO 3</strong> · 异常曲线 <code>anomaly_curve</code>:每个位置记 1 − cos —— §6 下图那条红曲线</li>
+      <li><strong>TODO 4</strong> · 居中滑动平均 <code>moving_avg</code> —— §6 交互对差异曲线做的同款平滑</li>
+      <li><strong>TODO 5</strong> · 串联 <code>find_anomaly_span</code>:阈值一刀,框出"师生分歧区间" —— §6 交互的纯代码复刻</li>
+    </ol>
+    <p style="margin-top:12px">做完 TODO 5,你会在一条 12 个位置的玩具特征序列上复现本课的核心一幕:老师全程答 [1, 0],学生在位置 5–7 只会答 [0, 1]——异常曲线在那三格拔地而起,检出区间 (5, 7) 应声而出。<strong>师生分歧即缺陷。</strong></p>
+  </div>
+</section>
+
+<div class="lesson-nav">
+  <a href="../08-feature-embedding-methods/lesson.html">← 上一课:特征嵌入类方法(工业界主流)</a>
+  <a href="../10-synthetic-defects-self-supervised/lesson.html">下一课:合成缺陷与自监督方法 →</a>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ============ §6 师生特征对比可视化 ============ */
+(function() {
+  var N = 32;                  // 空间位置数
+  var DEF_S = 18, DEF_E = 24;  // 缺陷段(含端点)
+  // 确定性伪随机(与第 02 课演示同款 LCG,保证每次打开画面一致)
+  var seed = 42;
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+
+  // 老师曲线:程序生成的平滑响应
+  var T = [];
+  for (var i0 = 0; i0 < N; i0++) {
+    T.push(0.52 + 0.20 * Math.sin(i0 * 0.42 + 0.8)
+                + 0.11 * Math.sin(i0 * 0.85 + 2.0)
+                + 0.05 * Math.sin(i0 * 1.7 + 4.0));
+  }
+  // 正常场景学生:全程紧贴老师 + 微小噪声
+  var S_normal = [];
+  for (var i1 = 0; i1 < N; i1++) S_normal.push(T[i1] + (rnd() - 0.5) * 0.03);
+  // 缺陷场景学生:缺陷段模仿失灵,响应明显偏离
+  var S_defect = [];
+  for (var i2 = 0; i2 < N; i2++) {
+    if (i2 >= DEF_S && i2 <= DEF_E) {
+      var w = Math.sin(Math.PI * (i2 - DEF_S + 0.5) / (DEF_E - DEF_S + 1)); // 0→1→0 包络
+      var dev = 0.34 * w * (1 + 0.18 * Math.sin(i2 * 2.7));
+      S_defect.push(Math.max(0.05, T[i2] - dev + (rnd() - 0.5) * 0.05));
+    } else {
+      S_defect.push(T[i2] + (rnd() - 0.5) * 0.03);
+    }
+  }
+
+  function movingAvg3(xs) {
+    var out = [];
+    for (var i = 0; i < xs.length; i++) {
+      var lo = Math.max(0, i - 1), hi = Math.min(xs.length, i + 2), s = 0;
+      for (var k = lo; k < hi; k++) s += xs[k];
+      out.push(s / (hi - lo));
+    }
+    return out;
+  }
+  function diffCurve(S) {
+    var d = [];
+    for (var i = 0; i < N; i++) d.push(Math.abs(T[i] - S[i]));
+    return movingAvg3(d);
+  }
+  function findSpans(d, thr) {
+    var spans = [], start = -1;
+    for (var i = 0; i < N; i++) {
+      if (d[i] > thr) { if (start < 0) start = i; }
+      else if (start >= 0) { spans.push([start, i - 1]); start = -1; }
+    }
+    if (start >= 0) spans.push([start, N - 1]);
+    return spans;
+  }
+
+  var mainCv = document.getElementById('ts-main');
+  var diffCv = document.getElementById('ts-diff');
+  var thrEl = document.getElementById('ts-thr');
+  var thrVal = document.getElementById('ts-thr-val');
+  var statusEl = document.getElementById('ts-status');
+  var btnN = document.getElementById('ts-btn-normal');
+  var btnD = document.getElementById('ts-btn-defect');
+  var scene = 'defect';
+  var FONT = '11px "Poppins","Noto Sans SC",sans-serif';
+  var TICKS = [0, 8, 16, 24, 31];
+
+  function drawGrid(ctx, W, H, padL, padR, padT, padB, px) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#FAF9F5';
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(216,213,204,0.8)';
+    ctx.lineWidth = 1;
+    ctx.font = FONT;
+    TICKS.forEach(function(t) {
+      ctx.beginPath();
+      ctx.moveTo(px(t), padT);
+      ctx.lineTo(px(t), H - padB);
+      ctx.stroke();
+      ctx.fillStyle = '#6B6860';
+      ctx.textAlign = 'center';
+      ctx.fillText('' + t, px(t), H - padB + 16);
+    });
+  }
+  function drawLine(ctx, ys, color, px, py) {
+    ctx.beginPath();
+    for (var i = 0; i < N; i++) {
+      var x = px(i), y = py(ys[i]);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.lineJoin = 'round';
+    ctx.stroke();
+  }
+
+  function drawMain() {
+    var ctx = mainCv.getContext('2d');
+    var W = mainCv.width, H = mainCv.height;
+    var padL = 16, padR = 16, padT = 24, padB = 30;
+    var S = scene === 'normal' ? S_normal : S_defect;
+    function px(i) { return padL + i * (W - padL - padR) / (N - 1); }
+    function py(v) { return padT + (1 - Math.max(0, Math.min(1, v))) * (H - padT - padB); }
+    drawGrid(ctx, W, H, padL, padR, padT, padB, px);
+    // 横向参考线
+    ctx.strokeStyle = 'rgba(216,213,204,0.8)';
+    [0.25, 0.5, 0.75].forEach(function(v) {
+      ctx.beginPath();
+      ctx.moveTo(padL, py(v));
+      ctx.lineTo(W - padR, py(v));
+      ctx.stroke();
+    });
+    // 师生差异填充
+    ctx.beginPath();
+    for (var i = 0; i < N; i++) {
+      var x = px(i), y = py(T[i]);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    for (var j = N - 1; j >= 0; j--) ctx.lineTo(px(j), py(S[j]));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(192,69,58,0.25)';
+    ctx.fill();
+    // 缺陷段标注
+    if (scene === 'defect') {
+      ctx.strokeStyle = 'rgba(192,69,58,0.5)';
+      ctx.setLineDash([4, 4]);
+      [DEF_S, DEF_E].forEach(function(t) {
+        ctx.beginPath();
+        ctx.moveTo(px(t), padT);
+        ctx.lineTo(px(t), H - padB);
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#C0453A';
+      ctx.textAlign = 'center';
+      ctx.fillText('缺陷段 18–24(学生没学过)', (px(DEF_S) + px(DEF_E)) / 2, padT - 9);
+    }
+    ctx.fillStyle = '#6B6860';
+    ctx.textAlign = 'left';
+    ctx.fillText('特征响应', padL + 2, padT - 9);
+    drawLine(ctx, T, '#6A9BCC', px, py);
+    drawLine(ctx, S, '#D97757', px, py);
+  }
+
+  function drawDiff() {
+    var ctx = diffCv.getContext('2d');
+    var W = diffCv.width, H = diffCv.height;
+    var padL = 16, padR = 16, padT = 26, padB = 30;
+    var DMAX = 0.55;
+    var S = scene === 'normal' ? S_normal : S_defect;
+    var d = diffCurve(S);
+    var thr = parseFloat(thrEl.value);
+    var spans = findSpans(d, thr);
+    var step = (W - padL - padR) / (N - 1);
+    function px(i) { return padL + i * step; }
+    function py(v) { return padT + (1 - Math.max(0, Math.min(DMAX, v)) / DMAX) * (H - padT - padB); }
+    drawGrid(ctx, W, H, padL, padR, padT, padB, px);
+    // 检出区间高亮
+    spans.forEach(function(sp) {
+      var x0 = Math.max(padL, px(sp[0]) - step / 2);
+      var x1 = Math.min(W - padR, px(sp[1]) + step / 2);
+      ctx.fillStyle = 'rgba(192,69,58,0.25)';
+      ctx.fillRect(x0, padT - 4, x1 - x0, H - padT - padB + 4);
+      ctx.fillStyle = '#C0453A';
+      ctx.textAlign = 'center';
+      ctx.fillText(x1 - x0 >= 46 ? '检出区间' : '检出', (x0 + x1) / 2, padT - 9);
+    });
+    // 差异曲线(曲线下浅填充 + 线)
+    ctx.beginPath();
+    ctx.moveTo(px(0), py(0));
+    for (var i = 0; i < N; i++) ctx.lineTo(px(i), py(d[i]));
+    ctx.lineTo(px(N - 1), py(0));
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(192,69,58,0.12)';
+    ctx.fill();
+    drawLine(ctx, d, '#C0453A', px, py);
+    // 阈值线
+    var yThr = py(thr);
+    ctx.strokeStyle = '#141413';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([7, 5]);
+    ctx.beginPath();
+    ctx.moveTo(padL, yThr);
+    ctx.lineTo(W - padR, yThr);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#141413';
+    ctx.textAlign = 'right';
+    ctx.fillText('阈值 ' + thr.toFixed(2), W - padR - 4, yThr - 6);
+    updateStatus(thr, spans);
+  }
+
+  function spanText(spans) {
+    return spans.map(function(sp) {
+      return sp[0] === sp[1] ? '[' + sp[0] + ']' : '[' + sp[0] + '–' + sp[1] + ']';
+    }).join('、');
+  }
+  function updateStatus(thr, spans) {
+    var msg;
+    if (scene === 'normal') {
+      if (!spans.length) {
+        msg = '正常样本 · 阈值 ' + thr.toFixed(2) + ':没有任何位置越线——学生全程紧贴老师,差异曲线趴在地上。这就是"背得惟妙惟肖"。';
+      } else {
+        msg = '正常样本 · 阈值 ' + thr.toFixed(2) + ':竟检出 ' + spans.length + ' 个区间(' + spanText(spans) + ')——但这张图根本没有缺陷,全是把正常小抖动当缺陷的误检。阈值太低了,往右拖。';
+      }
+    } else {
+      var covered = 0, extra = 0, truthLen = DEF_E - DEF_S + 1;
+      for (var i = 0; i < N; i++) {
+        var det = spans.some(function(sp) { return i >= sp[0] && i <= sp[1]; });
+        if (!det) continue;
+        if (i >= DEF_S && i <= DEF_E) covered++; else extra++;
+      }
+      if (!spans.length) {
+        msg = '缺陷样本 · 阈值 ' + thr.toFixed(2) + ':一个区间都没检出——真实缺陷段 18–24 被整段漏检。阈值太高了,往左拖。';
+      } else if (covered === truthLen && extra === 0) {
+        msg = '缺陷样本 · 阈值 ' + thr.toFixed(2) + ':检出 ' + spanText(spans) + ',恰好框住真实缺陷段 18–24,一格不多一格不少——这个阈值正合适。';
+      } else if (covered === truthLen) {
+        msg = '缺陷样本 · 阈值 ' + thr.toFixed(2) + ':检出 ' + spanText(spans) + ',缺陷段 18–24 已完整框住,但有 ' + extra + ' 个正常位置被捎带进来(误检)——阈值偏低了。';
+      } else if (covered > 0 && extra === 0) {
+        msg = '缺陷样本 · 阈值 ' + thr.toFixed(2) + ':检出 ' + spanText(spans) + ',只框住缺陷段 18–24 的中间部分,漏掉 ' + (truthLen - covered) + ' 个边缘位置——缺陷边缘的师生分歧天生较小,想框全就把阈值再压低一点。';
+      } else if (covered > 0) {
+        msg = '缺陷样本 · 阈值 ' + thr.toFixed(2) + ':检出 ' + spanText(spans) + ',框住了缺陷段的一部分,同时有 ' + extra + ' 个正常位置误检——微调阈值,找到漏检与误检的平衡点。';
+      } else {
+        msg = '缺陷样本 · 阈值 ' + thr.toFixed(2) + ':检出的区间全是噪声,真实缺陷段 18–24 反而没框住——把阈值拖回中间试试。';
+      }
+    }
+    statusEl.textContent = msg;
+  }
+
+  function setScene(s) {
+    scene = s;
+    btnN.classList.toggle('primary', s === 'normal');
+    btnD.classList.toggle('primary', s === 'defect');
+    drawMain();
+    drawDiff();
+  }
+  btnN.addEventListener('click', function() { setScene('normal'); });
+  btnD.addEventListener('click', function() { setScene('defect'); });
+  thrEl.addEventListener('input', function() {
+    thrVal.textContent = parseFloat(thrEl.value).toFixed(2);
+    drawDiff();
+  });
+  setScene('defect');
+})();
+
+/* ============ 测验 ============ */
+function checkQuiz(btn, quizId) {
+  const quiz = document.getElementById(quizId);
+  const options = quiz.querySelectorAll('.quiz-option');
+  const isCorrect = btn.dataset.correct === 'true';
+  options.forEach(o => {
+    o.disabled = true;
+    o.style.pointerEvents = 'none';
+    o.style.opacity = '0.5';
+  });
+  btn.style.opacity = '1';
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  document.getElementById(
+    quizId + (isCorrect ? '-correct' : '-wrong')
+  ).classList.add('show');
+}
+
+/* ============ 配套练习开关 ============ */
+(function() {
+  const KEY = 'course-show-exercises';
+  const toggle = document.getElementById('code-toggle');
+  const section = document.getElementById('code-exercise');
+  if (!toggle || !section) return;
+  const saved = localStorage.getItem(KEY);
+  let show = saved === null ? true : saved === '1';
+  function apply() {
+    toggle.classList.toggle('active', show);
+    section.classList.toggle('hidden', !show);
+  }
+  apply();
+  toggle.addEventListener('click', () => {
+    show = !show;
+    localStorage.setItem(KEY, show ? '1' : '0');
+    apply();
+  });
+})();
+</script>
+
+<script>
+(function() {
+  'use strict';
+  var LESSON_TITLE = '第 09 课:师生蒸馏类方法';
+  var COURSE_NAME  = '缺陷检测:从深度学习基础到主流方法全景';
+  var toolbar, overlay, toastEl;
+  var hideToolbarTimer = null;
+  var selectedAnchorNode = null;
+  function init() {
+    createToolbar();
+    createDialog();
+    bindEvents();
+    restoreNotes();
+  }
+  function createToolbar() {
+    toolbar = document.createElement('div');
+    toolbar.className = 'selection-toolbar';
+    toolbar.innerHTML =
+      '<button class="sel-btn sel-btn-ask" data-action="ask">\u{1F4AC} 问 LLM</button>' +
+      '<button class="sel-btn sel-btn-modify" data-action="modify">\u{270F}\u{FE0F} 修改</button>' +
+      '<button class="sel-btn sel-btn-note" data-action="note">\u{1F4DD} 划线笔记</button>';
+    document.body.appendChild(toolbar);
+    toolbar.querySelector('[data-action="ask"]').onclick = onAsk;
+    toolbar.querySelector('[data-action="modify"]').onclick = onModify;
+    toolbar.querySelector('[data-action="note"]').onclick = onNote;
+  }
+  function createDialog() {
+    overlay = document.createElement('div');
+    overlay.className = 'sel-dialog-overlay';
+    overlay.innerHTML =
+      '<div class="sel-dialog">' +
+        '<h3 class="sel-dialog-title">\u{270F}\u{FE0F} 修改选中内容</h3>' +
+        '<div class="sel-dialog-field"><label class="sel-dialog-label">选中的原文:</label>' +
+          '<div class="sel-dialog-source" id="sel-source-text"></div></div>' +
+        '<div class="sel-dialog-field">' +
+          '<label class="sel-dialog-label" for="sel-modify-instruction">你希望改成什么样?</label>' +
+          '<textarea id="sel-modify-instruction" rows="4" placeholder="例如:把这段写得更容易理解一些 / 用更生动的比喻 / 补充细节…"></textarea></div>' +
+        '<div class="sel-dialog-actions">' +
+          '<button class="sel-btn-cancel" id="sel-cancel">取消</button>' +
+          '<button class="sel-btn-confirm" id="sel-copy-modify">\u{1F4CB} 复制到剪贴板</button></div></div>';
+    document.body.appendChild(overlay);
+    document.getElementById('sel-cancel').onclick = hideDialog;
+    document.getElementById('sel-copy-modify').onclick = onCopyModify;
+    overlay.onclick = function(e) { if (e.target === overlay) hideDialog(); };
+  }
+  function getSelectedText() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return '';
+    if (!document.body.contains(sel.getRangeAt(0).commonAncestorContainer)) return '';
+    return sel.toString().trim();
+  }
+  function getSectionLabel(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    while (el && el !== document.body) {
+      if (el.tagName === 'SECTION' || el.tagName === 'DIV') {
+        var h2 = el.querySelector(':scope > h2, :scope > h3');
+        if (h2) {
+          var txt = h2.textContent.replace(/\s+/g, ' ').trim();
+          return txt.length > 50 ? txt.substring(0, 50) + '…' : txt;
+        }
+      }
+      el = el.parentElement;
+    }
+    return '';
+  }
+  var NOTES_KEY = 'note-underlines::' + location.pathname;
+  function getContainerSections() {
+    return Array.prototype.slice.call(document.querySelectorAll('.container > section'));
+  }
+  function getSectionIndex(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    var container = document.querySelector('.container');
+    while (el && el.parentElement !== container) { el = el.parentElement; }
+    if (!el) return -1;
+    return getContainerSections().indexOf(el);
+  }
+  function loadNotes() {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveNoteEntry(entry) {
+    var notes = loadNotes();
+    notes.push(entry);
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function deleteNoteEntry(id) {
+    var notes = loadNotes().filter(function(n) { return n.id !== id; });
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function getTextNodesIn(root) {
+    var nodes = [];
+    (function walk(n) {
+      if (n.nodeType === Node.TEXT_NODE) { nodes.push(n); return; }
+      for (var i = 0; i < n.childNodes.length; i++) walk(n.childNodes[i]);
+    })(root);
+    return nodes;
+  }
+  function countOccurrenceIndex(root, range, text) {
+    var textNodes = getTextNodesIn(root);
+    var full = '', startAbs = -1, pos = 0;
+    for (var i = 0; i < textNodes.length; i++) {
+      if (textNodes[i] === range.startContainer) startAbs = pos + range.startOffset;
+      full += textNodes[i].nodeValue;
+      pos += textNodes[i].nodeValue.length;
+    }
+    if (startAbs === -1) return 0;
+    var idx = -1, count = 0;
+    while (true) {
+      var next = full.indexOf(text, idx + 1);
+      if (next === -1 || next >= startAbs) break;
+      idx = next;
+      count++;
+    }
+    return count;
+  }
+  function findRangeByOccurrence(root, text, occurrence) {
+    var textNodes = getTextNodesIn(root);
+    var full = textNodes.map(function(t) { return t.nodeValue; }).join('');
+    var idx = -1;
+    for (var c = 0; c <= occurrence; c++) {
+      idx = full.indexOf(text, idx + 1);
+      if (idx === -1) return null;
+    }
+    var startOffset = idx, endOffset = idx + text.length, pos = 0;
+    var range = document.createRange(), startSet = false, endSet = false;
+    for (var i = 0; i < textNodes.length; i++) {
+      var len = textNodes[i].nodeValue.length;
+      if (!startSet && startOffset <= pos + len) { range.setStart(textNodes[i], startOffset - pos); startSet = true; }
+      if (!endSet && endOffset <= pos + len) { range.setEnd(textNodes[i], endOffset - pos); endSet = true; break; }
+      pos += len;
+    }
+    return (startSet && endSet) ? range : null;
+  }
+  function wrapRangeAsNote(range, id) {
+    var span = document.createElement('span');
+    span.className = 'note-underline';
+    span.dataset.noteId = id;
+    var frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  function onNote() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (!document.body.contains(range.commonAncestorContainer)) return;
+    var text = getSelectedText();
+    if (!text) return;
+    var sectionIdx = selectedAnchorNode ? getSectionIndex(selectedAnchorNode) : -1;
+    var sections = getContainerSections();
+    var section = sectionIdx >= 0 ? sections[sectionIdx] : null;
+    var occurrence = section ? countOccurrenceIndex(section, range, text) : 0;
+    var id = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    try {
+      wrapRangeAsNote(range, id);
+      sel.removeAllRanges();
+      if (sectionIdx >= 0) saveNoteEntry({ id: id, sectionIdx: sectionIdx, text: text, occurrence: occurrence });
+      showToast('\u{1F4DD} 已添加划线笔记,再点一下可以取消');
+    } catch (e) {
+      showToast('⚠️ 这段选区暂时无法划线,换一段试试');
+    }
+    hideToolbar();
+  }
+  function removeNote(span) {
+    var id = span.dataset.noteId;
+    var parent = span.parentNode;
+    if (!parent) return;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
+    parent.normalize();
+    deleteNoteEntry(id);
+    showToast('\u{1F5D1}️ 已取消这条划线笔记');
+  }
+  function restoreNotes() {
+    var notes = loadNotes();
+    var sections = getContainerSections();
+    notes.forEach(function(n) {
+      var section = sections[n.sectionIdx];
+      if (!section) return;
+      var range = findRangeByOccurrence(section, n.text, n.occurrence);
+      if (!range) return;
+      try { wrapRangeAsNote(range, n.id); } catch (e) {}
+    });
+  }
+  function positionToolbar(cx, cy) {
+    clearTimeout(hideToolbarTimer);
+    toolbar.classList.add('visible');
+    var tw = toolbar.offsetWidth, th = toolbar.offsetHeight;
+    var left = cx - tw / 2, top = cy + 12;
+    if (left < 12) left = 12;
+    if (left + tw > innerWidth - 12) left = innerWidth - tw - 12;
+    if (top + th > innerHeight - 12) top = cy - th - 12;
+    toolbar.style.left = left + 'px';
+    toolbar.style.top = top + 'px';
+  }
+  function hideToolbar() {
+    clearTimeout(hideToolbarTimer);
+    hideToolbarTimer = setTimeout(function() { toolbar.classList.remove('visible'); }, 200);
+  }
+  function buildContext(section) {
+    var lines = ['## 课程上下文'];
+    lines.push('- 课程:' + COURSE_NAME);
+    lines.push('- 课时:' + LESSON_TITLE);
+    if (section) lines.push('- 章节:' + section);
+    lines.push('');
+    return lines.join('\n');
+  }
+  function onAsk() {
+    var text = getSelectedText();
+    if (!text) return;
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 我选中的内容\n\n' + text + '\n\n## 我的提问\n\n';
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并提问吧!');
+    hideToolbar();
+  }
+  function onModify() {
+    var text = getSelectedText();
+    if (!text) return;
+    document.getElementById('sel-source-text').textContent = text;
+    document.getElementById('sel-modify-instruction').value = '';
+    overlay.classList.add('visible');
+    hideToolbar();
+    setTimeout(function() { document.getElementById('sel-modify-instruction').focus(); }, 100);
+  }
+  function onCopyModify() {
+    var src = document.getElementById('sel-source-text').textContent;
+    var inst = document.getElementById('sel-modify-instruction').value.trim();
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 选中的原文\n\n' + src + '\n\n## 修改要求\n\n' +
+      (inst || '(用户未指定具体要求,请自行判断合理修改方向)');
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并请求修改吧!');
+    hideDialog();
+  }
+  function copyToClipboard(text, msg) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast(msg || '✅ 已复制到剪贴板'); }
+    catch (e) { showToast('⚠\u{FE0F} 未能自动复制,请按 Cmd+C 手动复制'); }
+    document.body.removeChild(ta);
+  }
+  function showToast(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'sel-toast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg;
+    toastEl.classList.add('visible');
+    clearTimeout(toastEl._hideTimer);
+    toastEl._hideTimer = setTimeout(function() { toastEl.classList.remove('visible'); }, 3500);
+  }
+  function hideDialog() { overlay.classList.remove('visible'); }
+  function bindEvents() {
+    document.addEventListener('mouseup', function(e) {
+      if (toolbar.contains(e.target) || overlay.contains(e.target)) return;
+      var text = getSelectedText();
+      if (text.length > 5) {
+        selectedAnchorNode = window.getSelection() ? window.getSelection().anchorNode : null;
+        positionToolbar(e.clientX, e.clientY);
+      } else { hideToolbar(); }
+    });
+    document.addEventListener('scroll', function() { toolbar.classList.remove('visible'); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { hideDialog(); toolbar.classList.remove('visible'); }
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!toolbar.contains(e.target) && !overlay.contains(e.target)) hideToolbar();
+    });
+    document.addEventListener('click', function(e) {
+      var note = e.target.closest && e.target.closest('.note-underline');
+      if (!note) return;
+      var sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().length > 0) return;
+      removeNote(note);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+</script>
+</body>
+</html>

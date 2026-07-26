@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 08 课 · 特征嵌入类方法(工业界主流) | 缺陷检测课程</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" media="print" onload="this.media='all'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<style>
+:root {
+  /* Anthropic 官方 Token(来自 anthropic-style-cn skill) */
+  --bg: #ECE9E0;
+  --surface: #F5F3EC;
+  --surface2: #E7E3D8;
+  --border: #D8D5CC;
+  --text: #141413;
+  --text-dim: #6B6860;
+  --accent: #D97757;
+  --accent2: #6A9BCC;
+  --good: #6A8A4F;
+  --bad: #C0453A;
+  --ink: #141413;
+  --ink-text: #F0EEE6;
+  --font-display: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-heading: 'Poppins', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217,119,87,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 15%, rgba(106,155,204,0.05) 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.85;
+  font-size: 16.5px;
+  text-spacing-trim: trim-start allow-end;
+  overflow-wrap: break-word;
+}
+
+/* ---- Hero ---- */
+.hero {
+  padding: 88px 24px 56px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero .lesson-tag {
+  display: inline-block;
+  padding: 7px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-bottom: 26px;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.3;
+  margin-bottom: 18px;
+  word-break: keep-all;
+}
+.hero .subtitle {
+  color: var(--text-dim);
+  font-size: 17px;
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ---- Settings bar ---- */
+.settings-bar {
+  max-width: 860px;
+  margin: 20px auto 0;
+  padding: 0 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-dim);
+  user-select: none;
+}
+.toggle-track {
+  width: 40px; height: 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.25s var(--ease);
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: all 0.25s var(--ease);
+}
+.toggle-wrap.active .toggle-track { background: var(--accent); border-color: var(--accent); }
+.toggle-wrap.active .toggle-track::after { left: 20px; background: #fff; }
+.toggle-wrap.active { color: var(--text); }
+
+/* ---- Layout ---- */
+.container { max-width: 860px; margin: 0 auto; padding: 24px 24px 96px; }
+section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+section:last-of-type { border-bottom: none; }
+h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  word-break: keep-all;
+}
+h2 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 28px 0 12px;
+}
+p { margin-bottom: 15px; }
+strong { color: var(--text); font-weight: 700; }
+em { color: var(--accent); font-style: normal; font-weight: 500; }
+ul, ol { margin: 0 0 15px 24px; }
+li { margin-bottom: 8px; }
+
+/* ---- Story card ---- */
+.story-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 20px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.05);
+}
+.story-card .story-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent2);
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+.story-card p:last-child { margin-bottom: 0; }
+
+/* ---- Insight box ---- */
+.insight-box {
+  background: linear-gradient(135deg, rgba(217,119,87,0.09), rgba(217,119,87,0.04));
+  border: 1px solid rgba(217,119,87,0.35);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.insight-box .insight-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+.insight-box p:last-child { margin-bottom: 0; }
+
+/* ---- Code block ---- */
+.code-block {
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.9;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--ink-text);
+}
+.code-block .cm { color: #9C9A92; }
+.code-block .kw { color: #E8A188; }
+.code-block .st { color: #A8C090; }
+
+/* ---- Compare grid ---- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.compare-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.compare-box h4 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.compare-box p { font-size: 14.5px; color: var(--text-dim); margin-bottom: 6px; }
+.compare-box p:last-child { margin-bottom: 0; }
+
+/* ---- Pipeline ---- */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 22px 0;
+}
+.pipeline-step {
+  flex: 1 1 130px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+}
+.pipeline-step .step-num {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-title {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+.pipeline-arrow { display: flex; align-items: center; color: var(--accent); font-size: 18px; }
+
+/* ---- Interactive demo shell ---- */
+.demo-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.06);
+}
+.demo-box .demo-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.demo-box .demo-hint { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.8; }
+.demo-status {
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-family: var(--font-heading);
+}
+.demo-btns { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.demo-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.demo-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.demo-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.demo-btn.primary:hover { filter: brightness(1.07); color: #fff; }
+.demo-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ---- Matrix grids (conv stepper) ---- */
+.mat-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 16px 0;
+}
+.mat-block { text-align: center; }
+.mat-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.mat-grid { display: grid; gap: 4px; justify-content: center; }
+.mat-cell {
+  width: 42px; height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: all 0.2s var(--ease);
+}
+.mat-cell.v3 { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
+.mat-cell.kpos { background: rgba(217,119,87,0.14); color: #B05C3F; border-color: rgba(217,119,87,0.45); font-weight: 700; }
+.mat-cell.kneg { background: rgba(106,155,204,0.14); color: #4A7BA8; border-color: rgba(106,155,204,0.5); font-weight: 700; }
+.mat-cell.kzero { color: var(--text-dim); }
+.mat-cell.win { box-shadow: 0 0 0 3px var(--accent); }
+.mat-cell.filled { background: rgba(217,119,87,0.13); color: var(--text); font-weight: 700; border-color: rgba(217,119,87,0.4); }
+.mat-cell.cur-out { box-shadow: 0 0 0 3px var(--accent); }
+.mat-op {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--text-dim);
+  padding-top: 60px;
+}
+.conv-calc {
+  background: var(--ink);
+  color: var(--ink-text);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.9;
+  min-height: 46px;
+}
+.conv-calc .hl { color: #E8A188; font-weight: 700; }
+
+/* ---- Filter demo ---- */
+.filter-canvases {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 14px 0;
+}
+.fc-block { text-align: center; }
+.fc-block canvas {
+  width: 264px; height: 264px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+  image-rendering: pixelated;
+  display: block;
+}
+.fc-cap {
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+.fc-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+/* ---- Receptive field viz ---- */
+.rf-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.rf-block { text-align: center; }
+.rf-grid { display: grid; gap: 3px; justify-content: center; }
+.rf-cell {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.rf-cell:hover { border-color: var(--accent); }
+.rf-cell.src { background: var(--accent); border-color: var(--accent); }
+.rf-cell.mid { background: rgba(217,119,87,0.5); border-color: rgba(217,119,87,0.5); }
+.rf-cell.field { background: rgba(217,119,87,0.18); border-color: rgba(217,119,87,0.3); }
+.rf-arrow {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  min-width: 64px;
+  line-height: 1.5;
+}
+.rf-arrow b { color: var(--accent); font-size: 16px; display: block; }
+
+/* ---- Quiz ---- */
+.quiz {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 18px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.quiz .quiz-q { font-family: var(--font-heading); font-weight: 500; margin-bottom: 14px; }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  line-height: 1.7;
+}
+.quiz-option:hover { border-color: var(--accent); transform: translateY(-1px); }
+.quiz-option.correct { border-color: var(--good); background: rgba(106,138,79,0.1); }
+.quiz-option.wrong { border-color: var(--bad); background: rgba(192,69,58,0.08); }
+.quiz-feedback {
+  display: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  margin-top: 6px;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok { background: rgba(106,138,79,0.09); border: 1px solid rgba(106,138,79,0.4); color: #4F6A3B; }
+.quiz-feedback.no { background: rgba(192,69,58,0.07); border: 1px solid rgba(192,69,58,0.35); color: var(--bad); }
+
+/* ---- Further reading ---- */
+.further-reading { padding: 44px 0; }
+.reading-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.reading-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 22px;
+  transition: all 0.2s var(--ease);
+}
+.reading-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+.reading-title a {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 15.5px;
+}
+.reading-title a:hover { text-decoration: underline; }
+.reading-meta {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.reading-desc { font-size: 14.5px; color: var(--text-dim); margin-top: 6px; }
+.further-reading-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 14.5px;
+}
+.further-reading-inline .fr-icon { flex-shrink: 0; }
+.further-reading-inline a { color: var(--accent); font-weight: 500; }
+
+/* ---- Exercise section ---- */
+#code-exercise.hidden { display: none; }
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 16px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.exercise-card h3 { margin-top: 0; }
+.todo-list { margin-top: 10px; }
+.todo-list li { font-size: 15px; }
+.todo-list code, p code, li code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #B05C3F;
+}
+
+/* ---- Lesson nav ---- */
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+}
+.lesson-nav a, .lesson-nav span {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+}
+.lesson-nav span { color: var(--text-dim); }
+.lesson-nav a:hover { text-decoration: underline; }
+
+/* ---- Selection toolbar ---- */
+.selection-toolbar {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.15);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.selection-toolbar.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.sel-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.sel-btn:hover { border-color: var(--accent); background: var(--bg); }
+.sel-btn:active { transform: scale(0.96); }
+.sel-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(20,20,19,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sel-dialog-overlay.visible { opacity: 1; pointer-events: auto; }
+.sel-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(20,20,19,0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sel-dialog-title { font-family: var(--font-heading); font-size: 20px; font-weight: 500; margin-bottom: 20px; }
+.sel-dialog-field { margin-bottom: 16px; }
+.sel-dialog-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.sel-dialog-source {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.sel-dialog textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+}
+.sel-dialog textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,87,0.2); }
+.sel-dialog textarea::placeholder { color: var(--text-dim); }
+.sel-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.sel-btn-cancel {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+.sel-btn-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-confirm:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.sel-btn-confirm:active { transform: scale(0.97); }
+.sel-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 100001;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--ink-text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 24px rgba(20,20,19,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+}
+.sel-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.note-underline {
+  background: rgba(255, 212, 59, 0.45);
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.note-underline:hover { background: rgba(255, 212, 59, 0.65); }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 26px; }
+  .pipeline-arrow { display: none; }
+  .mat-cell { width: 34px; height: 34px; font-size: 12px; }
+  .rf-cell { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ---- 第 08 课新增:方法对比表 ---- */
+.table-wrap {
+  overflow-x: auto;
+  margin: 20px 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.compare-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 680px; }
+.compare-table th, .compare-table td {
+  padding: 11px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.65;
+}
+.compare-table th {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  background: var(--surface2);
+  white-space: nowrap;
+}
+.compare-table tr:last-child td { border-bottom: none; }
+.compare-table td:first-child { font-family: var(--font-heading); font-weight: 500; white-space: nowrap; }
+.compare-table .tab-good { color: var(--good); font-weight: 700; }
+.compare-table .tab-bad { color: var(--bad); font-weight: 700; }
+.compare-table .tab-dim { color: var(--text-dim); }
+
+/* ---- 第 08 课新增:patch 热力图 + kNN 检索步进 ---- */
+.pc-wrap {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  margin: 16px 0;
+}
+.pc-left { flex: 0 1 auto; }
+.pc-right { flex: 1 1 300px; max-width: 400px; min-width: 270px; }
+.pc-grid { display: grid; grid-template-columns: repeat(8, 38px); gap: 4px; justify-content: center; }
+.pc-cell {
+  width: 38px; height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+  transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease);
+}
+.pc-cell:hover { transform: scale(1.08); border-color: var(--accent); }
+.pc-cell.sel { box-shadow: 0 0 0 3px var(--accent); }
+.pc-gradbar {
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: linear-gradient(90deg, #FAF9F5, #D97757);
+  margin: 14px auto 4px;
+  max-width: 332px;
+}
+.pc-gradlabels {
+  display: flex;
+  justify-content: space-between;
+  max-width: 332px;
+  margin: 0 auto;
+  font-family: var(--font-heading);
+  font-size: 11.5px;
+  color: var(--text-dim);
+}
+.pc-imgscore {
+  text-align: center;
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+  margin-top: 10px;
+  color: var(--text);
+}
+.pc-imgscore b { color: var(--accent); }
+.pc-query {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 13px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.pc-query b { color: #B05C3F; }
+.pc-bank { display: flex; flex-direction: column; gap: 6px; }
+.pc-bank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: #FAF9F5;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  transition: all 0.2s var(--ease);
+}
+.pc-bank-row .pc-idx { color: var(--text-dim); font-size: 11px; }
+.pc-bank-row .pc-d { margin-left: auto; font-weight: 700; color: #B05C3F; min-width: 44px; text-align: right; }
+.pc-bank-row.cur { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(217,119,87,0.3); }
+.pc-bank-row.best { border-color: var(--good); background: rgba(106,138,79,0.12); }
+@media (max-width: 640px) {
+  .pc-grid { grid-template-columns: repeat(8, 30px); }
+  .pc-cell { width: 30px; height: 30px; font-size: 8px; }
+}
+
+/* ===== mobile adaptation (injected, uniform across course) ===== */
+@media (max-width: 640px) {
+  body { font-size: 15.5px; }
+  .container { padding: 16px 16px 72px; }
+  .hero { padding: 52px 18px 38px; }
+  .hero .subtitle { font-size: 15.5px; }
+  section { padding: 32px 0; }
+  h2 { font-size: 22px; }
+  h2 .num { width: 30px; height: 30px; font-size: 14px; }
+  .demo-box { padding: 16px 14px; }
+  canvas { max-width: 100%; height: auto !important; }
+  .fc-block canvas { width: 100% !important; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .code-block { font-size: 11.5px; padding: 13px 14px; line-height: 1.75; }
+  .slider-row { flex-wrap: wrap; }
+  .slider-row label { min-width: 0; flex: 1 1 100%; }
+  .lesson-nav { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .quiz { padding: 16px 16px; }
+  .quiz-option { font-size: 14px; padding: 11px 12px; }
+  .demo-btns .demo-btn, .demo-btn { padding: 9px 15px; font-size: 13px; }
+  .story-card, .insight-box, .exercise-card { padding: 16px 16px; }
+  .settings-bar { padding: 0 16px; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bp-diagram { font-size: 12px; }
+  .bp-node { min-width: 66px; padding: 8px 8px; }
+  .mat-op { padding-top: 40px; }
+  .selection-toolbar { max-width: calc(100vw - 16px); flex-wrap: wrap; }
+}
+@media (max-width: 400px) {
+  .mat-cell { width: 30px; height: 30px; font-size: 11px; }
+  .rf-cell { width: 17px; height: 17px; }
+  .mat-grid { gap: 3px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="lesson-tag">缺陷检测课程 · 第 08 课</div>
+  <h1>特征嵌入类方法(工业界主流)</h1>
+  <p class="subtitle">一次训练都不做——用 ImageNet 预训练特征给"正常"建档案,新样本查档案看偏不偏。这是当今产线上的默认答案。</p>
+</div>
+
+<div class="settings-bar">
+  <label class="toggle-wrap active" id="code-toggle">
+    <span>配套练习</span>
+    <div class="toggle-track"></div>
+  </label>
+</div>
+
+<div class="container">
+
+<!-- ============ §0 ============ -->
+<section>
+  <h2><span class="num">0</span> 快速回顾</h2>
+  <p>本课要收割前面埋下的两颗种子,并接住上一课留下的难题:</p>
+  <ul>
+    <li><strong>第 02 课的姿势③"纯特征提取"</strong>:迁移学习的三种姿势里最省事的一种——骨干冻结,连任务头都不接,直接抽中间层特征做统计建模,<em>一次训练都不做</em>。当时说"到第 8 课它就是主角",现在兑现。</li>
+    <li><strong>第 02 课的感受野</strong>:特征图上每个位置对应原图的一块区域;浅层看细节、深层看语义。本课马上用它把整张图变成一张"patch 特征网格"。</li>
+    <li><strong>第 07 课重构类的命门</strong>:一是网络泛化太好,把没见过的缺陷也"顺手"重构了出来,差异图不亮;二是在<em>像素空间</em>里比差异,光照抖动、噪声、纹理错位这些无害失真全都会假报警。本课的方法根本不重构图像——从源头绕开这两条命门。</li>
+  </ul>
+</section>
+
+<!-- ============ §1 ============ -->
+<section>
+  <h2><span class="num">1</span> 核心转念:别在像素里比,去特征空间比</h2>
+
+  <p>上一课判断异常的逻辑是"重构一张图,在像素空间对比差异"。但像素是个糟糕的比较空间:同一个正常工件连拍两张,光照抖一点、传感器噪声换一批、金属纹理的颗粒错开半个像素,像素差就能大到和真缺陷一个量级。在这样的空间里画"正常 / 异常"的分界线,注定摇摇晃晃。</p>
+
+  <p>本课的转念只有一句话:<strong>换到特征空间去比</strong>。第 02 课说过,ImageNet 预训练 CNN 的中间层特征是一部"现成的视觉词典":卷积加池化天然抹平小噪声和小位移(<em>对噪声鲁棒</em>),层层组合又让特征带上语义——边缘、纹理、部件(<em>带语义</em>)。两个"看上去一样"的正常区域,哪怕像素相差不小,特征向量也几乎重合;而一道划痕的特征,会明显偏离所有正常纹理的特征。判断"偏不偏",在这个空间里稳得多。</p>
+
+  <h3>把图像切成 patch 网格</h3>
+  <p>具体怎么把一张图变成一组可比较的特征?答案是按 <em>patch</em>(小块)来看。但不是真的把图裁成小块逐个送进网络——而是<strong>整张图过一次冻结的骨干网络,取中间层特征图</strong>。特征图的空间尺寸是 h×w(比如 28×28),每个空间位置是一个 C 维向量。回收第 02 课的感受野:这个位置的向量,描述的正是原图上以它为中心的一小块区域。于是一张图 = h×w 个 patch,每个 patch 一个特征向量,天然排成网格。</p>
+
+  <h3>多层拼接:细节 + 语义两只眼</h3>
+  <p>用哪一层的特征?小划痕需要浅层的高分辨率细节,大面积污染需要深层的大视野语义——所以标准做法是取两三个中间层(如 ResNet 的 layer2、layer3),在同一位置对齐后<strong>拼接成一个更长的向量</strong>:细节和语义两只眼一起看。太深的层反而少用:它们偏向 ImageNet 的分类语义("这是猫还是狗"),对工业纹理帮助不大。</p>
+
+  <div class="insight-box">
+    <div class="insight-label">"零训练"的确切含义</div>
+    <p>从这里到本课结束,不会再出现"训练"两个字:骨干是冻结的,没有损失函数,没有梯度下降。接下来三个方法(SPADE → PaDiM → PatchCore)做的全部事情只有两类:<strong>统计</strong>(算均值、方差)或<strong>存储与检索</strong>(建库、查库)。范式从"训练一个懂缺陷的模型",变成了"用一个懂图像的模型,给正常建档案"——这就是它们能在产线上"几十张正常样本、几分钟建档开工"的根本原因。</p>
+  </div>
+</section>
+
+<!-- ============ §2 ============ -->
+<section>
+  <h2><span class="num">2</span> 最朴素的实现:SPADE 的"检索即检测"</h2>
+
+  <p>有了 patch 特征,最朴素的做法一步就能想到:把<strong>所有正常样本的所有 patch 特征</strong>,原封不动存进一张大表——<em>记忆库</em>(memory bank)。"正常"的定义,就是这张表本身:凡是表里出现过(或和表里某条很像)的,都算正常。</p>
+
+  <p>推理时,新图像的每个 patch 特征去库里查<em>最近邻</em>:离它最近的那条库记录有多远,<strong>这个距离就是该 patch 的异常分</strong>。距离小,说明"库里见过长这样的",正常;距离大,说明"正常档案里找不到像它的",异常。把每格分数按位置铺回去是像素级热力图;取全图最大分,是图像级分数。这条"检索即检测"的路线,源头就是 SPADE(它还配了一步图像级预筛:先用全局特征找出最像的 K 张正常图,只在它们的 patch 里检索)。</p>
+
+  <div class="code-block">patch 异常分 = 该 patch 特征到记忆库的最近邻距离
+    分 ≈ 0  → 库里有几乎一样的  → 正常
+    分很大  → 全库都不像它      → 异常
+图像级分数 = 全图 patch 分的最大值   <span class="cm"># 一处异常即 NG</span></div>
+
+  <p>思想干净,但直接上产线会撞上两个工程问题:</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>问题① 库太大,查得太慢</h4>
+      <p>一张 224×224 的图就有近千个 patch;几百张正常图攒下来,库里是几十万到上百万条特征。</p>
+      <p>推理时<strong>每个 patch 都要和全库算距离</strong>。产线要毫秒级,这种查法撑不住。</p>
+    </div>
+    <div class="compare-box">
+      <h4>问题② "正常"是分布,不是点</h4>
+      <p>同一位置(比如"螺丝孔左上角")在不同正常样本上的特征天然有波动:有的维度晃得厉害,有的纹丝不动。</p>
+      <p>只拿"最近的一个点"量距离,把这些<strong>波动形状的信息</strong>全丢了。</p>
+    </div>
+  </div>
+
+  <p>接下来的两个方法,各接走一个问题:<strong>PaDiM</strong> 把"点的集合"压缩成"分布",解决问题②;<strong>PatchCore</strong> 把"全量库"压缩成"核心子集",解决问题①——并顺手成为当今的默认首选。</p>
+</section>
+
+<!-- ============ §3 ============ -->
+<section>
+  <h2><span class="num">3</span> PaDiM:给每个位置建一份高斯档案</h2>
+
+  <p>PaDiM 的思路:不存点了,给 patch 网格的<strong>每个位置</strong>建一份统计档案。前提是工件在图里的摆放是对齐的——位置 (i, j) 在每张图里都对应工件的同一个部位。</p>
+
+  <p><strong>建档</strong>:拿 N 张正常图,收集它们在位置 (i, j) 的 N 个特征向量,估计均值 μ<sub>ij</sub> 和协方差 Σ<sub>ij</sub>——一个多维高斯分布,完整描述了"这个部位的正常长什么样、往哪些方向晃、晃多大"。h×w 个位置,h×w 份档案,这叫<em>位置感知</em>。</p>
+
+  <p><strong>打分</strong>:新样本在位置 (i, j) 的特征 x 偏离档案多远,用<em>马氏距离</em>(Mahalanobis distance)来量。这是本课第一个需要原子拆解的概念。</p>
+
+  <h3>原子拆解:马氏距离——按分布的形状量距离</h3>
+  <p>为什么不用熟悉的欧氏距离?因为欧氏对每一维一视同仁,而"正常波动"恰恰不是各维平等的:</p>
+  <ul>
+    <li><strong>各维尺度不同</strong>:有的特征维天生方差大,偏离 2 只是寻常波动;有的维极其稳定,偏离 0.5 都很反常。</li>
+    <li><strong>维度之间相关</strong>:维度 A 高时维度 B 往往也高。"顺着相关方向"的偏离很常见,"逆着"同样大小的偏离才稀奇。</li>
+  </ul>
+  <p>马氏距离的做法一句话说清:<strong>先把分布"揉圆"(白化),再量普通的欧氏距离</strong>。每一维除以自己的标准差(消掉尺度差异),再旋转消掉维度间的相关,椭圆形的正常分布就变成了标准圆;在这个圆的世界里,普通距离才公平。公式 d<sub>M</sub>(x) = √((x−μ)<sup>T</sup> Σ<sup>−1</sup> (x−μ)),其中 Σ<sup>−1</sup> 干的就是"揉圆"这件事。</p>
+
+  <div class="code-block">最小数值例子(取对角协方差,先不管相关):
+档案:μ = [0, 0],两维方差 = [4, 1](标准差 = [2, 1])
+
+新样本 x = [2, 0]:
+  欧氏 = √(2² + 0²)     = <span class="kw">2.0</span>
+  马氏 = √(2²/4 + 0²/1) = √1 = <span class="kw">1.0</span>  <span class="cm"># 第一维本来就爱晃,偏 2 只是 1 个标准差</span>
+
+换成 x = [0, 2]:
+  欧氏 = √(0² + 2²)     = <span class="kw">2.0</span>  <span class="cm"># 欧氏眼里:和上面一样远</span>
+  马氏 = √(0²/4 + 2²/1) = <span class="kw">2.0</span>  <span class="cm"># 稳定的第二维上偏 2 = 2 个标准差,反常得多</span></div>
+
+  <p>同样"偏 2":落在爱晃的维度上不算事,落在稳定的维度上就是警报。马氏距离把"这个位置的正常波动范围"考虑进了距离本身——这正是 SPADE 问题②想要的答案。每个位置算一个马氏距离,铺成热力图;全图取 max 得图像分。</p>
+
+  <div class="insight-box">
+    <div class="insight-label">PaDiM 的命门:位置对齐</div>
+    <p>档案是<strong>按位置</strong>建的。工件平移或旋转几个像素,位置 (i, j) 对应的部位就变了——拿"螺丝孔"的特征去查"平面区"的档案,满图都是假警报。有夹具定位、拍摄严格对齐的产线用它没问题;摆放随意的场景,就要看下一位主角了。(另外,每个位置存一份 μ 和 Σ 内存不小,实际实现要随机抽取一部分特征维降维。)</p>
+  </div>
+</section>
+
+<!-- ============ §4 ============ -->
+<section>
+  <h2><span class="num">4</span> PatchCore:当今的默认首选</h2>
+
+  <p>PatchCore 回到 SPADE 的"库 + 检索"路线——检索天然不挑位置——然后用两个改进把这条路线做到<strong>又快又准</strong>,从 2022 年发表至今一直是工业界新任务的默认起点。先看全景,再逐步拆:</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">STEP 1</div>
+      <div class="step-title">建全局记忆库</div>
+      <div class="step-desc">所有正常 patch 特征<br>进同一个库,不记位置</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 2</div>
+      <div class="step-title">coreset 贪心降采样</div>
+      <div class="step-desc">选 1%-10% 的代表点<br>覆盖整个分布</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 3</div>
+      <div class="step-title">kNN 打分</div>
+      <div class="step-desc">每个 patch 查近邻<br>距离即分数,全图 max 即图像分</div>
+    </div>
+  </div>
+
+  <h3>第①步:全局 memory bank——对错位天然鲁棒</h3>
+  <p>所有正常图的所有 patch 特征进<strong>同一个全局库,不记录位置</strong>。查询时,一个 patch 可以和库里任何位置的特征匹配:工件挪了半厘米,"螺丝孔"的 patch 照样能匹配上库里别的图的"螺丝孔"特征。PaDiM 的对齐命门,在这里从结构上就不存在。(细节:PatchCore 还会把每个位置和它的邻域聚合一次,让 patch 特征带上一圈上下文;课程里记住"全局库"这个主设计即可。)</p>
+
+  <h3>第②步:coreset 贪心降采样——1% 的点守住 100% 的疆域</h3>
+  <p>全局库继承了 SPADE 的老毛病:太大。但库里大量特征是<strong>冗余</strong>的——正常纹理翻来覆去就那几种,成千上万条几乎重合。coreset 的目标:选出一小撮"代表点",使库里任何一条特征到最近代表点都不远——用 1%-10% 的点,保住对整个分布的覆盖。</p>
+  <p>怎么选?贪心的<em>最远点采样</em>,规则一句话:<strong>每一轮,选"到已选集合的最近距离"最大的那个点</strong>。拿 5 个二维点手推一遍(选 3 个,从 P0 起步):</p>
+
+  <div class="code-block">点:P0=(0,0)  P1=(0.1,0)  P2=(5,5)  P3=(5,5.1)  P4=(10,0)
+
+第 1 轮:起点 P0 入选                          已选 {P0}
+第 2 轮:各候选点到 {P0} 的距离
+        P1=0.10   P2=7.07   P3=7.14   P4=<span class="kw">10.00</span>
+        → 最远的是 P4,入选                    已选 {P0, P4}
+第 3 轮:各候选点到 {P0, P4} 的最近距离
+        P1 = min(0.10, 9.90) = 0.10
+        P2 = min(7.07, 7.07) = 7.07
+        P3 = min(7.14, 7.14) = <span class="kw">7.14</span>
+        → 最远的是 P3,入选                    已选 {P0, P4, P3}
+
+结果:{P0, P4, P3} 分守左下、右下、右上三块疆域
+      P1 和 P0 几乎重合,纯冗余,永远轮不到它</div>
+
+  <p>每一步都在填补"当前覆盖最薄弱的空洞"。这正是随机抽样做不到的:随机按密度抽,会把密集区抽一大把、把稀疏但重要的边界点漏掉——而"正常的边界"恰恰是异常检测最需要守住的地方。</p>
+
+  <h3>第③步:推理——查近邻,距离即分数</h3>
+  <p>新图的每个 patch 特征到精简库里查 k 近邻(k 取 1 或很小的数),最近邻距离(PatchCore 还做一步邻域重加权,让"连它的近邻都很孤僻"的点分数更高)就是 patch 分;分数铺回位置得热力图,全图取 max 得图像分。库缩小了一两个数量级,再配上近似最近邻索引,推理毫秒级。</p>
+
+  <p>成绩:MVTec AD 基准上图像级 AUROC <strong>99%+</strong>,像素级定位同样顶尖。工业界爱它的理由,每一条都很实际:</p>
+  <ul>
+    <li><strong>零训练</strong>:不碰梯度、没有调参地狱;换一条产品线 = 重建一次库,几分钟的事。</li>
+    <li><strong>吃得少</strong>:几十张正常样本就能用,极端情况十几张也有像样的精度——完美适配"缺陷样本稀缺、正常样本管够"的工业现实(第 04 课的核心矛盾)。</li>
+    <li><strong>对错位鲁棒</strong>:全局库,见第①步。</li>
+    <li><strong>可解释</strong>:某个 patch 分数高,可以反查"它最像库里哪个正常 patch、差多远"——给产线工程师一个看得见的证据,而不是一个黑盒分数。</li>
+  </ul>
+
+  <div class="further-reading-inline">
+    <span class="fr-icon">📖</span>
+    <span>不想自己造轮子?本课三个方法在工业库 <a href="https://arxiv.org/abs/2202.08341" target="_blank" rel="noopener">anomalib</a> 里都是开箱即用的一行配置,第 13 课工程实践会正式请它出场。</span>
+  </div>
+</section>
+
+<!-- ============ §5 ============ -->
+<section>
+  <h2><span class="num">5</span> 亲手跑一遍:patch 热力图 + kNN 检索步进</h2>
+
+  <p>下面这个 64 格的小模型,就是 PatchCore 推理的全部逻辑:左边是一张图的 patch 网格(每格已按异常分染色),右边是记忆库——点一个格子,亲手把它的分数一步步查出来。</p>
+
+  <div class="demo-box">
+    <div class="demo-title">🔥 交互:给每个 patch 查档案打分</div>
+    <div class="demo-hint">左边是 8×8 patch 网格,颜色 = 异常分(白 → 橙),<strong>右上角 2×2 是内置的"划痕区"</strong>,其余为正常纹理。<strong>点击任意格子</strong>,右侧演示 PatchCore 给它打分的全过程:该格特征和记忆库(6 条正常特征,已 coreset 精简)逐条算距离 → 取最小值即该格分数。先点一个白格、再点一个橙格,对比两次检索的结局。(特征取 2 维便于跟算,距离用欧氏,数值全部程序内置、可复现。)</div>
+    <div class="pc-wrap">
+      <div class="pc-left">
+        <div class="mat-label">8×8 PATCH 网格(点击格子)</div>
+        <div class="pc-grid" id="pc-grid"></div>
+        <div class="pc-gradbar"></div>
+        <div class="pc-gradlabels"><span>0 = 正常</span><span>4+ = 异常</span></div>
+        <div class="pc-imgscore" id="pc-imgscore"></div>
+      </div>
+      <div class="pc-right" id="pc-knn">
+        <div class="mat-label">KNN 检索步进(k=1)</div>
+        <div class="pc-query" id="pc-query">先点击左侧一个格子。</div>
+        <div class="pc-bank" id="pc-bank"></div>
+        <div class="conv-calc" id="pc-calc">点「下一步」开始逐条算距离。</div>
+        <div class="demo-btns">
+          <button class="demo-btn primary" id="pc-next">下一步</button>
+          <button class="demo-btn" id="pc-run">一键算完</button>
+          <button class="demo-btn" id="pc-reset">重置本格</button>
+        </div>
+      </div>
+    </div>
+    <div class="demo-status" id="pc-status">点击左侧任意格子开始。</div>
+  </div>
+
+  <p>把两次检索放在一起看:正常格在库里总能找到"近亲",分数≈0;划痕格把 6 条库记录问了个遍,最近的也差得远,分数>3.7。<strong>两类分数之间隔着一条鸿沟,阈值随便画在中间都对</strong>——没有训练、没有魔法,只有"查档案、量距离"。真实的 PatchCore 只是把 2 维特征换成几百维、6 条库记录换成几万条、64 格换成几千格,逻辑一个字都不用改。</p>
+</section>
+
+<!-- ============ §6 ============ -->
+<section>
+  <h2><span class="num">6</span> 三个方法一张表</h2>
+
+  <p>把本课三个方法放在一起,最后一行放上一课的重构类作参照:</p>
+
+  <div class="table-wrap">
+    <table class="compare-table">
+      <tr>
+        <th>方法</th>
+        <th>给"正常"建模的方式</th>
+        <th>训练?</th>
+        <th>位置敏感?</th>
+        <th>内存</th>
+        <th>速度</th>
+        <th>精度(MVTec 图像级)</th>
+      </tr>
+      <tr>
+        <td>SPADE</td>
+        <td>全量 patch 特征库 + kNN 检索</td>
+        <td class="tab-good">零训练</td>
+        <td>低(全位置检索)</td>
+        <td class="tab-bad">大(全量特征)</td>
+        <td class="tab-bad">慢(全库检索)</td>
+        <td>≈85.5%</td>
+      </tr>
+      <tr>
+        <td>PaDiM</td>
+        <td>逐位置高斯档案(μ, Σ)+ 马氏距离</td>
+        <td class="tab-good">零训练</td>
+        <td class="tab-bad">高(必须对齐)</td>
+        <td>中-大(每位置一份档案)</td>
+        <td class="tab-good">快</td>
+        <td>≈97.9%</td>
+      </tr>
+      <tr>
+        <td>PatchCore</td>
+        <td>coreset 精简全局库 + kNN 检索</td>
+        <td class="tab-good">零训练</td>
+        <td class="tab-good">低(全局库)</td>
+        <td class="tab-good">小(1%-10% 库)</td>
+        <td class="tab-good">快</td>
+        <td class="tab-good">≈99.1%</td>
+      </tr>
+      <tr>
+        <td class="tab-dim">重构类(第 07 课)</td>
+        <td class="tab-dim">训练 AE 重构图像,比像素差异</td>
+        <td class="tab-bad">要训练</td>
+        <td class="tab-dim">低</td>
+        <td class="tab-dim">小(网络权重)</td>
+        <td class="tab-dim">快</td>
+        <td class="tab-dim">通常明显更低且不稳</td>
+      </tr>
+    </table>
+  </div>
+  <p style="font-size:13.5px;color:var(--text-dim)">AUROC 数字取自 PatchCore 论文的汇总表(WideResNet-50 骨干,MVTec AD 15 类平均);不同实现略有出入,但量级关系是稳定的。</p>
+</section>
+
+<!-- ============ §7 ============ -->
+<section>
+  <h2><span class="num">7</span> 局限与边界</h2>
+
+  <p>特征嵌入类不是万能钥匙,它的边界清楚地写在它的前提里:</p>
+  <ul>
+    <li><strong>域差距</strong>:整套方法压在"ImageNet 特征能描述你的图像"这一条上。自然图像练出的词典,遇到差得太远的成像(X 光、超声、特殊材质的微观纹理)会"词穷"——正常和异常在特征空间里挤成一团,查档案就失灵。补救方向:换领域更近的骨干,或用自监督预训练。</li>
+    <li><strong>对齐与几何变化</strong>:PaDiM 对错位高度敏感;PatchCore 对平移鲁棒,但大角度旋转、剧烈尺度变化仍会让 patch 特征对不上库。</li>
+    <li><strong>逻辑异常无能为力</strong>:零件每一块都正常,但装错了位置、装反了、少装了一个——每个 patch 都能在库里查到近亲,分数全低,整图却是次品。局部外观检索,管不了全局逻辑;MVTec LOCO 数据集专考这类题,第 13 课再展开。</li>
+  </ul>
+
+  <div class="insight-box">
+    <div class="insight-label">下一课预告</div>
+    <p>建库检索是"把正常<strong>记</strong>下来";还有一条不建库的路——知识蒸馏:让一个学生网络在正常样本上模仿老师(预训练网络)的特征,学生只学会了"正常"的抄法;推理时老师、学生各算一遍,<strong>抄不像的地方就是异常</strong>。下一课:师生蒸馏类方法。</p>
+  </div>
+</section>
+
+<!-- ============ 测验 ============ -->
+<section>
+  <h2><span class="num">✓</span> 自我检验</h2>
+  <p>四道题,检查本课的核心概念是否立住了。</p>
+
+  <div class="quiz" id="quiz1">
+    <div class="quiz-q">Q1 · 特征嵌入类方法号称"零训练",它靠什么代替了训练?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">A. 用海量缺陷样本做数据增强,省去了训练轮数</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz1')">B. 冻结 ImageNet 预训练骨干抽特征,在特征上只做统计建模或建库检索</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">C. 用极大的学习率把训练压缩到一个 epoch 内完成</button>
+    <div class="quiz-feedback ok" id="quiz1-correct">✔ 正确。§1 的核心:骨干冻结,全程没有损失函数和梯度下降;所谓"建档案"只是算均值/协方差(PaDiM)或存库+检索(SPADE / PatchCore)。预训练特征本身已经够好,方法只负责"查"。</div>
+    <div class="quiz-feedback no" id="quiz1-wrong">✘ 回看 §1 的"'零训练'的确切含义":这族方法从头到尾不做梯度下降,靠的是 ImageNet 预训练特征 + 统计/检索,和增强或学习率都无关。</div>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-q">Q2 · 马氏距离比欧氏距离多考虑了什么?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">A. 特征向量的维度数量,维度越多距离越大</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz2')">B. 分布的形状:各维的波动尺度不同,维度之间还有相关</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">C. patch 在图像里的位置坐标</button>
+    <div class="quiz-feedback ok" id="quiz2-correct">✔ 正确。§3 的数值例子:方差 [4,1] 时,x=[2,0] 的欧氏是 2.0、马氏只有 1.0——在爱晃的维度上偏 2 不稀奇;换到稳定维度马氏立刻翻倍。马氏 = 先按 Σ⁻¹"揉圆"分布,再量距离。</div>
+    <div class="quiz-feedback no" id="quiz2-wrong">✘ 回看 §3 的原子拆解:欧氏对每一维一视同仁;马氏把"各维方差不同 + 维度间相关"(分布形状)算进距离,先白化再量。和维度数量、位置坐标无关。</div>
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-q">Q3 · coreset 贪心降采样,每一轮选进来的是什么点?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">A. 离已选集合最近的点,保证代表点彼此相似</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz3')">B. 到已选集合的最近距离最大的点,填补覆盖最薄弱的空洞</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">C. 随机抽一个点,保证采样无偏</button>
+    <div class="quiz-feedback ok" id="quiz3-correct">✔ 正确。§4 第②步的手推:第 2 轮选了离 P0 最远的 P4,第 3 轮选了 P3;和 P0 几乎重合的冗余点 P1 永远轮不到。每一步都最大化覆盖——这叫最远点采样。</div>
+    <div class="quiz-feedback no" id="quiz3-wrong">✘ 回看 §4 第②步的手推例子:规则是"谁离已选集合最远,谁入选"。选最近的等于反复挑冗余点;随机抽会按密度采样,漏掉稀疏但关键的分布边界。</div>
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-q">Q4 · PatchCore 比 PaDiM 更能容忍"工件摆放偏移",根本原因是?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">A. PatchCore 的特征维度更高,信息更丰富</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">B. PatchCore 在建库时做了旋转平移的数据增强</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz4')">C. PatchCore 的库是全局的、不绑定位置,patch 能和库中任何位置的特征匹配;PaDiM 的高斯档案逐位置建立,必须对齐</button>
+    <div class="quiz-feedback ok" id="quiz4-correct">✔ 正确。§3 结尾与 §4 第①步的对照:PaDiM 拿"螺丝孔"特征查"平面区"档案会满图误报;PatchCore 的全局 memory bank 不记录位置,错位后"螺丝孔"照样匹配上库里的"螺丝孔"。</div>
+    <div class="quiz-feedback no" id="quiz4-wrong">✘ 和维度高低、数据增强都无关。回看 §4 第①步:全局库不记录位置,这个结构性设计让错位天然不致命;而 PaDiM(§3)的档案按位置绑定,错位就是查错档案。</div>
+  </div>
+</section>
+
+<!-- ============ 延伸阅读 ============ -->
+<section class="further-reading">
+  <h2><span class="num">✦</span> 延伸阅读</h2>
+  <p>按本课叙事顺序排列——三篇方法原文加一个工程库:</p>
+  <div class="reading-list">
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2005.02357" target="_blank" rel="noopener">SPADE: Sub-Image Anomaly Detection with Deep Pyramid Correspondences</a></div>
+      <div class="reading-meta">arXiv 2005.02357 · Cohen &amp; Hoshen, 2020</div>
+      <div class="reading-desc">kNN 检索路线的源头:全量特征库 + 多层金字塔对应。本课 §2 的完整版,读它能看到"检索即检测"最初的样子。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2011.08785" target="_blank" rel="noopener">PaDiM: a Patch Distribution Modeling Framework for Anomaly Detection and Localization</a></div>
+      <div class="reading-meta">arXiv 2011.08785 · Defard et al., 2020</div>
+      <div class="reading-desc">逐位置高斯 + 马氏距离的原始论文,§3 的出处;文中还有随机降维的消融实验,解释了为什么随机抽维就够。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2106.08265" target="_blank" rel="noopener">Towards Total Recall in Industrial Anomaly Detection(PatchCore)</a></div>
+      <div class="reading-meta">arXiv 2106.08265 · Roth et al., CVPR 2022</div>
+      <div class="reading-desc">本课主角:全局库 + coreset + kNN 三件套,MVTec AD 图像级 AUROC 99.1%。工业界默认首选的出处,少样本实验(16 张正常图)也在这篇里。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2202.08341" target="_blank" rel="noopener">Anomalib: A Deep Learning Library for Anomaly Detection</a></div>
+      <div class="reading-meta">arXiv 2202.08341 · Akcay et al., 2022</div>
+      <div class="reading-desc">把本课全部方法(以及后面几课的大多数方法)做成开箱即用的工业库。想动手,直接从它开始;第 13 课工程实践的主角。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 配套练习 ============ -->
+<section id="code-exercise">
+  <h2><span class="num">✎</span> 配套代码练习</h2>
+  <div class="exercise-card">
+    <h3>exercise.py:亲手实现 PatchCore 的三大件</h3>
+    <p>本课目录下的 <code>exercise.py</code> 用纯 Python(零依赖)把"距离度量 → kNN 打分 → coreset 降采样"三大件全部实现一遍,最后串成一个 4×4 patch 网格的迷你 PatchCore。运行 <code>python exercise.py</code>,完成 5 个递进的 TODO:</p>
+    <ol class="todo-list">
+      <li><strong>TODO 1</strong> · 欧氏距离 <code>euclidean</code> —— 一切检索的地基(对应 §2)</li>
+      <li><strong>TODO 2</strong> · 对角协方差版马氏距离 <code>mahalanobis_diag</code> —— 亲手算出"欧氏 2.0、马氏 1.0"(对应 §3)</li>
+      <li><strong>TODO 3</strong> · kNN 打分 <code>knn_score</code> —— 到库的前 k 近邻平均距离(对应 §2 与 §4 第③步)</li>
+      <li><strong>TODO 4</strong> · coreset 贪心降采样 <code>greedy_coreset</code> —— 复现 §4 的手推例子,选出 [0, 4, 3](对应 §4 第②步)</li>
+      <li><strong>TODO 5</strong> · 串联 <code>patch_anomaly_map</code> —— 给 4×4 网格逐格打分,看异常格自己亮起来(对应 §5)</li>
+    </ol>
+    <p style="margin-top:12px">做完 TODO 5 你会看到一张 ASCII 热力图:15 个正常格分数 ≈ 0,唯一的异常格分数 > 4——没有任何训练,"查档案"本身就完成了检测。这正是 PatchCore 在真实产线上做的事,只是特征从 2 维换成了几百维。</p>
+  </div>
+</section>
+
+<div class="lesson-nav">
+  <a href="../07-reconstruction-methods/lesson.html">← 上一课:无监督入门与重构类方法</a>
+  <a href="../09-teacher-student-distillation/lesson.html">下一课:师生蒸馏类方法 →</a>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ============ §5 patch 热力图 + kNN 检索步进 ============ */
+(function() {
+  var ROWS = 8, COLS = 8;
+  // 记忆库:6 条正常 patch 特征(已 coreset 精简)
+  var BANK = [[1.00, 1.00], [1.12, 0.94], [0.90, 1.06], [1.04, 1.14], [0.94, 0.88], [1.16, 1.02]];
+  // 确定性伪随机(LCG),保证数值可复现
+  var seed = 97;
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  function q2(v) { return Math.round(v * 100) / 100; }
+  // 生成 8×8 patch 特征:右上角 2×2(r<2 且 c>=6)为"划痕区",其余正常
+  var FEATS = [];
+  for (var r = 0; r < ROWS; r++) {
+    FEATS.push([]);
+    for (var c = 0; c < COLS; c++) {
+      if (r < 2 && c >= 6) {
+        FEATS[r].push([q2(3.9 + (rnd() - 0.5) * 0.5), q2(3.9 + (rnd() - 0.5) * 0.5)]);
+      } else {
+        FEATS[r].push([q2(1 + (rnd() - 0.5) * 0.24), q2(1 + (rnd() - 0.5) * 0.24)]);
+      }
+    }
+  }
+  function dist(a, b) {
+    var dx = a[0] - b[0], dy = a[1] - b[1];
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+  // 每格分数 = 到库的最近邻距离;图像分 = 全图 max
+  var SCORES = [], imgScore = 0;
+  for (var r2 = 0; r2 < ROWS; r2++) {
+    SCORES.push([]);
+    for (var c2 = 0; c2 < COLS; c2++) {
+      var mn = Infinity;
+      for (var k = 0; k < BANK.length; k++) mn = Math.min(mn, dist(FEATS[r2][c2], BANK[k]));
+      SCORES[r2].push(mn);
+      imgScore = Math.max(imgScore, mn);
+    }
+  }
+  var SMAX = 4.2; // 热力归一化上限
+  function heat(t) { // 白 #FAF9F5 → 橙 #D97757
+    var w = [250, 249, 245], o = [217, 119, 87];
+    return 'rgb(' + Math.round(w[0] + (o[0] - w[0]) * t) + ',' +
+                    Math.round(w[1] + (o[1] - w[1]) * t) + ',' +
+                    Math.round(w[2] + (o[2] - w[2]) * t) + ')';
+  }
+  var gridEl = document.getElementById('pc-grid');
+  var queryEl = document.getElementById('pc-query');
+  var bankEl = document.getElementById('pc-bank');
+  var calcEl = document.getElementById('pc-calc');
+  var statusEl = document.getElementById('pc-status');
+  var imgScoreEl = document.getElementById('pc-imgscore');
+  var cellEls = [];
+  for (var r3 = 0; r3 < ROWS; r3++) {
+    for (var c3 = 0; c3 < COLS; c3++) {
+      (function(rr, cc) {
+        var d = document.createElement('div');
+        var t = Math.min(1, SCORES[rr][cc] / SMAX);
+        d.className = 'pc-cell';
+        d.style.background = heat(t);
+        if (t > 0.55) { d.style.color = '#fff'; d.style.borderColor = 'rgba(217,119,87,0.6)'; }
+        d.textContent = SCORES[rr][cc].toFixed(2);
+        d.title = 'patch (' + rr + ',' + cc + ') 分数 ' + SCORES[rr][cc].toFixed(2);
+        d.addEventListener('click', function() { select(rr, cc); });
+        gridEl.appendChild(d);
+        cellEls.push(d);
+      })(r3, c3);
+    }
+  }
+  imgScoreEl.innerHTML = '图像级分数 = 全图最大格分 = <b>' + imgScore.toFixed(2) + '</b> → 判 NG(有缺陷)';
+  var rowEls = [], dEls = [];
+  for (var k2 = 0; k2 < BANK.length; k2++) {
+    var row = document.createElement('div');
+    row.className = 'pc-bank-row';
+    row.innerHTML = '<span class="pc-idx">库#' + (k2 + 1) + '</span><span>[' +
+      BANK[k2][0].toFixed(2) + ', ' + BANK[k2][1].toFixed(2) + ']</span><span class="pc-d">·</span>';
+    bankEl.appendChild(row);
+    rowEls.push(row);
+    dEls.push(row.querySelector('.pc-d'));
+  }
+  var sel = null, step = -1, dists = [];
+  function fmt(v) { return v.toFixed(2); }
+  function isAnomCell(r, c) { return r < 2 && c >= 6; }
+  function resetStepper() {
+    step = -1; dists = [];
+    rowEls.forEach(function(row) { row.classList.remove('cur', 'best'); });
+    dEls.forEach(function(el) { el.textContent = '·'; });
+    if (!sel) return;
+    var f = FEATS[sel.r][sel.c];
+    queryEl.innerHTML = '查询 patch (' + sel.r + ',' + sel.c + ') 特征 x = <b>[' + fmt(f[0]) + ', ' + fmt(f[1]) + ']</b>';
+    calcEl.textContent = '点「下一步」,和库里 6 条正常特征逐条算距离。';
+    statusEl.textContent = '选中了' + (isAnomCell(sel.r, sel.c) ? '划痕区' : '正常纹理区') +
+      '的格子 (' + sel.r + ',' + sel.c + ')。距离会一条条算出来,最小值就是它的异常分。';
+  }
+  function select(r, c) {
+    sel = { r: r, c: c };
+    cellEls.forEach(function(d) { d.classList.remove('sel'); });
+    cellEls[r * COLS + c].classList.add('sel');
+    resetStepper();
+  }
+  function finish() {
+    var mn = Math.min.apply(null, dists);
+    var bi = dists.indexOf(mn);
+    rowEls.forEach(function(row) { row.classList.remove('cur'); });
+    rowEls[bi].classList.add('best');
+    calcEl.innerHTML += '<br>该格分数 = min(6 条距离) = <span class="hl">' + fmt(mn) +
+      '</span>(最近邻:库#' + (bi + 1) + ')';
+    statusEl.textContent = isAnomCell(sel.r, sel.c)
+      ? '分数 ' + fmt(mn) + ':连最像的库#' + (bi + 1) + ' 都离得很远——"正常档案"里没有它,判异常。最近邻还顺带告诉你它"最像谁",这就是 PatchCore 的可解释性。'
+      : '分数 ' + fmt(mn) + ':库#' + (bi + 1) + ' 和它几乎一模一样——档案里见过的正常纹理。再点一个右上角的橙色格子对比,两类分数隔着一条鸿沟。';
+  }
+  function next() {
+    if (!sel) { statusEl.textContent = '先点击左侧一个格子。'; return; }
+    if (step >= BANK.length - 1) return;
+    step++;
+    var f = FEATS[sel.r][sel.c], b = BANK[step];
+    var dx = f[0] - b[0], dy = f[1] - b[1];
+    var d = Math.sqrt(dx * dx + dy * dy);
+    dists.push(d);
+    rowEls.forEach(function(row) { row.classList.remove('cur'); });
+    rowEls[step].classList.add('cur');
+    dEls[step].textContent = fmt(d);
+    calcEl.innerHTML = 'd' + (step + 1) + ' = √((' + fmt(f[0]) + '−' + fmt(b[0]) + ')² + (' +
+      fmt(f[1]) + '−' + fmt(b[1]) + ')²) = √(' + (dx * dx).toFixed(4) + ' + ' + (dy * dy).toFixed(4) +
+      ') = <span class="hl">' + fmt(d) + '</span>';
+    if (step === BANK.length - 1) finish();
+  }
+  document.getElementById('pc-next').addEventListener('click', next);
+  document.getElementById('pc-run').addEventListener('click', function() {
+    if (!sel) { statusEl.textContent = '先点击左侧一个格子。'; return; }
+    while (step < BANK.length - 1) next();
+  });
+  document.getElementById('pc-reset').addEventListener('click', resetStepper);
+  select(2, 2); // 初始选中一个正常格
+})();
+
+/* ============ 测验 ============ */
+function checkQuiz(btn, quizId) {
+  const quiz = document.getElementById(quizId);
+  const options = quiz.querySelectorAll('.quiz-option');
+  const isCorrect = btn.dataset.correct === 'true';
+  options.forEach(o => {
+    o.disabled = true;
+    o.style.pointerEvents = 'none';
+    o.style.opacity = '0.5';
+  });
+  btn.style.opacity = '1';
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  document.getElementById(
+    quizId + (isCorrect ? '-correct' : '-wrong')
+  ).classList.add('show');
+}
+
+/* ============ 配套练习开关 ============ */
+(function() {
+  const KEY = 'course-show-exercises';
+  const toggle = document.getElementById('code-toggle');
+  const section = document.getElementById('code-exercise');
+  if (!toggle || !section) return;
+  const saved = localStorage.getItem(KEY);
+  let show = saved === null ? true : saved === '1';
+  function apply() {
+    toggle.classList.toggle('active', show);
+    section.classList.toggle('hidden', !show);
+  }
+  apply();
+  toggle.addEventListener('click', () => {
+    show = !show;
+    localStorage.setItem(KEY, show ? '1' : '0');
+    apply();
+  });
+})();
+</script>
+
+<script>
+(function() {
+  'use strict';
+  var LESSON_TITLE = '第 08 课:特征嵌入类方法(工业界主流)';
+  var COURSE_NAME  = '缺陷检测:从深度学习基础到主流方法全景';
+  var toolbar, overlay, toastEl;
+  var hideToolbarTimer = null;
+  var selectedAnchorNode = null;
+  function init() {
+    createToolbar();
+    createDialog();
+    bindEvents();
+    restoreNotes();
+  }
+  function createToolbar() {
+    toolbar = document.createElement('div');
+    toolbar.className = 'selection-toolbar';
+    toolbar.innerHTML =
+      '<button class="sel-btn sel-btn-ask" data-action="ask">\u{1F4AC} 问 LLM</button>' +
+      '<button class="sel-btn sel-btn-modify" data-action="modify">\u{270F}\u{FE0F} 修改</button>' +
+      '<button class="sel-btn sel-btn-note" data-action="note">\u{1F4DD} 划线笔记</button>';
+    document.body.appendChild(toolbar);
+    toolbar.querySelector('[data-action="ask"]').onclick = onAsk;
+    toolbar.querySelector('[data-action="modify"]').onclick = onModify;
+    toolbar.querySelector('[data-action="note"]').onclick = onNote;
+  }
+  function createDialog() {
+    overlay = document.createElement('div');
+    overlay.className = 'sel-dialog-overlay';
+    overlay.innerHTML =
+      '<div class="sel-dialog">' +
+        '<h3 class="sel-dialog-title">\u{270F}\u{FE0F} 修改选中内容</h3>' +
+        '<div class="sel-dialog-field"><label class="sel-dialog-label">选中的原文:</label>' +
+          '<div class="sel-dialog-source" id="sel-source-text"></div></div>' +
+        '<div class="sel-dialog-field">' +
+          '<label class="sel-dialog-label" for="sel-modify-instruction">你希望改成什么样?</label>' +
+          '<textarea id="sel-modify-instruction" rows="4" placeholder="例如:把这段写得更容易理解一些 / 用更生动的比喻 / 补充细节…"></textarea></div>' +
+        '<div class="sel-dialog-actions">' +
+          '<button class="sel-btn-cancel" id="sel-cancel">取消</button>' +
+          '<button class="sel-btn-confirm" id="sel-copy-modify">\u{1F4CB} 复制到剪贴板</button></div></div>';
+    document.body.appendChild(overlay);
+    document.getElementById('sel-cancel').onclick = hideDialog;
+    document.getElementById('sel-copy-modify').onclick = onCopyModify;
+    overlay.onclick = function(e) { if (e.target === overlay) hideDialog(); };
+  }
+  function getSelectedText() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return '';
+    if (!document.body.contains(sel.getRangeAt(0).commonAncestorContainer)) return '';
+    return sel.toString().trim();
+  }
+  function getSectionLabel(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    while (el && el !== document.body) {
+      if (el.tagName === 'SECTION' || el.tagName === 'DIV') {
+        var h2 = el.querySelector(':scope > h2, :scope > h3');
+        if (h2) {
+          var txt = h2.textContent.replace(/\s+/g, ' ').trim();
+          return txt.length > 50 ? txt.substring(0, 50) + '…' : txt;
+        }
+      }
+      el = el.parentElement;
+    }
+    return '';
+  }
+  var NOTES_KEY = 'note-underlines::' + location.pathname;
+  function getContainerSections() {
+    return Array.prototype.slice.call(document.querySelectorAll('.container > section'));
+  }
+  function getSectionIndex(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    var container = document.querySelector('.container');
+    while (el && el.parentElement !== container) { el = el.parentElement; }
+    if (!el) return -1;
+    return getContainerSections().indexOf(el);
+  }
+  function loadNotes() {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveNoteEntry(entry) {
+    var notes = loadNotes();
+    notes.push(entry);
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function deleteNoteEntry(id) {
+    var notes = loadNotes().filter(function(n) { return n.id !== id; });
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function getTextNodesIn(root) {
+    var nodes = [];
+    (function walk(n) {
+      if (n.nodeType === Node.TEXT_NODE) { nodes.push(n); return; }
+      for (var i = 0; i < n.childNodes.length; i++) walk(n.childNodes[i]);
+    })(root);
+    return nodes;
+  }
+  function countOccurrenceIndex(root, range, text) {
+    var textNodes = getTextNodesIn(root);
+    var full = '', startAbs = -1, pos = 0;
+    for (var i = 0; i < textNodes.length; i++) {
+      if (textNodes[i] === range.startContainer) startAbs = pos + range.startOffset;
+      full += textNodes[i].nodeValue;
+      pos += textNodes[i].nodeValue.length;
+    }
+    if (startAbs === -1) return 0;
+    var idx = -1, count = 0;
+    while (true) {
+      var next = full.indexOf(text, idx + 1);
+      if (next === -1 || next >= startAbs) break;
+      idx = next;
+      count++;
+    }
+    return count;
+  }
+  function findRangeByOccurrence(root, text, occurrence) {
+    var textNodes = getTextNodesIn(root);
+    var full = textNodes.map(function(t) { return t.nodeValue; }).join('');
+    var idx = -1;
+    for (var c = 0; c <= occurrence; c++) {
+      idx = full.indexOf(text, idx + 1);
+      if (idx === -1) return null;
+    }
+    var startOffset = idx, endOffset = idx + text.length, pos = 0;
+    var range = document.createRange(), startSet = false, endSet = false;
+    for (var i = 0; i < textNodes.length; i++) {
+      var len = textNodes[i].nodeValue.length;
+      if (!startSet && startOffset <= pos + len) { range.setStart(textNodes[i], startOffset - pos); startSet = true; }
+      if (!endSet && endOffset <= pos + len) { range.setEnd(textNodes[i], endOffset - pos); endSet = true; break; }
+      pos += len;
+    }
+    return (startSet && endSet) ? range : null;
+  }
+  function wrapRangeAsNote(range, id) {
+    var span = document.createElement('span');
+    span.className = 'note-underline';
+    span.dataset.noteId = id;
+    var frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  function onNote() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (!document.body.contains(range.commonAncestorContainer)) return;
+    var text = getSelectedText();
+    if (!text) return;
+    var sectionIdx = selectedAnchorNode ? getSectionIndex(selectedAnchorNode) : -1;
+    var sections = getContainerSections();
+    var section = sectionIdx >= 0 ? sections[sectionIdx] : null;
+    var occurrence = section ? countOccurrenceIndex(section, range, text) : 0;
+    var id = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    try {
+      wrapRangeAsNote(range, id);
+      sel.removeAllRanges();
+      if (sectionIdx >= 0) saveNoteEntry({ id: id, sectionIdx: sectionIdx, text: text, occurrence: occurrence });
+      showToast('\u{1F4DD} 已添加划线笔记,再点一下可以取消');
+    } catch (e) {
+      showToast('⚠️ 这段选区暂时无法划线,换一段试试');
+    }
+    hideToolbar();
+  }
+  function removeNote(span) {
+    var id = span.dataset.noteId;
+    var parent = span.parentNode;
+    if (!parent) return;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
+    parent.normalize();
+    deleteNoteEntry(id);
+    showToast('\u{1F5D1}️ 已取消这条划线笔记');
+  }
+  function restoreNotes() {
+    var notes = loadNotes();
+    var sections = getContainerSections();
+    notes.forEach(function(n) {
+      var section = sections[n.sectionIdx];
+      if (!section) return;
+      var range = findRangeByOccurrence(section, n.text, n.occurrence);
+      if (!range) return;
+      try { wrapRangeAsNote(range, n.id); } catch (e) {}
+    });
+  }
+  function positionToolbar(cx, cy) {
+    clearTimeout(hideToolbarTimer);
+    toolbar.classList.add('visible');
+    var tw = toolbar.offsetWidth, th = toolbar.offsetHeight;
+    var left = cx - tw / 2, top = cy + 12;
+    if (left < 12) left = 12;
+    if (left + tw > innerWidth - 12) left = innerWidth - tw - 12;
+    if (top + th > innerHeight - 12) top = cy - th - 12;
+    toolbar.style.left = left + 'px';
+    toolbar.style.top = top + 'px';
+  }
+  function hideToolbar() {
+    clearTimeout(hideToolbarTimer);
+    hideToolbarTimer = setTimeout(function() { toolbar.classList.remove('visible'); }, 200);
+  }
+  function buildContext(section) {
+    var lines = ['## 课程上下文'];
+    lines.push('- 课程:' + COURSE_NAME);
+    lines.push('- 课时:' + LESSON_TITLE);
+    if (section) lines.push('- 章节:' + section);
+    lines.push('');
+    return lines.join('\n');
+  }
+  function onAsk() {
+    var text = getSelectedText();
+    if (!text) return;
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 我选中的内容\n\n' + text + '\n\n## 我的提问\n\n';
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并提问吧!');
+    hideToolbar();
+  }
+  function onModify() {
+    var text = getSelectedText();
+    if (!text) return;
+    document.getElementById('sel-source-text').textContent = text;
+    document.getElementById('sel-modify-instruction').value = '';
+    overlay.classList.add('visible');
+    hideToolbar();
+    setTimeout(function() { document.getElementById('sel-modify-instruction').focus(); }, 100);
+  }
+  function onCopyModify() {
+    var src = document.getElementById('sel-source-text').textContent;
+    var inst = document.getElementById('sel-modify-instruction').value.trim();
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 选中的原文\n\n' + src + '\n\n## 修改要求\n\n' +
+      (inst || '(用户未指定具体要求,请自行判断合理修改方向)');
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并请求修改吧!');
+    hideDialog();
+  }
+  function copyToClipboard(text, msg) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast(msg || '✅ 已复制到剪贴板'); }
+    catch (e) { showToast('⚠\u{FE0F} 未能自动复制,请按 Cmd+C 手动复制'); }
+    document.body.removeChild(ta);
+  }
+  function showToast(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'sel-toast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg;
+    toastEl.classList.add('visible');
+    clearTimeout(toastEl._hideTimer);
+    toastEl._hideTimer = setTimeout(function() { toastEl.classList.remove('visible'); }, 3500);
+  }
+  function hideDialog() { overlay.classList.remove('visible'); }
+  function bindEvents() {
+    document.addEventListener('mouseup', function(e) {
+      if (toolbar.contains(e.target) || overlay.contains(e.target)) return;
+      var text = getSelectedText();
+      if (text.length > 5) {
+        selectedAnchorNode = window.getSelection() ? window.getSelection().anchorNode : null;
+        positionToolbar(e.clientX, e.clientY);
+      } else { hideToolbar(); }
+    });
+    document.addEventListener('scroll', function() { toolbar.classList.remove('visible'); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { hideDialog(); toolbar.classList.remove('visible'); }
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!toolbar.contains(e.target) && !overlay.contains(e.target)) hideToolbar();
+    });
+    document.addEventListener('click', function(e) {
+      var note = e.target.closest && e.target.closest('.note-underline');
+      if (!note) return;
+      var sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().length > 0) return;
+      removeNote(note);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+</script>
+</body>
+</html>

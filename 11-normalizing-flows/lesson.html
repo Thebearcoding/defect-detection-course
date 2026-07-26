@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 11 课 · 归一化流类方法 | 缺陷检测课程</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" media="print" onload="this.media='all'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<style>
+:root {
+  /* Anthropic 官方 Token(来自 anthropic-style-cn skill) */
+  --bg: #ECE9E0;
+  --surface: #F5F3EC;
+  --surface2: #E7E3D8;
+  --border: #D8D5CC;
+  --text: #141413;
+  --text-dim: #6B6860;
+  --accent: #D97757;
+  --accent2: #6A9BCC;
+  --good: #6A8A4F;
+  --bad: #C0453A;
+  --ink: #141413;
+  --ink-text: #F0EEE6;
+  --font-display: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-heading: 'Poppins', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217,119,87,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 15%, rgba(106,155,204,0.05) 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.85;
+  font-size: 16.5px;
+  text-spacing-trim: trim-start allow-end;
+  overflow-wrap: break-word;
+}
+
+/* ---- Hero ---- */
+.hero {
+  padding: 88px 24px 56px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero .lesson-tag {
+  display: inline-block;
+  padding: 7px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-bottom: 26px;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.3;
+  margin-bottom: 18px;
+  word-break: keep-all;
+}
+.hero .subtitle {
+  color: var(--text-dim);
+  font-size: 17px;
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ---- Settings bar ---- */
+.settings-bar {
+  max-width: 860px;
+  margin: 20px auto 0;
+  padding: 0 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-dim);
+  user-select: none;
+}
+.toggle-track {
+  width: 40px; height: 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.25s var(--ease);
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: all 0.25s var(--ease);
+}
+.toggle-wrap.active .toggle-track { background: var(--accent); border-color: var(--accent); }
+.toggle-wrap.active .toggle-track::after { left: 20px; background: #fff; }
+.toggle-wrap.active { color: var(--text); }
+
+/* ---- Layout ---- */
+.container { max-width: 860px; margin: 0 auto; padding: 24px 24px 96px; }
+section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+section:last-of-type { border-bottom: none; }
+h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  word-break: keep-all;
+}
+h2 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 28px 0 12px;
+}
+p { margin-bottom: 15px; }
+strong { color: var(--text); font-weight: 700; }
+em { color: var(--accent); font-style: normal; font-weight: 500; }
+ul, ol { margin: 0 0 15px 24px; }
+li { margin-bottom: 8px; }
+
+/* ---- Story card ---- */
+.story-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 20px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.05);
+}
+.story-card .story-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent2);
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+.story-card p:last-child { margin-bottom: 0; }
+
+/* ---- Insight box ---- */
+.insight-box {
+  background: linear-gradient(135deg, rgba(217,119,87,0.09), rgba(217,119,87,0.04));
+  border: 1px solid rgba(217,119,87,0.35);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.insight-box .insight-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+.insight-box p:last-child { margin-bottom: 0; }
+
+/* ---- Code block ---- */
+.code-block {
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.9;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--ink-text);
+}
+.code-block .cm { color: #9C9A92; }
+.code-block .kw { color: #E8A188; }
+.code-block .st { color: #A8C090; }
+
+/* ---- Compare grid ---- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.compare-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.compare-box h4 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.compare-box p { font-size: 14.5px; color: var(--text-dim); margin-bottom: 6px; }
+.compare-box p:last-child { margin-bottom: 0; }
+
+/* ---- Pipeline ---- */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 22px 0;
+}
+.pipeline-step {
+  flex: 1 1 130px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+}
+.pipeline-step .step-num {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-title {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+.pipeline-arrow { display: flex; align-items: center; color: var(--accent); font-size: 18px; }
+
+/* ---- Interactive demo shell ---- */
+.demo-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.06);
+}
+.demo-box .demo-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.demo-box .demo-hint { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.8; }
+.demo-status {
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-family: var(--font-heading);
+}
+.demo-btns { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.demo-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.demo-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.demo-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.demo-btn.primary:hover { filter: brightness(1.07); color: #fff; }
+.demo-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ---- Matrix grids (conv stepper) ---- */
+.mat-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 16px 0;
+}
+.mat-block { text-align: center; }
+.mat-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.mat-grid { display: grid; gap: 4px; justify-content: center; }
+.mat-cell {
+  width: 42px; height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: all 0.2s var(--ease);
+}
+.mat-cell.v3 { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
+.mat-cell.kpos { background: rgba(217,119,87,0.14); color: #B05C3F; border-color: rgba(217,119,87,0.45); font-weight: 700; }
+.mat-cell.kneg { background: rgba(106,155,204,0.14); color: #4A7BA8; border-color: rgba(106,155,204,0.5); font-weight: 700; }
+.mat-cell.kzero { color: var(--text-dim); }
+.mat-cell.win { box-shadow: 0 0 0 3px var(--accent); }
+.mat-cell.filled { background: rgba(217,119,87,0.13); color: var(--text); font-weight: 700; border-color: rgba(217,119,87,0.4); }
+.mat-cell.cur-out { box-shadow: 0 0 0 3px var(--accent); }
+.mat-op {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--text-dim);
+  padding-top: 60px;
+}
+.conv-calc {
+  background: var(--ink);
+  color: var(--ink-text);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.9;
+  min-height: 46px;
+}
+.conv-calc .hl { color: #E8A188; font-weight: 700; }
+
+/* ---- Filter demo ---- */
+.filter-canvases {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 14px 0;
+}
+.fc-block { text-align: center; }
+.fc-block canvas {
+  width: 264px; height: 264px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+  image-rendering: pixelated;
+  display: block;
+}
+.fc-cap {
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+.fc-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+/* ---- Receptive field viz ---- */
+.rf-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.rf-block { text-align: center; }
+.rf-grid { display: grid; gap: 3px; justify-content: center; }
+.rf-cell {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.rf-cell:hover { border-color: var(--accent); }
+.rf-cell.src { background: var(--accent); border-color: var(--accent); }
+.rf-cell.mid { background: rgba(217,119,87,0.5); border-color: rgba(217,119,87,0.5); }
+.rf-cell.field { background: rgba(217,119,87,0.18); border-color: rgba(217,119,87,0.3); }
+.rf-arrow {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  min-width: 64px;
+  line-height: 1.5;
+}
+.rf-arrow b { color: var(--accent); font-size: 16px; display: block; }
+
+/* ---- Quiz ---- */
+.quiz {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 18px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.quiz .quiz-q { font-family: var(--font-heading); font-weight: 500; margin-bottom: 14px; }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  line-height: 1.7;
+}
+.quiz-option:hover { border-color: var(--accent); transform: translateY(-1px); }
+.quiz-option.correct { border-color: var(--good); background: rgba(106,138,79,0.1); }
+.quiz-option.wrong { border-color: var(--bad); background: rgba(192,69,58,0.08); }
+.quiz-feedback {
+  display: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  margin-top: 6px;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok { background: rgba(106,138,79,0.09); border: 1px solid rgba(106,138,79,0.4); color: #4F6A3B; }
+.quiz-feedback.no { background: rgba(192,69,58,0.07); border: 1px solid rgba(192,69,58,0.35); color: var(--bad); }
+
+/* ---- Further reading ---- */
+.further-reading { padding: 44px 0; }
+.reading-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.reading-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 22px;
+  transition: all 0.2s var(--ease);
+}
+.reading-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+.reading-title a {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 15.5px;
+}
+.reading-title a:hover { text-decoration: underline; }
+.reading-meta {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.reading-desc { font-size: 14.5px; color: var(--text-dim); margin-top: 6px; }
+.further-reading-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 14.5px;
+}
+.further-reading-inline .fr-icon { flex-shrink: 0; }
+.further-reading-inline a { color: var(--accent); font-weight: 500; }
+
+/* ---- Exercise section ---- */
+#code-exercise.hidden { display: none; }
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 16px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.exercise-card h3 { margin-top: 0; }
+.todo-list { margin-top: 10px; }
+.todo-list li { font-size: 15px; }
+.todo-list code, p code, li code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #B05C3F;
+}
+
+/* ---- Lesson nav ---- */
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+}
+.lesson-nav a, .lesson-nav span {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+}
+.lesson-nav span { color: var(--text-dim); }
+.lesson-nav a:hover { text-decoration: underline; }
+
+/* ---- Selection toolbar ---- */
+.selection-toolbar {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.15);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.selection-toolbar.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.sel-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.sel-btn:hover { border-color: var(--accent); background: var(--bg); }
+.sel-btn:active { transform: scale(0.96); }
+.sel-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(20,20,19,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sel-dialog-overlay.visible { opacity: 1; pointer-events: auto; }
+.sel-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(20,20,19,0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sel-dialog-title { font-family: var(--font-heading); font-size: 20px; font-weight: 500; margin-bottom: 20px; }
+.sel-dialog-field { margin-bottom: 16px; }
+.sel-dialog-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.sel-dialog-source {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.sel-dialog textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+}
+.sel-dialog textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,87,0.2); }
+.sel-dialog textarea::placeholder { color: var(--text-dim); }
+.sel-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.sel-btn-cancel {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+.sel-btn-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-confirm:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.sel-btn-confirm:active { transform: scale(0.97); }
+.sel-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 100001;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--ink-text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 24px rgba(20,20,19,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+}
+.sel-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.note-underline {
+  background: rgba(255, 212, 59, 0.45);
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.note-underline:hover { background: rgba(255, 212, 59, 0.65); }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 26px; }
+  .pipeline-arrow { display: none; }
+  .mat-cell { width: 34px; height: 34px; font-size: 12px; }
+  .rf-cell { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ---- 本课新增:§3 分布变形交互 ---- */
+.flow-wrap {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  align-items: stretch;
+  margin: 6px 0 4px;
+}
+.flow-canvas-block { flex: 1 1 380px; min-width: 290px; }
+.flow-canvas-block canvas {
+  width: 100%;
+  height: auto;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #FAF9F5;
+}
+.flow-side {
+  flex: 0 1 235px;
+  min-width: 215px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+}
+.flow-point-card {
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font-family: var(--font-heading);
+  font-size: 13.5px;
+  transition: opacity 0.3s var(--ease), border-color 0.3s var(--ease);
+}
+.flow-point-card.off { opacity: 0.45; }
+.flow-point-card.normal.on { border-color: rgba(106,138,79,0.55); }
+.flow-point-card.anomaly.on { border-color: rgba(192,69,58,0.5); }
+.fp-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.fp-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+.fp-dot.good { background: var(--good); }
+.fp-dot.bad { background: var(--bad); }
+.fp-row { color: var(--text-dim); margin-bottom: 6px; line-height: 1.6; }
+.fp-row b {
+  color: var(--text);
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.flow-bar-track {
+  height: 12px;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  margin-top: 4px;
+}
+.flow-bar-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.7s var(--ease);
+}
+.flow-bar-fill.good { background: var(--good); }
+.flow-bar-fill.bad { background: var(--bad); }
+.flow-slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+.flow-slider-end {
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.flow-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  outline: none;
+  cursor: pointer;
+}
+.flow-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #FAF9F5;
+  box-shadow: 0 1px 6px rgba(20,20,19,0.25);
+  cursor: pointer;
+}
+.flow-slider::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid #FAF9F5;
+  cursor: pointer;
+}
+.flow-slider-caption {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  text-align: center;
+}
+.flow-slider-caption b { color: var(--accent); font-family: var(--font-mono); }
+@media (max-width: 640px) {
+  .flow-side { flex-basis: 100%; flex-direction: row; flex-wrap: wrap; }
+  .flow-point-card { flex: 1 1 200px; }
+}
+
+/* ===== mobile adaptation (injected, uniform across course) ===== */
+@media (max-width: 640px) {
+  body { font-size: 15.5px; }
+  .container { padding: 16px 16px 72px; }
+  .hero { padding: 52px 18px 38px; }
+  .hero .subtitle { font-size: 15.5px; }
+  section { padding: 32px 0; }
+  h2 { font-size: 22px; }
+  h2 .num { width: 30px; height: 30px; font-size: 14px; }
+  .demo-box { padding: 16px 14px; }
+  canvas { max-width: 100%; height: auto !important; }
+  .fc-block canvas { width: 100% !important; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .code-block { font-size: 11.5px; padding: 13px 14px; line-height: 1.75; }
+  .slider-row { flex-wrap: wrap; }
+  .slider-row label { min-width: 0; flex: 1 1 100%; }
+  .lesson-nav { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .quiz { padding: 16px 16px; }
+  .quiz-option { font-size: 14px; padding: 11px 12px; }
+  .demo-btns .demo-btn, .demo-btn { padding: 9px 15px; font-size: 13px; }
+  .story-card, .insight-box, .exercise-card { padding: 16px 16px; }
+  .settings-bar { padding: 0 16px; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bp-diagram { font-size: 12px; }
+  .bp-node { min-width: 66px; padding: 8px 8px; }
+  .mat-op { padding-top: 40px; }
+  .selection-toolbar { max-width: calc(100vw - 16px); flex-wrap: wrap; }
+}
+@media (max-width: 400px) {
+  .mat-cell { width: 30px; height: 30px; font-size: 11px; }
+  .rf-cell { width: 17px; height: 17px; }
+  .mat-grid { gap: 3px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="lesson-tag">缺陷检测课程 · 第 11 课</div>
+  <h1>归一化流类方法</h1>
+  <p class="subtitle">给"正常"算一个概率——把复杂分布揉成标准高斯,低概率的样本自己举手。这是无监督家族里最"数学"的一支。</p>
+</div>
+
+<div class="settings-bar">
+  <label class="toggle-wrap active" id="code-toggle">
+    <span>配套练习</span>
+    <div class="toggle-track"></div>
+  </label>
+</div>
+
+<div class="container">
+
+<!-- ============ §0 ============ -->
+<section>
+  <h2><span class="num">0</span> 快速回顾</h2>
+  <p>第 7-10 课把无监督缺陷检测的四条路线走了一遍。回头看,它们其实都在回答同一个问题——<strong>"什么是正常"</strong>——只是刻画的方式各不相同,而且都是<em>间接的</em>:</p>
+  <ul>
+    <li><strong>第 7 课 · 重构类</strong>:AutoEncoder 只学会重建正常样本,重构差大 = 异常——用"画得像不像"间接刻画正常;</li>
+    <li><strong>第 8 课 · 嵌入类</strong>:把正常样本的预训练 patch 特征建档案(PaDiM 的高斯、PatchCore 的记忆库),新样本离档案远 = 异常——用"距离"间接刻画正常;</li>
+    <li><strong>第 9 课 · 师生蒸馏</strong>:学生只见过正常,师生特征分歧大 = 异常——用"模仿失败"间接刻画正常;</li>
+    <li><strong>第 10 课 · 合成缺陷</strong>:自己造伪缺陷,把无监督变成判别题——干脆绕开"刻画正常",直接学"什么不正常"。</li>
+  </ul>
+  <p>本课直捣黄龙:<strong>直接学出正常特征的概率密度 p(x)</strong>。有了密度,异常的定义前所未有地干净——p(x) 低的样本就是异常,连"间接"两个字都省了。</p>
+</section>
+
+<!-- ============ §1 ============ -->
+<section>
+  <h2><span class="num">1</span> 为什么要密度、为什么难</h2>
+
+  <h3>有了 p(x),异常检测变成一句话</h3>
+  <p>假设我们真的拿到了正常世界的概率密度 p(x)——任给一个样本,它能报出"这个样本在正常世界里出现的可能性有多大"。那么异常检测只剩一步:</p>
+
+  <div class="code-block">异常分数 s(x) = <span class="kw">−log p(x)</span>
+<span class="cm"># p(x):x 在"正常世界"里的概率密度</span>
+<span class="cm"># log:把极小的数变成好比较的负数,把连乘变连加</span>
+<span class="cm"># 负号:概率越低,分数越高,越像异常</span>
+例:p = 0.36  → s ≈ 1.0   <span class="cm"># 常见,放行</span>
+    p = 0.0005 → s ≈ 7.6   <span class="cm"># 罕见,报警</span></div>
+
+  <p>和前几课的分数(重构差、马氏距离、师生差)相比,−log p 的阈值第一次有了<em>概率语义</em>:"把出现概率低于万分之一的样本判为异常"是一句人能听懂、能向产线负责人解释的话。统计学里,基于似然的检验在理想条件下就是理论最优的判别方式——所以说这是无监督家族里<strong>最优雅的表述</strong>。</p>
+
+  <h3>但高维密度是出了名的难估</h3>
+  <p>麻烦在于,密度估计在高维空间是个经典难题。看两个朴素方案怎么死掉的:</p>
+  <ul>
+    <li><strong>直方图</strong>:一维切 10 个格子,数每格的样本数,没问题;两维要 100 格;而第 8 课的 patch 特征是几百维——就算每维只切 10 格,512 维需要 10<sup>512</sup> 个格子,宇宙里的原子也只有约 10<sup>80</sup> 个。绝大多数格子永远是空的,"数格子"彻底失效。</li>
+    <li><strong>核密度估计</strong>(在每个样本上放一个小土堆,叠成山):高维空间里任何两点的距离都差不多远,"邻居"的概念失去意义,土堆彼此够不着,连不成山。</li>
+  </ul>
+  <p>这就是<em>维度灾难</em>:样本数量跟不上空间体积的指数爆炸,直接在高维空间"数样本"注定失败。深度学习给出的答案换了个思路——<strong>不数样本,学变换</strong>。这就是归一化流。</p>
+</section>
+
+<!-- ============ §2 ============ -->
+<section>
+  <h2><span class="num">2</span> 流的核心思想:揉面,并记账</h2>
+
+  <p>归一化流(Normalizing Flow)的策略听起来像变魔术:复杂分布我不会算,但<strong>标准高斯我会算</strong>——它有解析公式,任何一点的密度抬手就能写出来。那就别硬算复杂分布,而是找一个<em>可逆变换 f</em>,把正常特征的复杂分布"揉"成标准高斯:算不了 x 这边的概率,就把 x 送到高斯那边去查表,再把变形过程中的"体积账"补上。</p>
+
+  <div class="story-card">
+    <div class="story-label">直觉:橡皮筋上的沙子</div>
+    <p>想象一根橡皮筋,上面均匀撒了一层沙子。现在把橡皮筋的某几段拉长、另几段压短:<strong>拉长的地方,同样多的沙子摊在更长的区间上,变稀了;压短的地方,沙子挤在一起,变密了</strong>。沙子总量始终不变(总概率恒为 1),变的只是每一处的"密度"。</p>
+    <p>所以,想从变形后的密度反推变形前的密度,只需在每一点记下"这里被拉伸/压缩了几倍",按倍数把账补回来。这本<em>拉伸账本</em>,就是下面公式里的雅可比行列式。</p>
+  </div>
+
+  <div class="code-block">log p(x) = log N(f(x)) + log|det J<sub>f</sub>(x)|
+<span class="cm">#          ─────┬─────    ──────┬───────</span>
+<span class="cm">#            落点项            账本项</span>
+<span class="cm"># 落点项:x 被 f 揉进高斯空间后落在 z = f(x),</span>
+<span class="cm">#         查标准高斯表:z 离 0 越近,这一项越大</span>
+<span class="cm"># 账本项:f 在 x 附近对空间的体积缩放——拉伸了记负账、</span>
+<span class="cm">#         压缩了记正账,保证变形前后概率守恒</span>
+<span class="cm"># 一维时 |det J| 就是 |f′(x)|:橡皮筋在 x 处的拉伸倍数</span></div>
+
+  <p>这条<em>变量替换公式</em>是全课的灵魂,值得用大白话再念一遍:<strong>一个点正常与否,一看它流到高斯空间后落点好不好(落点项),二看变换在它附近有没有大动干戈(账本项),两项相加才是它真实的对数密度</strong>。只看落点会被骗——§3 的交互里你会亲眼见到一个"落点很好、账本很差"的反例。</p>
+
+  <h3>对 f 的两大设计约束</h3>
+  <p>不是随便一个神经网络都能当 f。想让上面的公式可用,f 必须满足两条:</p>
+  <ul>
+    <li><strong>① 可逆</strong>:每个 x 唯一对应一个 z、每个 z 也能反推回 x。概率是"搬运"过去的,一一对应才能记账;信息在变换中一点不丢。</li>
+    <li><strong>② 雅可比行列式好算</strong>:一般矩阵求行列式要 O(d³),512 维特征、几十层流,每个样本每层都算一次会把训练拖死。必须把网络设计成"行列式白送"的结构。</li>
+  </ul>
+  <p>经典解法一句话就能说完——<em>coupling layer</em>:把特征切成两半,前一半原样通过、只负责算出缩放和平移参数,去仿射变换后一半。反着做就能精确还原(天然可逆);而且它的雅可比是三角矩阵,行列式 = 对角线元素连乘(白送)。NICE 和 RealNVP 的全部魔法就是这一招,叠几十层、每层换着切分方向,"揉面"的表达力就上来了。</p>
+
+  <div class="insight-box">
+    <div class="insight-label">流不是黑魔法</div>
+    <p>一维时,流干的事就是"参数化的分位数映射"——把数据的累积分布对齐到高斯的累积分布。真实的流只是把这件事搬到几百维特征空间、用几十层 coupling 来做,而且 f 不是手工指定的,是<strong>用梯度下降从正常样本里学出来的</strong>。原理和你下一节亲手拖的那个动画,一模一样。</p>
+  </div>
+</section>
+
+<!-- ============ §3 ============ -->
+<section>
+  <h2><span class="num">3</span> 亲手揉一次:分布变形动画</h2>
+
+  <p>光看公式,"把分布揉成高斯"仍然抽象。下面把它拍在你眼前:上排是某个"正常特征"的真实分布——<strong>双峰</strong>(想象工件表面有两种正常纹理,各占一半);下排是标准高斯参考线。200 个灰蓝色小点是正常样本。拖动滑块,就是在播放那个可逆变换 f:双峰的两坨样本被逐渐搬运、重排,最后严丝合缝地叠成一个钟形。</p>
+
+  <div class="demo-box" id="flow-demo">
+    <div class="demo-title">🌊 交互:把双峰揉成钟形</div>
+    <div class="demo-hint">先拖动滑块 t 从 0 到 1,看样本怎么"流"过去;然后点「<strong>正常点</strong>」「<strong>异常点</strong>」放两个测试点(绿 / 红大圆点),再拖一遍滑块看它们各自流向哪里。右侧读数条给出每个点的落点 z 和 log p:正常点落在 z≈0 附近(log p 高),异常点被甩到 |z| 很大的远端(log p 低)。</div>
+    <div class="flow-wrap">
+      <div class="flow-canvas-block">
+        <canvas id="flow-canvas" width="640" height="420"></canvas>
+        <div class="flow-slider-row">
+          <span class="flow-slider-end">数据空间 x(双峰)</span>
+          <input type="range" class="flow-slider" id="flow-t" min="0" max="1000" value="0" aria-label="变形进度 t">
+          <span class="flow-slider-end">高斯空间 z(钟形)</span>
+        </div>
+        <div class="flow-slider-caption">变形进度 t = <b id="flow-t-val">0.00</b>(t=0 原始分布,t=1 完整变换 f)</div>
+      </div>
+      <div class="flow-side">
+        <div class="flow-point-card normal off" id="flow-card-normal">
+          <div class="fp-head"><span class="fp-dot good"></span><span id="flow-head-normal">正常点(未放置)</span></div>
+          <div class="fp-row">起点 x = <b>+1.60</b>(右峰正中)</div>
+          <div class="fp-row">流到 z = <b id="flow-z-normal">—</b></div>
+          <div class="fp-row">当前坐标 <b id="flow-pos-normal">—</b></div>
+          <div class="fp-row">log p = <b id="flow-lp-normal">—</b></div>
+          <div class="flow-bar-track"><div class="flow-bar-fill good" id="flow-bar-normal"></div></div>
+        </div>
+        <div class="flow-point-card anomaly off" id="flow-card-anomaly">
+          <div class="fp-head"><span class="fp-dot bad"></span><span id="flow-head-anomaly">异常点(未放置)</span></div>
+          <div class="fp-row">起点 x = <b>+3.60</b>(两峰之外的远端)</div>
+          <div class="fp-row">流到 z = <b id="flow-z-anomaly">—</b></div>
+          <div class="fp-row">当前坐标 <b id="flow-pos-anomaly">—</b></div>
+          <div class="fp-row">log p = <b id="flow-lp-anomaly">—</b></div>
+          <div class="flow-bar-track"><div class="flow-bar-fill bad" id="flow-bar-anomaly"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="demo-btns">
+      <button class="demo-btn primary" id="flow-btn-normal">正常点</button>
+      <button class="demo-btn" id="flow-btn-anomaly">异常点</button>
+      <button class="demo-btn" id="flow-btn-play">自动播放</button>
+      <button class="demo-btn" id="flow-btn-reset">重置</button>
+    </div>
+    <div class="demo-status" id="flow-status">先拖滑块看双峰如何被揉成钟形;再放两个测试点,右侧读数条会亮起来。</div>
+  </div>
+
+  <p><strong>读数怎么看</strong>:正常点 x=+1.60 落在右峰正中,变换后 z≈+0.67,离 0 很近——查高斯表得到高密度,log p≈−1.01;异常点 x=+3.60 在两峰之外的远端,变换后被甩到 z≈+3.81,三个多标准差开外——log p≈−7.63。两者概率差了 e<sup>6.6</sup>≈700 多倍。<em>没有任何人给异常下过定义,它的低概率自己举了手</em>——这就是密度方法的全部主张。</p>
+
+  <p><strong>一个值得多看一眼的地方</strong>:两峰之间的谷底(x≈0)也是低概率区(log p≈−4.55)。有趣的是,一维的分位数映射会把谷底的点恰好送到 z≈0 附近——<strong>落点看起来非常"正常"</strong>!但那一带的变换拉伸得极其厉害(谷底那点样本要被摊开去填高斯的峰顶),§2 公式的账本项会记下一笔大大的负账,把 log p 拉回真实的低值。这就是"落点项 + 账本项,缺一不可"的活例子:只看 z 会被骗,把账算全才是真密度。</p>
+
+  <p>真实的流和这个玩具的区别只有规模:特征是几百维而不是一维,变换是几十层 coupling 而不是一次插值,而且 f 是从正常样本里学出来的。原理一模一样。</p>
+</section>
+
+<!-- ============ §4 ============ -->
+<section>
+  <h2><span class="num">4</span> 打分与像素级异常图:FastFlow 与 CFLOW</h2>
+
+  <p>把流用于缺陷检测,训练和推理各一句话。<strong>训练</strong>:只用正常样本,目标是最大化它们的平均 log p(<em>最大似然</em>)——直觉上,是把密度这块"面团"往正常样本聚集的地方捏,捏得越贴合,正常样本的 log p 越高,而没见过样本的区域密度自然塌下去。<strong>推理</strong>:算 −log p(x),超过阈值就报警。</p>
+
+  <div class="code-block">训练(只用正常样本):  maximize  平均 log p(x)
+                     = 平均 [ log N(f(x)) + log|det J| ]   <span class="cm"># 最大似然</span>
+推理:  s(x) = −log p(x)                                  <span class="cm"># 逐位置算 → 热力图</span></div>
+
+  <h3>FastFlow:在特征图上做 2D 流</h3>
+  <p>在像素上直接学流太难(图像分布远比特征分布复杂),FastFlow 的选择是<strong>回收第 8 课的资产</strong>:在 ImageNet 预训练骨干抽出的 patch 特征图上做流。而且它不把特征图拍平,而是做 <em>2D 流</em>——保留 H×W 的空间结构,每个空间位置的特征向量各自过流、各自算出一个 log p。于是 H×W 个位置就是 H×W 个 log p,<strong>拼起来天然就是一张像素级异常热力图</strong>,连定位都是白送的,只差最后一步插值放大。</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">STEP 1</div>
+      <div class="step-title">输入图像</div>
+      <div class="step-desc">待检测的工件图</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 2</div>
+      <div class="step-title">冻结骨干</div>
+      <div class="step-desc">ImageNet 预训练<br>第 2 课姿势③</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 3</div>
+      <div class="step-title">patch 特征图</div>
+      <div class="step-desc">H×W×C<br>第 8 课同款</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 4</div>
+      <div class="step-title">2D 归一化流</div>
+      <div class="step-desc">唯一要训练的部分<br>轻量流头</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 5</div>
+      <div class="step-title">逐位置 log p</div>
+      <div class="step-desc">−log p 热力图<br>定位白送</div>
+    </div>
+  </div>
+
+  <h3>CFLOW-AD:条件流 + 多尺度并联</h3>
+  <p>CFLOW-AD 走另一条路:<em>条件流</em>——把位置编码作为条件输入喂给流,相当于告诉它"这个特征来自图像的哪个位置",同一套流参数就能在不同位置表现出不同的密度(边缘位置的正常纹理和中心位置的本就不同)。再把浅、中、深多个尺度的特征各配一个流<strong>并联</strong>:浅层高分辨率管小缺陷,深层大视野管大缺陷,结果融合。</p>
+
+  <p>两者的共同点比区别更重要:<strong>骨干统统冻结</strong>——又是第 2 课的姿势③(纯特征提取),要训练的只有轻量的流头,几个 epoch 就收敛。流类方法"最数学",工程上却相当务实:它从不碰"从零训练一个生成模型"这种硬骨头。</p>
+</section>
+
+<!-- ============ §5 ============ -->
+<section>
+  <h2><span class="num">5</span> 和其他家族对账</h2>
+
+  <p>流类方法和第 7、8 课的两条路线渊源最深,放在一张桌上对账:</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>vs 嵌入类(第 8 课)</h4>
+      <p>同样吃预训练 patch 特征,分歧在"怎么刻画正常"。</p>
+      <p><strong>PatchCore</strong>:存样本、查最近邻——非参数,"档案柜"直观,但要背着记忆库,库越大查得越慢。</p>
+      <p><strong>流</strong>:学一个参数化密度——推理只跑一遍网络,内存小、耗时稳定,不随训练集变大而变慢。</p>
+    </div>
+    <div class="compare-box">
+      <h4>vs 重构类(第 7 课)</h4>
+      <p><strong>AutoEncoder</strong>:异常分是重构差,没有概率含义;还受"重构太好"悖论困扰——网络泛化能力强到把缺陷也重建出来,分数就失灵。</p>
+      <p><strong>流</strong>:−log p 有严格概率语义;它压根不重构图像,自然不存在这个悖论。可逆性还保证特征信息一点不丢。</p>
+    </div>
+    <div class="compare-box">
+      <h4>代价在哪</h4>
+      <p>要<strong>真的训练</strong>:比 PatchCore 的"零训练建库"贵,正常样本也要得更多。</p>
+      <p>对特征分布形状有<strong>隐含假设</strong>:轻量流揉不动过于破碎的多峰分布。</p>
+      <p>超参(层数、耦合方式、尺度选择)比"存档案"多,调试门槛更高。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §6 ============ -->
+<section>
+  <h2><span class="num">6</span> 使用边界与工程提示</h2>
+
+  <ul>
+    <li><strong>样本量</strong>:PatchCore 几十张正常样本就能建库;流要估出一整个密度,通常几百张起步才稳。样本太少时,最大似然会把密度捏得过分贴合训练集,新的正常样本反而拿低分。</li>
+    <li><strong>表达力边界</strong>:纹理高度多样的类别(花色布料、木纹)在特征空间里是破碎的多峰分布,轻量流头可能"揉不成"高斯;加深流能缓解,但训练成本与过拟合风险同步上升。</li>
+    <li><strong>阈值标定</strong>:−log p 虽有概率语义,但它是<em>特征空间</em>里的密度,数值受骨干、维度、分辨率影响,绝对值并不直接等于"真实世界的概率"。产线上阈值仍要靠验证集标定——第 13 课专门讲这件事。</li>
+    <li><strong>速度</strong>:FastFlow 推理只是一次前向,速度与师生蒸馏同级,快于要查库的 PatchCore(大库场景),满足多数产线节拍。</li>
+  </ul>
+
+  <div class="insight-box">
+    <div class="insight-label">"最数学"不等于"最好用"</div>
+    <p>论文里,FastFlow / CFLOW 的 AUROC 与 PatchCore 基本打平(MVTec AD 上都挤在 99% 上下);但工业落地更多选 PatchCore / EfficientAD——建库简单、行为直观、坏了好排查。流类方法真正的差异化卖点是两个:<strong>带概率语义的分数</strong>(阈值能解释)和<strong>小内存、稳定耗时的推理</strong>(不背记忆库)。什么产线该为这两个卖点买单?第 13 课的选型决策树见。</p>
+  </div>
+</section>
+
+<!-- ============ 测验 ============ -->
+<section>
+  <h2><span class="num">✓</span> 自我检验</h2>
+  <p>四道题,检查本课的核心概念是否立住了。</p>
+
+  <div class="quiz" id="quiz1">
+    <div class="quiz-q">Q1 · 归一化流方法的异常分数是什么?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">A. 输入与重构图像之间的重构误差</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz1')">B. −log p(x):正常世界里的概率密度越低,分数越高</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">C. 与记忆库中最近邻特征的距离</button>
+    <div class="quiz-feedback ok" id="quiz1-correct">✔ 正确。流直接学出正常特征的概率密度 p(x),异常分数 = −log p(x)——低概率样本自己举手(§1)。这也让阈值第一次有了概率语义。</div>
+    <div class="quiz-feedback no" id="quiz1-wrong">✘ 重构误差是第 7 课、最近邻距离是第 8 课的分数。本课的流<strong>直接给出概率密度</strong>,分数是 −log p(x)。回看 §1 的公式框。</div>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-q">Q2 · 变量替换公式里的 log|det J| 那一项,在记什么账?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">A. 网络参数量的大小,防止模型过大</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">B. 样本离均值的马氏距离</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz2')">C. 变换对空间的体积缩放:哪里拉伸、哪里压缩都按比例补偿,保证概率守恒</button>
+    <div class="quiz-feedback ok" id="quiz2-correct">✔ 正确。§2 的橡皮筋:拉伸的地方沙子变稀,密度要按拉伸倍数记账。这一项保证变形前后总概率守恒,和落点项相加才是完整的 log p(x)——§3 谷底点的例子里,全靠它把"落点很好"的假象拉回真实低概率。</div>
+    <div class="quiz-feedback no" id="quiz2-wrong">✘ 它和参数量、马氏距离都无关。回看 §2 的橡皮筋比喻:log|det J| 是变换的"体积缩放账本",没有它概率就不守恒,只看落点会被骗(§3 谷底点就是反例)。</div>
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-q">Q3 · 流对变换 f 的两大设计要求是?</div>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz3')">A. 可逆 + 雅可比行列式容易计算</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">B. 层数越深越好 + 参数量越大越好</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">C. 输出必须落在 0 到 1 之间,直接表示概率</button>
+    <div class="quiz-feedback ok" id="quiz3-correct">✔ 正确。可逆保证 x 与 z 一一对应、账能记回来;雅可比易算保证 log|det J| 不至于 O(d³) 地拖垮训练。coupling layer 一招同时满足两条:反着做即还原,雅可比是三角阵、行列式白送(§2)。</div>
+    <div class="quiz-feedback no" id="quiz3-wrong">✘ 深度和参数量是自由度,不是硬约束;流输出的是密度(可以大于 1),不是 0-1 的概率。回看 §2 的"两大设计约束":可逆 + 雅可比行列式好算。</div>
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-q">Q4 · FastFlow 为什么"天然"就有像素级异常热力图?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">A. 因为它把图像重构了一遍,再逐像素作差</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz4')">B. 因为 2D 流保留特征图的空间结构,每个空间位置各自算出 log p,H×W 个 log p 拼起来就是热力图</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">C. 因为它用滑动窗口对每个像素单独做了一次分类</button>
+    <div class="quiz-feedback ok" id="quiz4-correct">✔ 正确。§4:FastFlow 不拍平特征图,H×W 个位置各自过流、各自出 log p,异常定位是"白送"的,只差一步插值放大——这正是它比"拍平再建模"高明的地方。</div>
+    <div class="quiz-feedback no" id="quiz4-wrong">✘ FastFlow 不重构图像(那是第 7 课),也不做滑窗分类。回看 §4:2D 流在特征图每个空间位置各自算 log p,热力图天然免费。</div>
+  </div>
+</section>
+
+<!-- ============ 延伸阅读 ============ -->
+<section class="further-reading">
+  <h2><span class="num">✦</span> 延伸阅读</h2>
+  <p>按"流模型源头 → 缺陷检测代表作"排序:</p>
+  <div class="reading-list">
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/1410.8516" target="_blank" rel="noopener">NICE: Non-linear Independent Components Estimation</a></div>
+      <div class="reading-meta">Dinh et al. · arXiv 2014</div>
+      <div class="reading-desc">流模型的开山之作,coupling layer 的起点:一半变量算参数去变换另一半,可逆且雅可比三角。§2 那"一句话"的完整原型,论文本身出奇地好读。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/1605.08803" target="_blank" rel="noopener">Density estimation using Real NVP</a></div>
+      <div class="reading-meta">Dinh et al. · ICLR 2017</div>
+      <div class="reading-desc">把 coupling 升级为"缩放 + 平移"的仿射形式,归一化流从此有了标准形态——后续所有缺陷检测流方法用的都是这套积木。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2111.07677" target="_blank" rel="noopener">FastFlow: Unsupervised Anomaly Detection and Localization via 2D Normalizing Flows</a></div>
+      <div class="reading-meta">Yu et al. · arXiv 2021</div>
+      <div class="reading-desc">§4 的主角:在冻结骨干的特征图上做 2D 流,逐位置出 log p,像素级热力图白送,速度快到能上产线——2D 流做缺陷检测的代表作。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2107.12571" target="_blank" rel="noopener">CFLOW-AD: Real-Time Unsupervised Anomaly Detection with Localization via Conditional Normalizing Flows</a></div>
+      <div class="reading-meta">Gudovskiy et al. · WACV 2022</div>
+      <div class="reading-desc">条件流路线:位置编码作条件 + 多尺度并联,同一套流参数在不同位置给出不同密度,兼顾大小缺陷。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2110.02855" target="_blank" rel="noopener">CS-Flow: Fully Convolutional Cross-Scale-Flows for Image-based Defect Detection</a></div>
+      <div class="reading-meta">Rudolph et al. · WACV 2022</div>
+      <div class="reading-desc">跨尺度流:多个分辨率的特征图在流内部互通信息再联合估密度,专攻工业缺陷检测的整图级判定。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 配套练习 ============ -->
+<section id="code-exercise">
+  <h2><span class="num">✎</span> 配套代码练习</h2>
+  <div class="exercise-card">
+    <h3>exercise.py:亲手搭一个一维归一化流</h3>
+    <p>本课目录下的 <code>exercise.py</code> 用纯 Python(只 <code>import math</code>)把变量替换公式逐一落地。运行 <code>python exercise.py</code>,完成 5 个递进的 TODO:</p>
+    <ol class="todo-list">
+      <li><strong>TODO 1</strong> · 实现标准高斯 log 密度 <code>gaussian_logpdf</code>(落点项)—— 对应 §2 第一项</li>
+      <li><strong>TODO 2</strong> · 实现一层仿射流 <code>affine_forward</code>:z=(x−b)/a,同时记下 log|det| 账本 —— 对应 §2 第二项</li>
+      <li><strong>TODO 3</strong> · 实现完整对数密度 <code>flow_logprob</code>:落点项 + 账本项 —— 变量替换公式落地</li>
+      <li><strong>TODO 4</strong> · 实现 <code>fit_affine</code>:用均值 / 总体标准差"训练"这层流(一维最大似然的解析解)—— 对应 §4 的训练</li>
+      <li><strong>TODO 5</strong> · 串联全部:<code>is_anomaly</code> 先拟合、再算 log p、低于阈值报警 —— 一个最小可用的密度异常检测器</li>
+    </ol>
+    <p style="margin-top:12px">做完 TODO 5 你会看到:x=5.0 的 log p≈+0.08,x=9.0 的 log p≈−71.13,相差 e<sup>71</sup>≈10<sup>31</sup> 倍——概率密度给了异常检测一把<strong>有单位的尺子</strong>,这正是 FastFlow 全部价值的种子。</p>
+  </div>
+</section>
+
+<div class="lesson-nav">
+  <a href="../10-synthetic-defects-self-supervised/lesson.html">← 上一课:合成缺陷与自监督方法</a>
+  <a href="../12-zero-shot-clip-era/lesson.html">下一课:零样本时代:CLIP 与大模型 →</a>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ============ §3 分布变形步进动画 ============ */
+(function() {
+  var canvas = document.getElementById('flow-canvas');
+  if (!canvas) return;
+  var CW = 640, CH = 420;
+  var dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = CW * dpr;
+  canvas.height = CH * dpr;
+  var ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  var MU = 1.6, SG = 0.55, XMIN = -4.2, XMAX = 4.2;
+  var TOPBASE = 180, BOTBASE = 385, KAMP = 340;
+  var N = 200, BINW = 0.3;
+  var DOTGAP = KAMP / (N * BINW); // ≈5.67px:让点堆的高度贴合密度曲线
+
+  function xToPx(v) { return 320 + v * 68; }
+  function phi(t) { return Math.exp(-0.5 * t * t) / Math.sqrt(2 * Math.PI); }
+  function dens(x) { return 0.5 * phi((x + MU) / SG) / SG + 0.5 * phi((x - MU) / SG) / SG; }
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function fmt(v) { return (v < 0 ? '−' : '+') + Math.abs(v).toFixed(2); }
+
+  /* 标准正态分位数(Acklam 近似,足够本演示精度) */
+  function probit(p) {
+    var A = [-39.69683028665376, 220.9460984245205, -275.9285104469687, 138.357751867269, -30.66479806614716, 2.506628277459239];
+    var B = [-54.47609879822406, 161.5858368580409, -155.6989798598866, 66.80131188771972, -13.28068155288572];
+    var C = [-0.007784894002430293, -0.3223964580411365, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+    var D = [0.007784695709041462, 0.3224671290700398, 2.445134137142996, 3.754408661907416];
+    var pl = 0.02425, q, r;
+    if (p < pl) {
+      q = Math.sqrt(-2 * Math.log(p));
+      return (((((C[0] * q + C[1]) * q + C[2]) * q + C[3]) * q + C[4]) * q + C[5]) /
+             ((((D[0] * q + D[1]) * q + D[2]) * q + D[3]) * q + 1);
+    }
+    if (p <= 1 - pl) {
+      q = p - 0.5; r = q * q;
+      return (((((A[0] * r + A[1]) * r + A[2]) * r + A[3]) * r + A[4]) * r + A[5]) * q /
+             (((((B[0] * r + B[1]) * r + B[2]) * r + B[3]) * r + B[4]) * r + 1);
+    }
+    q = Math.sqrt(-2 * Math.log(1 - p));
+    return -(((((C[0] * q + C[1]) * q + C[2]) * q + C[3]) * q + C[4]) * q + C[5]) /
+            ((((D[0] * q + D[1]) * q + D[2]) * q + D[3]) * q + 1);
+  }
+
+  /* 固定种子生成 200 个双峰样本(与模板同款 LCG) */
+  var seed = 7;
+  function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+  var xs = [];
+  while (xs.length < N) {
+    var u1 = rnd(), u2 = rnd();
+    if (u1 < 1e-9) continue;
+    var g = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+    var v = (rnd() < 0.5 ? -MU : MU) + SG * g;
+    if (v > XMIN + 0.1 && v < XMAX - 0.1) xs.push(v);
+  }
+  xs.sort(function(a, b) { return a - b; });
+  /* 预计算分位数映射:排序后第 i 个样本 → 高斯的第 i 个分位点 */
+  var zs = [];
+  for (var i = 0; i < N; i++) zs.push(probit((i + 0.5) / N));
+
+  /* 点堆叠:同一 bin 内按到达顺序往上摞 */
+  function stacks(vals) {
+    var counts = {}, out = [];
+    for (var i = 0; i < vals.length; i++) {
+      var bi = Math.floor((vals[i] - XMIN) / BINW);
+      var k = counts[bi] || 0;
+      counts[bi] = k + 1;
+      out.push(k);
+    }
+    return out;
+  }
+  var st0 = stacks(xs), st1 = stacks(zs);
+
+  /* 两个测试点(数值在正文中有推导,预先算好写死) */
+  var PTS = {
+    normal:  { x: 1.6, z: 0.6745, logp: -1.01, on: false,
+               color: '#6A8A4F', faint: 'rgba(106,138,79,0.35)' },
+    anomaly: { x: 3.6, z: 3.8113, logp: -7.63, on: false,
+               color: '#C0453A', faint: 'rgba(192,69,58,0.35)' }
+  };
+
+  var slider = document.getElementById('flow-t');
+  var tValEl = document.getElementById('flow-t-val');
+  var statusEl = document.getElementById('flow-status');
+  var playBtn = document.getElementById('flow-btn-play');
+  var t = 0, timer = null;
+
+  function drawCurve(baseY, f, stroke, dash, fill) {
+    if (fill) {
+      ctx.beginPath();
+      ctx.moveTo(xToPx(XMIN), baseY);
+      for (var v = XMIN; v <= XMAX + 1e-9; v += 0.06) ctx.lineTo(xToPx(v), baseY - f(v) * KAMP);
+      ctx.lineTo(xToPx(XMAX), baseY);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+    ctx.beginPath();
+    if (dash) ctx.setLineDash(dash);
+    var first = true;
+    for (var v2 = XMIN; v2 <= XMAX + 1e-9; v2 += 0.06) {
+      var px = xToPx(v2), py = baseY - f(v2) * KAMP;
+      if (first) { ctx.moveTo(px, py); first = false; } else ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, CW, CH);
+
+    /* 参考曲线:上排双峰(填充),下排标准高斯(虚线) */
+    drawCurve(TOPBASE, dens, 'rgba(106,155,204,0.85)', null, 'rgba(106,155,204,0.08)');
+    drawCurve(BOTBASE, phi, '#D97757', [6, 4], null);
+
+    /* 基线 */
+    ctx.strokeStyle = '#D8D5CC';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(xToPx(XMIN), TOPBASE); ctx.lineTo(xToPx(XMAX), TOPBASE); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(xToPx(XMIN), BOTBASE); ctx.lineTo(xToPx(XMAX), BOTBASE); ctx.stroke();
+
+    /* z=0 竖直参考线(下排) */
+    ctx.strokeStyle = 'rgba(107,104,96,0.3)';
+    ctx.setLineDash([3, 4]);
+    ctx.beginPath(); ctx.moveTo(xToPx(0), 248); ctx.lineTo(xToPx(0), BOTBASE); ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* 刻度(下排坐标轴,两排共用同一比例) */
+    ctx.fillStyle = '#6B6860';
+    ctx.font = '11px "Noto Sans SC", sans-serif';
+    ctx.textAlign = 'center';
+    for (var k = -4; k <= 4; k++) {
+      var tx = xToPx(k);
+      ctx.beginPath(); ctx.moveTo(tx, BOTBASE); ctx.lineTo(tx, BOTBASE + 4);
+      ctx.strokeStyle = '#D8D5CC'; ctx.stroke();
+      ctx.fillText(String(k), tx, BOTBASE + 17);
+    }
+
+    /* 区域标签 */
+    ctx.textAlign = 'left';
+    ctx.font = '12.5px "Noto Sans SC", sans-serif';
+    ctx.fillStyle = '#6A9BCC';
+    ctx.fillText('正常特征分布 p(x) · 双峰', 34, 40);
+    ctx.fillStyle = '#D97757';
+    ctx.fillText('标准高斯 N(0,1) · 参考线', 34, 240);
+
+    /* 200 个样本点:沿分位数映射插值流动 */
+    ctx.fillStyle = 'rgba(106,155,204,0.55)';
+    for (var i = 0; i < N; i++) {
+      var px = lerp(xToPx(xs[i]), xToPx(zs[i]), t);
+      var py = lerp(TOPBASE - 4 - st0[i] * DOTGAP, BOTBASE - 4 - st1[i] * DOTGAP, t);
+      ctx.beginPath();
+      ctx.arc(px, py, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    /* 测试点 */
+    Object.keys(PTS).forEach(function(key) {
+      var p = PTS[key];
+      var posEl = document.getElementById('flow-pos-' + key);
+      if (!p.on) { if (posEl) posEl.textContent = '—'; return; }
+      var sx0 = xToPx(p.x), sx1 = xToPx(p.z);
+      var sy0 = TOPBASE - 6, sy1 = BOTBASE - 6;
+      ctx.strokeStyle = p.faint;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([2, 5]);
+      ctx.beginPath(); ctx.moveTo(sx0, sy0); ctx.lineTo(sx1, sy1); ctx.stroke();
+      ctx.setLineDash([]);
+      var mx = lerp(sx0, sx1, t), my = lerp(sy0, sy1, t);
+      ctx.strokeStyle = p.faint;
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(mx, my, 9.5, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(mx, my, 5.5, 0, Math.PI * 2); ctx.fill();
+      if (posEl) posEl.textContent = fmt(lerp(p.x, p.z, t));
+    });
+
+    tValEl.textContent = t.toFixed(2);
+  }
+
+  function barPct(logp) {
+    return Math.round(Math.max(3, Math.min(100, (logp + 10) / 11 * 100)));
+  }
+
+  function place(key, msg) {
+    var p = PTS[key];
+    p.on = true;
+    var card = document.getElementById('flow-card-' + key);
+    card.classList.remove('off');
+    card.classList.add('on');
+    document.getElementById('flow-head-' + key).textContent =
+      (key === 'normal' ? '正常点 · 已放置' : '异常点 · 已放置');
+    document.getElementById('flow-z-' + key).textContent = fmt(p.z);
+    document.getElementById('flow-lp-' + key).textContent = fmt(p.logp);
+    document.getElementById('flow-bar-' + key).style.width = barPct(p.logp) + '%';
+    statusEl.textContent = msg;
+    draw();
+  }
+
+  function stopPlay() {
+    if (timer) { clearInterval(timer); timer = null; }
+    playBtn.textContent = '自动播放';
+  }
+
+  document.getElementById('flow-btn-normal').addEventListener('click', function() {
+    place('normal', '🟢 正常点 x=+1.60:落在右峰正中,流过去后 z≈+0.67,离 0 很近 → log p≈−1.01,高概率,模型放行。');
+  });
+  document.getElementById('flow-btn-anomaly').addEventListener('click', function() {
+    place('anomaly', '🔴 异常点 x=+3.60:落在两峰之外的远端,流过去后被甩到 z≈+3.81 → log p≈−7.63,低概率,自己举手。');
+  });
+  playBtn.addEventListener('click', function() {
+    if (timer) { stopPlay(); return; }
+    if (t >= 1) { t = 0; }
+    playBtn.textContent = '暂停';
+    timer = setInterval(function() {
+      t += 0.01;
+      if (t >= 1) { t = 1; stopPlay(); }
+      slider.value = Math.round(t * 1000);
+      draw();
+    }, 16);
+  });
+  document.getElementById('flow-btn-reset').addEventListener('click', function() {
+    stopPlay();
+    t = 0;
+    slider.value = 0;
+    Object.keys(PTS).forEach(function(key) {
+      PTS[key].on = false;
+      var card = document.getElementById('flow-card-' + key);
+      card.classList.add('off');
+      card.classList.remove('on');
+      document.getElementById('flow-head-' + key).textContent =
+        (key === 'normal' ? '正常点(未放置)' : '异常点(未放置)');
+      document.getElementById('flow-z-' + key).textContent = '—';
+      document.getElementById('flow-lp-' + key).textContent = '—';
+      document.getElementById('flow-bar-' + key).style.width = '0%';
+    });
+    statusEl.textContent = '先拖滑块看双峰如何被揉成钟形;再放两个测试点,右侧读数条会亮起来。';
+    draw();
+  });
+  slider.addEventListener('input', function() {
+    stopPlay();
+    t = slider.value / 1000;
+    draw();
+  });
+
+  draw();
+})();
+
+/* ============ 测验 ============ */
+function checkQuiz(btn, quizId) {
+  const quiz = document.getElementById(quizId);
+  const options = quiz.querySelectorAll('.quiz-option');
+  const isCorrect = btn.dataset.correct === 'true';
+  options.forEach(o => {
+    o.disabled = true;
+    o.style.pointerEvents = 'none';
+    o.style.opacity = '0.5';
+  });
+  btn.style.opacity = '1';
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  document.getElementById(
+    quizId + (isCorrect ? '-correct' : '-wrong')
+  ).classList.add('show');
+}
+
+/* ============ 配套练习开关 ============ */
+(function() {
+  const KEY = 'course-show-exercises';
+  const toggle = document.getElementById('code-toggle');
+  const section = document.getElementById('code-exercise');
+  if (!toggle || !section) return;
+  const saved = localStorage.getItem(KEY);
+  let show = saved === null ? true : saved === '1';
+  function apply() {
+    toggle.classList.toggle('active', show);
+    section.classList.toggle('hidden', !show);
+  }
+  apply();
+  toggle.addEventListener('click', () => {
+    show = !show;
+    localStorage.setItem(KEY, show ? '1' : '0');
+    apply();
+  });
+})();
+</script>
+
+<script>
+(function() {
+  'use strict';
+  var LESSON_TITLE = '第 11 课:归一化流类方法';
+  var COURSE_NAME  = '缺陷检测:从深度学习基础到主流方法全景';
+  var toolbar, overlay, toastEl;
+  var hideToolbarTimer = null;
+  var selectedAnchorNode = null;
+  function init() {
+    createToolbar();
+    createDialog();
+    bindEvents();
+    restoreNotes();
+  }
+  function createToolbar() {
+    toolbar = document.createElement('div');
+    toolbar.className = 'selection-toolbar';
+    toolbar.innerHTML =
+      '<button class="sel-btn sel-btn-ask" data-action="ask">\u{1F4AC} 问 LLM</button>' +
+      '<button class="sel-btn sel-btn-modify" data-action="modify">\u{270F}\u{FE0F} 修改</button>' +
+      '<button class="sel-btn sel-btn-note" data-action="note">\u{1F4DD} 划线笔记</button>';
+    document.body.appendChild(toolbar);
+    toolbar.querySelector('[data-action="ask"]').onclick = onAsk;
+    toolbar.querySelector('[data-action="modify"]').onclick = onModify;
+    toolbar.querySelector('[data-action="note"]').onclick = onNote;
+  }
+  function createDialog() {
+    overlay = document.createElement('div');
+    overlay.className = 'sel-dialog-overlay';
+    overlay.innerHTML =
+      '<div class="sel-dialog">' +
+        '<h3 class="sel-dialog-title">\u{270F}\u{FE0F} 修改选中内容</h3>' +
+        '<div class="sel-dialog-field"><label class="sel-dialog-label">选中的原文:</label>' +
+          '<div class="sel-dialog-source" id="sel-source-text"></div></div>' +
+        '<div class="sel-dialog-field">' +
+          '<label class="sel-dialog-label" for="sel-modify-instruction">你希望改成什么样?</label>' +
+          '<textarea id="sel-modify-instruction" rows="4" placeholder="例如:把这段写得更容易理解一些 / 用更生动的比喻 / 补充细节…"></textarea></div>' +
+        '<div class="sel-dialog-actions">' +
+          '<button class="sel-btn-cancel" id="sel-cancel">取消</button>' +
+          '<button class="sel-btn-confirm" id="sel-copy-modify">\u{1F4CB} 复制到剪贴板</button></div></div>';
+    document.body.appendChild(overlay);
+    document.getElementById('sel-cancel').onclick = hideDialog;
+    document.getElementById('sel-copy-modify').onclick = onCopyModify;
+    overlay.onclick = function(e) { if (e.target === overlay) hideDialog(); };
+  }
+  function getSelectedText() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return '';
+    if (!document.body.contains(sel.getRangeAt(0).commonAncestorContainer)) return '';
+    return sel.toString().trim();
+  }
+  function getSectionLabel(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    while (el && el !== document.body) {
+      if (el.tagName === 'SECTION' || el.tagName === 'DIV') {
+        var h2 = el.querySelector(':scope > h2, :scope > h3');
+        if (h2) {
+          var txt = h2.textContent.replace(/\s+/g, ' ').trim();
+          return txt.length > 50 ? txt.substring(0, 50) + '…' : txt;
+        }
+      }
+      el = el.parentElement;
+    }
+    return '';
+  }
+  var NOTES_KEY = 'note-underlines::' + location.pathname;
+  function getContainerSections() {
+    return Array.prototype.slice.call(document.querySelectorAll('.container > section'));
+  }
+  function getSectionIndex(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    var container = document.querySelector('.container');
+    while (el && el.parentElement !== container) { el = el.parentElement; }
+    if (!el) return -1;
+    return getContainerSections().indexOf(el);
+  }
+  function loadNotes() {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveNoteEntry(entry) {
+    var notes = loadNotes();
+    notes.push(entry);
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function deleteNoteEntry(id) {
+    var notes = loadNotes().filter(function(n) { return n.id !== id; });
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function getTextNodesIn(root) {
+    var nodes = [];
+    (function walk(n) {
+      if (n.nodeType === Node.TEXT_NODE) { nodes.push(n); return; }
+      for (var i = 0; i < n.childNodes.length; i++) walk(n.childNodes[i]);
+    })(root);
+    return nodes;
+  }
+  function countOccurrenceIndex(root, range, text) {
+    var textNodes = getTextNodesIn(root);
+    var full = '', startAbs = -1, pos = 0;
+    for (var i = 0; i < textNodes.length; i++) {
+      if (textNodes[i] === range.startContainer) startAbs = pos + range.startOffset;
+      full += textNodes[i].nodeValue;
+      pos += textNodes[i].nodeValue.length;
+    }
+    if (startAbs === -1) return 0;
+    var idx = -1, count = 0;
+    while (true) {
+      var next = full.indexOf(text, idx + 1);
+      if (next === -1 || next >= startAbs) break;
+      idx = next;
+      count++;
+    }
+    return count;
+  }
+  function findRangeByOccurrence(root, text, occurrence) {
+    var textNodes = getTextNodesIn(root);
+    var full = textNodes.map(function(t) { return t.nodeValue; }).join('');
+    var idx = -1;
+    for (var c = 0; c <= occurrence; c++) {
+      idx = full.indexOf(text, idx + 1);
+      if (idx === -1) return null;
+    }
+    var startOffset = idx, endOffset = idx + text.length, pos = 0;
+    var range = document.createRange(), startSet = false, endSet = false;
+    for (var i = 0; i < textNodes.length; i++) {
+      var len = textNodes[i].nodeValue.length;
+      if (!startSet && startOffset <= pos + len) { range.setStart(textNodes[i], startOffset - pos); startSet = true; }
+      if (!endSet && endOffset <= pos + len) { range.setEnd(textNodes[i], endOffset - pos); endSet = true; break; }
+      pos += len;
+    }
+    return (startSet && endSet) ? range : null;
+  }
+  function wrapRangeAsNote(range, id) {
+    var span = document.createElement('span');
+    span.className = 'note-underline';
+    span.dataset.noteId = id;
+    var frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  function onNote() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (!document.body.contains(range.commonAncestorContainer)) return;
+    var text = getSelectedText();
+    if (!text) return;
+    var sectionIdx = selectedAnchorNode ? getSectionIndex(selectedAnchorNode) : -1;
+    var sections = getContainerSections();
+    var section = sectionIdx >= 0 ? sections[sectionIdx] : null;
+    var occurrence = section ? countOccurrenceIndex(section, range, text) : 0;
+    var id = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    try {
+      wrapRangeAsNote(range, id);
+      sel.removeAllRanges();
+      if (sectionIdx >= 0) saveNoteEntry({ id: id, sectionIdx: sectionIdx, text: text, occurrence: occurrence });
+      showToast('\u{1F4DD} 已添加划线笔记,再点一下可以取消');
+    } catch (e) {
+      showToast('⚠️ 这段选区暂时无法划线,换一段试试');
+    }
+    hideToolbar();
+  }
+  function removeNote(span) {
+    var id = span.dataset.noteId;
+    var parent = span.parentNode;
+    if (!parent) return;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
+    parent.normalize();
+    deleteNoteEntry(id);
+    showToast('\u{1F5D1}️ 已取消这条划线笔记');
+  }
+  function restoreNotes() {
+    var notes = loadNotes();
+    var sections = getContainerSections();
+    notes.forEach(function(n) {
+      var section = sections[n.sectionIdx];
+      if (!section) return;
+      var range = findRangeByOccurrence(section, n.text, n.occurrence);
+      if (!range) return;
+      try { wrapRangeAsNote(range, n.id); } catch (e) {}
+    });
+  }
+  function positionToolbar(cx, cy) {
+    clearTimeout(hideToolbarTimer);
+    toolbar.classList.add('visible');
+    var tw = toolbar.offsetWidth, th = toolbar.offsetHeight;
+    var left = cx - tw / 2, top = cy + 12;
+    if (left < 12) left = 12;
+    if (left + tw > innerWidth - 12) left = innerWidth - tw - 12;
+    if (top + th > innerHeight - 12) top = cy - th - 12;
+    toolbar.style.left = left + 'px';
+    toolbar.style.top = top + 'px';
+  }
+  function hideToolbar() {
+    clearTimeout(hideToolbarTimer);
+    hideToolbarTimer = setTimeout(function() { toolbar.classList.remove('visible'); }, 200);
+  }
+  function buildContext(section) {
+    var lines = ['## 课程上下文'];
+    lines.push('- 课程:' + COURSE_NAME);
+    lines.push('- 课时:' + LESSON_TITLE);
+    if (section) lines.push('- 章节:' + section);
+    lines.push('');
+    return lines.join('\n');
+  }
+  function onAsk() {
+    var text = getSelectedText();
+    if (!text) return;
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 我选中的内容\n\n' + text + '\n\n## 我的提问\n\n';
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并提问吧!');
+    hideToolbar();
+  }
+  function onModify() {
+    var text = getSelectedText();
+    if (!text) return;
+    document.getElementById('sel-source-text').textContent = text;
+    document.getElementById('sel-modify-instruction').value = '';
+    overlay.classList.add('visible');
+    hideToolbar();
+    setTimeout(function() { document.getElementById('sel-modify-instruction').focus(); }, 100);
+  }
+  function onCopyModify() {
+    var src = document.getElementById('sel-source-text').textContent;
+    var inst = document.getElementById('sel-modify-instruction').value.trim();
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 选中的原文\n\n' + src + '\n\n## 修改要求\n\n' +
+      (inst || '(用户未指定具体要求,请自行判断合理修改方向)');
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并请求修改吧!');
+    hideDialog();
+  }
+  function copyToClipboard(text, msg) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast(msg || '✅ 已复制到剪贴板'); }
+    catch (e) { showToast('⚠\u{FE0F} 未能自动复制,请按 Cmd+C 手动复制'); }
+    document.body.removeChild(ta);
+  }
+  function showToast(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'sel-toast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg;
+    toastEl.classList.add('visible');
+    clearTimeout(toastEl._hideTimer);
+    toastEl._hideTimer = setTimeout(function() { toastEl.classList.remove('visible'); }, 3500);
+  }
+  function hideDialog() { overlay.classList.remove('visible'); }
+  function bindEvents() {
+    document.addEventListener('mouseup', function(e) {
+      if (toolbar.contains(e.target) || overlay.contains(e.target)) return;
+      var text = getSelectedText();
+      if (text.length > 5) {
+        selectedAnchorNode = window.getSelection() ? window.getSelection().anchorNode : null;
+        positionToolbar(e.clientX, e.clientY);
+      } else { hideToolbar(); }
+    });
+    document.addEventListener('scroll', function() { toolbar.classList.remove('visible'); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { hideDialog(); toolbar.classList.remove('visible'); }
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!toolbar.contains(e.target) && !overlay.contains(e.target)) hideToolbar();
+    });
+    document.addEventListener('click', function(e) {
+      var note = e.target.closest && e.target.closest('.note-underline');
+      if (!note) return;
+      var sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().length > 0) return;
+      removeNote(note);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+</script>
+</body>
+</html>

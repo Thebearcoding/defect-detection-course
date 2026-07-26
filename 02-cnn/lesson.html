@@ -1,0 +1,1702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 02 课 · 卷积神经网络:让机器看见 | 缺陷检测课程</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" media="print" onload="this.media='all'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<style>
+:root {
+  /* Anthropic 官方 Token(来自 anthropic-style-cn skill) */
+  --bg: #ECE9E0;
+  --surface: #F5F3EC;
+  --surface2: #E7E3D8;
+  --border: #D8D5CC;
+  --text: #141413;
+  --text-dim: #6B6860;
+  --accent: #D97757;
+  --accent2: #6A9BCC;
+  --good: #6A8A4F;
+  --bad: #C0453A;
+  --ink: #141413;
+  --ink-text: #F0EEE6;
+  --font-display: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-heading: 'Poppins', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217,119,87,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 15%, rgba(106,155,204,0.05) 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.85;
+  font-size: 16.5px;
+  text-spacing-trim: trim-start allow-end;
+  overflow-wrap: break-word;
+}
+
+/* ---- Hero ---- */
+.hero {
+  padding: 88px 24px 56px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero .lesson-tag {
+  display: inline-block;
+  padding: 7px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-bottom: 26px;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.3;
+  margin-bottom: 18px;
+  word-break: keep-all;
+}
+.hero .subtitle {
+  color: var(--text-dim);
+  font-size: 17px;
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ---- Settings bar ---- */
+.settings-bar {
+  max-width: 860px;
+  margin: 20px auto 0;
+  padding: 0 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-dim);
+  user-select: none;
+}
+.toggle-track {
+  width: 40px; height: 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.25s var(--ease);
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: all 0.25s var(--ease);
+}
+.toggle-wrap.active .toggle-track { background: var(--accent); border-color: var(--accent); }
+.toggle-wrap.active .toggle-track::after { left: 20px; background: #fff; }
+.toggle-wrap.active { color: var(--text); }
+
+/* ---- Layout ---- */
+.container { max-width: 860px; margin: 0 auto; padding: 24px 24px 96px; }
+section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+section:last-of-type { border-bottom: none; }
+h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  word-break: keep-all;
+}
+h2 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 28px 0 12px;
+}
+p { margin-bottom: 15px; }
+strong { color: var(--text); font-weight: 700; }
+em { color: var(--accent); font-style: normal; font-weight: 500; }
+ul, ol { margin: 0 0 15px 24px; }
+li { margin-bottom: 8px; }
+
+/* ---- Story card ---- */
+.story-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 20px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.05);
+}
+.story-card .story-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent2);
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+.story-card p:last-child { margin-bottom: 0; }
+
+/* ---- Insight box ---- */
+.insight-box {
+  background: linear-gradient(135deg, rgba(217,119,87,0.09), rgba(217,119,87,0.04));
+  border: 1px solid rgba(217,119,87,0.35);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.insight-box .insight-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+.insight-box p:last-child { margin-bottom: 0; }
+
+/* ---- Code block ---- */
+.code-block {
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.9;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--ink-text);
+}
+.code-block .cm { color: #9C9A92; }
+.code-block .kw { color: #E8A188; }
+.code-block .st { color: #A8C090; }
+
+/* ---- Compare grid ---- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.compare-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.compare-box h4 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.compare-box p { font-size: 14.5px; color: var(--text-dim); margin-bottom: 6px; }
+.compare-box p:last-child { margin-bottom: 0; }
+
+/* ---- Pipeline ---- */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 22px 0;
+}
+.pipeline-step {
+  flex: 1 1 130px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+}
+.pipeline-step .step-num {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-title {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+.pipeline-arrow { display: flex; align-items: center; color: var(--accent); font-size: 18px; }
+
+/* ---- Interactive demo shell ---- */
+.demo-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.06);
+}
+.demo-box .demo-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.demo-box .demo-hint { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.8; }
+.demo-status {
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-family: var(--font-heading);
+}
+.demo-btns { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.demo-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.demo-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.demo-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.demo-btn.primary:hover { filter: brightness(1.07); color: #fff; }
+.demo-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ---- Matrix grids (conv stepper) ---- */
+.mat-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 16px 0;
+}
+.mat-block { text-align: center; }
+.mat-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.mat-grid { display: grid; gap: 4px; justify-content: center; }
+.mat-cell {
+  width: 42px; height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: all 0.2s var(--ease);
+}
+.mat-cell.v3 { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
+.mat-cell.kpos { background: rgba(217,119,87,0.14); color: #B05C3F; border-color: rgba(217,119,87,0.45); font-weight: 700; }
+.mat-cell.kneg { background: rgba(106,155,204,0.14); color: #4A7BA8; border-color: rgba(106,155,204,0.5); font-weight: 700; }
+.mat-cell.kzero { color: var(--text-dim); }
+.mat-cell.win { box-shadow: 0 0 0 3px var(--accent); }
+.mat-cell.filled { background: rgba(217,119,87,0.13); color: var(--text); font-weight: 700; border-color: rgba(217,119,87,0.4); }
+.mat-cell.cur-out { box-shadow: 0 0 0 3px var(--accent); }
+.mat-op {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--text-dim);
+  padding-top: 60px;
+}
+.conv-calc {
+  background: var(--ink);
+  color: var(--ink-text);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.9;
+  min-height: 46px;
+}
+.conv-calc .hl { color: #E8A188; font-weight: 700; }
+
+/* ---- Filter demo ---- */
+.filter-canvases {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 14px 0;
+}
+.fc-block { text-align: center; }
+.fc-block canvas {
+  width: 264px; height: 264px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+  image-rendering: pixelated;
+  display: block;
+}
+.fc-cap {
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+.fc-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+/* ---- Receptive field viz ---- */
+.rf-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.rf-block { text-align: center; }
+.rf-grid { display: grid; gap: 3px; justify-content: center; }
+.rf-cell {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.rf-cell:hover { border-color: var(--accent); }
+.rf-cell.src { background: var(--accent); border-color: var(--accent); }
+.rf-cell.mid { background: rgba(217,119,87,0.5); border-color: rgba(217,119,87,0.5); }
+.rf-cell.field { background: rgba(217,119,87,0.18); border-color: rgba(217,119,87,0.3); }
+.rf-arrow {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  min-width: 64px;
+  line-height: 1.5;
+}
+.rf-arrow b { color: var(--accent); font-size: 16px; display: block; }
+
+/* ---- Quiz ---- */
+.quiz {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 18px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.quiz .quiz-q { font-family: var(--font-heading); font-weight: 500; margin-bottom: 14px; }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  line-height: 1.7;
+}
+.quiz-option:hover { border-color: var(--accent); transform: translateY(-1px); }
+.quiz-option.correct { border-color: var(--good); background: rgba(106,138,79,0.1); }
+.quiz-option.wrong { border-color: var(--bad); background: rgba(192,69,58,0.08); }
+.quiz-feedback {
+  display: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  margin-top: 6px;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok { background: rgba(106,138,79,0.09); border: 1px solid rgba(106,138,79,0.4); color: #4F6A3B; }
+.quiz-feedback.no { background: rgba(192,69,58,0.07); border: 1px solid rgba(192,69,58,0.35); color: var(--bad); }
+
+/* ---- Further reading ---- */
+.further-reading { padding: 44px 0; }
+.reading-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.reading-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 22px;
+  transition: all 0.2s var(--ease);
+}
+.reading-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+.reading-title a {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 15.5px;
+}
+.reading-title a:hover { text-decoration: underline; }
+.reading-meta {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.reading-desc { font-size: 14.5px; color: var(--text-dim); margin-top: 6px; }
+.further-reading-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 14.5px;
+}
+.further-reading-inline .fr-icon { flex-shrink: 0; }
+.further-reading-inline a { color: var(--accent); font-weight: 500; }
+
+/* ---- Exercise section ---- */
+#code-exercise.hidden { display: none; }
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 16px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.exercise-card h3 { margin-top: 0; }
+.todo-list { margin-top: 10px; }
+.todo-list li { font-size: 15px; }
+.todo-list code, p code, li code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #B05C3F;
+}
+
+/* ---- Lesson nav ---- */
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+}
+.lesson-nav a, .lesson-nav span {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+}
+.lesson-nav span { color: var(--text-dim); }
+.lesson-nav a:hover { text-decoration: underline; }
+
+/* ---- Selection toolbar ---- */
+.selection-toolbar {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.15);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.selection-toolbar.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.sel-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.sel-btn:hover { border-color: var(--accent); background: var(--bg); }
+.sel-btn:active { transform: scale(0.96); }
+.sel-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(20,20,19,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sel-dialog-overlay.visible { opacity: 1; pointer-events: auto; }
+.sel-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(20,20,19,0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sel-dialog-title { font-family: var(--font-heading); font-size: 20px; font-weight: 500; margin-bottom: 20px; }
+.sel-dialog-field { margin-bottom: 16px; }
+.sel-dialog-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.sel-dialog-source {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.sel-dialog textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+}
+.sel-dialog textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,87,0.2); }
+.sel-dialog textarea::placeholder { color: var(--text-dim); }
+.sel-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.sel-btn-cancel {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+.sel-btn-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-confirm:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.sel-btn-confirm:active { transform: scale(0.97); }
+.sel-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 100001;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--ink-text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 24px rgba(20,20,19,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+}
+.sel-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.note-underline {
+  background: rgba(255, 212, 59, 0.45);
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.note-underline:hover { background: rgba(255, 212, 59, 0.65); }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 26px; }
+  .pipeline-arrow { display: none; }
+  .mat-cell { width: 34px; height: 34px; font-size: 12px; }
+  .rf-cell { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ===== mobile adaptation (injected, uniform across course) ===== */
+@media (max-width: 640px) {
+  body { font-size: 15.5px; }
+  .container { padding: 16px 16px 72px; }
+  .hero { padding: 52px 18px 38px; }
+  .hero .subtitle { font-size: 15.5px; }
+  section { padding: 32px 0; }
+  h2 { font-size: 22px; }
+  h2 .num { width: 30px; height: 30px; font-size: 14px; }
+  .demo-box { padding: 16px 14px; }
+  canvas { max-width: 100%; height: auto !important; }
+  .fc-block canvas { width: 100% !important; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .code-block { font-size: 11.5px; padding: 13px 14px; line-height: 1.75; }
+  .slider-row { flex-wrap: wrap; }
+  .slider-row label { min-width: 0; flex: 1 1 100%; }
+  .lesson-nav { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .quiz { padding: 16px 16px; }
+  .quiz-option { font-size: 14px; padding: 11px 12px; }
+  .demo-btns .demo-btn, .demo-btn { padding: 9px 15px; font-size: 13px; }
+  .story-card, .insight-box, .exercise-card { padding: 16px 16px; }
+  .settings-bar { padding: 0 16px; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bp-diagram { font-size: 12px; }
+  .bp-node { min-width: 66px; padding: 8px 8px; }
+  .mat-op { padding-top: 40px; }
+  .selection-toolbar { max-width: calc(100vw - 16px); flex-wrap: wrap; }
+}
+@media (max-width: 400px) {
+  .mat-cell { width: 30px; height: 30px; font-size: 11px; }
+  .rf-cell { width: 17px; height: 17px; }
+  .mat-grid { gap: 3px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="lesson-tag">缺陷检测课程 · 第 02 课</div>
+  <h1>卷积神经网络:让机器看见</h1>
+  <p class="subtitle">上一课的网络还"看不了"图像——参数会爆炸。这一课用两个朴素的先验(局部性、权重共享)把它改造成视觉专用机器,并埋好通往缺陷检测的最重要伏笔:预训练特征。</p>
+</div>
+
+<div class="settings-bar">
+  <label class="toggle-wrap active" id="code-toggle">
+    <span>配套练习</span>
+    <div class="toggle-track"></div>
+  </label>
+</div>
+
+<div class="container">
+
+<!-- ============ §0 ============ -->
+<section>
+  <h2><span class="num">0</span> 快速回顾</h2>
+  <p>第 01 课的三个结论,是这一课的地基:</p>
+  <ul>
+    <li><strong>网络是参数化的函数模板</strong>:一摞"线性变换 + 非线性激活",全部行为由权重和偏置决定。</li>
+    <li><strong>训练 = 梯度下降最小化损失</strong>,反向传播负责高效算梯度。这一课不再碰训练机制——它对任何网络结构都一样。</li>
+    <li><strong>深层特征是逐层组合出来的</strong>:上一课埋的种子。这一课你会看到这个组合过程在图像上具体长什么样:边缘 → 纹理 → 部件 → 物体。</li>
+  </ul>
+</section>
+
+<!-- ============ §1 ============ -->
+<section>
+  <h2><span class="num">1</span> 全连接的困境:图像进不去</h2>
+
+  <p>把上一课的多层网络直接接上图像,会立刻遇到两个致命问题。</p>
+
+  <h3>问题一:参数爆炸</h3>
+  <p>一张很小的工业相机图 224×224、RGB 三通道,拉平后是 224×224×3 ≈ <strong>15 万个输入</strong>。接一个只有 1000 个神经元的隐藏层,每个神经元都要连接全部输入——参数量:</p>
+  <div class="code-block">150,528 输入 × 1,000 神经元 ≈ <span class="kw">1.5 亿参数</span>   <span class="cm"># 这才第一层</span></div>
+  <p>存不下是小事,更糟的是:参数越多,需要的训练数据越多,而工业场景恰恰<strong>最缺数据</strong>(第 4 课会展开这个矛盾)。</p>
+
+  <h3>问题二:丢掉了空间结构</h3>
+  <p>拉平操作把图像变成一根长向量,"哪些像素互为邻居"这个信息被彻底抹掉了。更荒谬的是:全连接网络里,左上角的划痕和右下角的划痕对应<em>完全不同的权重</em>——同一种缺陷,换个位置就要从头重学一遍。</p>
+
+  <div class="insight-box">
+    <div class="insight-label">两个先验,救活整件事</div>
+    <p>卷积神经网络(CNN)把两条关于图像的常识"焊死"在网络结构里:<br>
+    ① <strong>局部性</strong>:判断一小块区域是不是边缘/划痕,看它周围 3×3 邻域就够了,不需要看全图;<br>
+    ② <strong>平移共享</strong>:探测划痕的方法在图像任何位置都一样,所以<em>同一组权重可以扫遍全图</em>。<br>
+    这两条合起来,就是"卷积"这个操作。参数量从 1.5 亿掉到几百,还免费获得"缺陷在哪都认得"的能力。</p>
+  </div>
+</section>
+
+<!-- ============ §2 ============ -->
+<section>
+  <h2><span class="num">2</span> 卷积:滑动的模式探测器</h2>
+
+  <p><em>卷积核</em>(kernel,也叫 filter)是一个很小的权重矩阵,常见 3×3。它做的事,拆开只有三步:</p>
+  <ol>
+    <li><strong>对位相乘</strong>:把核盖在图像的某个 3×3 窗口上,9 对数字各自相乘;</li>
+    <li><strong>求和</strong>:9 个乘积加起来,得到一个数——这就是上一课的加权和 z,只是权重排成了方阵;</li>
+    <li><strong>滑动</strong>:窗口向右、向下逐格移动,每个位置都算一个数,结果拼成一张新的"图",叫<em>特征图</em>(feature map)。</li>
+  </ol>
+
+  <p>这个"对位相乘再求和"在几何上是<strong>相似度打分</strong>:窗口里的图案和核的图案越像,输出值越大。所以一个卷积核就是一个<em>模式探测器</em>——它扫过全图,在每个位置回答同一个问题:"这里有没有我要找的图案?"</p>
+
+  <div class="demo-box">
+    <div class="demo-title">🎞 交互:亲手滑一遍卷积</div>
+    <div class="demo-hint">左边是 5×5 输入(深色块 = 亮像素,构成一条<strong>斜向边缘</strong>);中间的 3×3 核是"左亮右暗"竖直边缘探测器(橙 = +1,蓝 = −1)。点「下一步」看窗口滑动、对位相乘、填充特征图的全过程。注意:<strong>输出值大的位置,正是边缘经过的位置。</strong></div>
+    <div class="mat-row-wrap">
+      <div class="mat-block">
+        <div class="mat-label">输入 5×5</div>
+        <div class="mat-grid" id="cv-input" style="grid-template-columns: repeat(5, 42px);"></div>
+      </div>
+      <div class="mat-op">⊛</div>
+      <div class="mat-block">
+        <div class="mat-label">卷积核 3×3</div>
+        <div class="mat-grid" id="cv-kernel" style="grid-template-columns: repeat(3, 42px);"></div>
+      </div>
+      <div class="mat-op">=</div>
+      <div class="mat-block">
+        <div class="mat-label">特征图 3×3</div>
+        <div class="mat-grid" id="cv-output" style="grid-template-columns: repeat(3, 42px);"></div>
+      </div>
+    </div>
+    <div class="conv-calc" id="cv-calc">点「下一步」开始滑动。</div>
+    <div class="demo-btns">
+      <button class="demo-btn primary" id="cv-next">下一步</button>
+      <button class="demo-btn" id="cv-auto">自动播放</button>
+      <button class="demo-btn" id="cv-reset">重置</button>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    <div class="insight-label">和上一课接轨</div>
+    <p>卷积层仍然是"加权和 + 偏置 + 激活(ReLU)",和第 01 课的神经元<strong>同一个公式</strong>。区别只有两点:每个输出只连接局部 3×3 窗口(局部性),且整张图共用同一组 9 个权重(共享)。所以它的参数一样用梯度下降 + 反向传播来学——<strong>核里的数字不是人设计的,是训练出来的</strong>。</p>
+  </div>
+</section>
+
+<!-- ============ §3 ============ -->
+<section>
+  <h2><span class="num">3</span> 三个尺寸旋钮:padding、stride、通道</h2>
+
+  <p>刚才的演示里,5×5 的输入卷出了 3×3 的特征图——窗口在边缘"出不去",尺寸缩了一圈。实际使用时有三个旋钮控制这件事:</p>
+
+  <h3>padding(填充)</h3>
+  <p>在输入四周补一圈 0,让窗口能"骑"在边缘上。3×3 核补一圈(P=1)正好保持尺寸不变——这就是最常用的 "same" 配置。不补的话,边缘像素被扫到的次数远少于中心像素,<strong>边缘信息会被系统性稀释</strong>;对缺陷检测这很要命,因为缺陷完全可能出现在工件边缘。</p>
+
+  <h3>stride(步长)</h3>
+  <p>窗口每次滑几格。S=1 逐格扫;S=2 隔格扫,输出尺寸直接减半——这是一种主动的降采样,后面会看到它和池化的分工。</p>
+
+  <h3>通道(channel)</h3>
+  <p>真实图像是 RGB 三通道,所以核其实是 3×3×<strong>3</strong> 的小立方体,27 对数字一起相乘求和,输出仍是一个数。一个核只能找一种模式,实际每层会并排放 M 个核,产出 M 张特征图——M 就是这一层的<em>输出通道数</em>。下一层的核再在这 M 个通道上继续卷。</p>
+
+  <div class="code-block">输出尺寸 = ⌊(N − K + 2P) / S⌋ + 1
+<span class="cm"># N=输入边长  K=核边长  P=padding  S=stride</span>
+例1:N=32, K=3, P=1, S=1 → 32   <span class="cm"># "same":尺寸不变</span>
+例2:N=32, K=3, P=0, S=2 → 15   <span class="cm"># 步长 2:尺寸近半</span>
+
+一层卷积的参数量 = K × K × 输入通道 × 输出通道 + 输出通道(偏置)
+例:3×3 核、3 通道入、64 通道出 → 3×3×3×64 + 64 = <span class="kw">1,792 个参数</span>
+<span class="cm"># 对比 §1 全连接的 1.5 亿——这就是两个先验的威力</span></div>
+</section>
+
+<!-- ============ §4 ============ -->
+<section>
+  <h2><span class="num">4</span> 亲眼看看:卷积核就是特征探测器</h2>
+
+  <p>不同的核找不同的模式。下面是一张程序生成的"金属圆盘工件图",上面有一道斜向划痕和一个凹坑。切换卷积核,看每种核各自"看见"什么:</p>
+
+  <div class="demo-box">
+    <div class="demo-title">🔍 交互:给工件图换滤镜</div>
+    <div class="demo-hint">重点试「垂直边缘」和「水平边缘」:圆盘轮廓和划痕被点亮,平坦区域一片黑——边缘核只对亮度<strong>变化</strong>有响应。这正是缺陷检测的第一性直觉:<strong>缺陷 = 局部模式的异常变化</strong>。</div>
+    <div class="filter-canvases">
+      <div class="fc-block">
+        <canvas id="ft-src" width="96" height="96"></canvas>
+        <div class="fc-cap">原图(96×96 灰度)</div>
+      </div>
+      <div class="fc-arrow">→</div>
+      <div class="fc-block">
+        <canvas id="ft-dst" width="96" height="96"></canvas>
+        <div class="fc-cap" id="ft-cap">卷积输出</div>
+      </div>
+    </div>
+    <div class="demo-btns" id="ft-btns">
+      <button class="demo-btn" data-k="identity">原图</button>
+      <button class="demo-btn" data-k="sobelx">垂直边缘</button>
+      <button class="demo-btn" data-k="sobely">水平边缘</button>
+      <button class="demo-btn" data-k="sharpen">锐化</button>
+      <button class="demo-btn" data-k="blur">模糊</button>
+    </div>
+    <div class="demo-status" id="ft-status"></div>
+  </div>
+
+  <p>上面这些核(Sobel 边缘、模糊、锐化)是几十年前人工设计的经典图像处理算子。CNN 的革命在于:<strong>不再人工设计,让梯度下降自己学</strong>。训练好的 CNN 第一层学出来的核,长得和 Sobel 边缘核、颜色斑块核惊人地相似——网络自己"发现"了边缘是理解图像的基本单位,然后在更深的层把它们组合成更复杂的探测器。</p>
+</section>
+
+<!-- ============ §5 ============ -->
+<section>
+  <h2><span class="num">5</span> 池化:抓重点,缩地图</h2>
+
+  <p><em>最大池化</em>(max pooling)是最常用的降采样操作:把特征图切成 2×2 的小块,每块只保留最大值,尺寸减半:</p>
+
+  <div class="code-block">┌ 1  3 │ 2  0 ┐          ┌ 6 │ 7 ┐
+│ 5  6 │ 7  1 │   2×2 池化   │───┼───│
+│──────┼──────│  ────────→  │ 9 │ 8 │
+│ 9  2 │ 4  8 │          └───┴───┘
+└ 0  1 │ 3  5 ┘   <span class="cm"># 每个 2×2 块取最大值,4×4 → 2×2</span></div>
+
+  <p>为什么要这么做?三个理由:</p>
+  <ul>
+    <li><strong>压缩计算</strong>:尺寸减半,后续层的计算量降到 1/4;</li>
+    <li><strong>放大视野</strong>:池化后,下一层的 3×3 窗口覆盖的是原图更大的范围(下一节展开);</li>
+    <li><strong>容忍小位移</strong>:最大值只回答"这个区域<em>有没有</em>强响应",不追究精确在哪个像素——图案挪动一两个像素,输出不变。对"划痕位置永远不固定"的缺陷检测,这是天然的鲁棒性。</li>
+  </ul>
+
+  <p>代价同样明显:<strong>精确位置信息被扔掉了</strong>。对分类任务无所谓("有没有缺陷"),但第 6 课的语义分割要精确到像素勾出缺陷轮廓,到时候你会看到 U-Net 如何用上采样和 skip connection 把丢掉的细节找回来——这里先记下这笔账。</p>
+</section>
+
+<!-- ============ §6 ============ -->
+<section>
+  <h2><span class="num">6</span> 感受野:深层为什么"看得更广"</h2>
+
+  <p>一个特征图上的格子,能"看到"原始图像的多大范围?这个范围叫它的<em>感受野</em>(receptive field)。第一层的格子只能看到 3×3;但第二层的每个格子看的是第一层的 3×3 个格子,而那些格子各自又看原图的 3×3——层层展开,第二层的感受野是 5×5,第三层是 7×7。<strong>每加一层 3×3 卷积,感受野向外扩一圈。</strong></p>
+
+  <div class="demo-box">
+    <div class="demo-title">👁 交互:点一个格子,看它的视野</div>
+    <div class="demo-hint">三张网格是"输入 → 第 1 层 → 第 2 层"。<strong>点击右边两层的任意格子</strong>,橙色区域就是它逐层向下展开的感受野。试试:第 2 层随便一个格子,视野已经覆盖输入的 5×5。</div>
+    <div class="rf-wrap">
+      <div class="rf-block">
+        <div class="mat-label">输入 7×7</div>
+        <div class="rf-grid" id="rf-l0" style="grid-template-columns: repeat(7, 26px);"></div>
+      </div>
+      <div class="rf-arrow"><b>⊛</b>3×3 卷积</div>
+      <div class="rf-block">
+        <div class="mat-label">第 1 层 5×5</div>
+        <div class="rf-grid" id="rf-l1" style="grid-template-columns: repeat(5, 26px);"></div>
+      </div>
+      <div class="rf-arrow"><b>⊛</b>3×3 卷积</div>
+      <div class="rf-block">
+        <div class="mat-label">第 2 层 3×3</div>
+        <div class="rf-grid" id="rf-l2" style="grid-template-columns: repeat(3, 26px);"></div>
+      </div>
+    </div>
+    <div class="demo-status" id="rf-status">点击第 1 层或第 2 层的格子。</div>
+  </div>
+
+  <p>感受野解释了 CNN 的分工逻辑:<strong>浅层视野小,只能看见边缘、斑点这类局部图案;深层视野大,能把它们拼成纹理、部件乃至整个物体。</strong>加上池化/步长卷积让尺寸减半,视野扩张的速度还会翻倍。这也是为什么后面第 8 课做缺陷检测时要同时用"浅层+深层"的特征——小划痕要浅层的高分辨率,大面积污染要深层的大视野。</p>
+</section>
+
+<!-- ============ §7 ============ -->
+<section>
+  <h2><span class="num">7</span> 特征层次与残差连接:网络如何变深</h2>
+
+  <p>把"卷积 + ReLU + 池化"一段段叠起来,就是完整的 CNN。训练好之后,逐层可视化会看到清晰的层次:</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">浅层</div>
+      <div class="step-title">边缘 / 色块</div>
+      <div class="step-desc">Sobel 式边缘核<br>视野 ~3×3</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">中层</div>
+      <div class="step-title">纹理 / 角点</div>
+      <div class="step-desc">边缘的组合<br>视野 ~几十像素</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">深层</div>
+      <div class="step-title">部件 / 物体</div>
+      <div class="step-desc">纹理的组合<br>视野接近全图</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">输出</div>
+      <div class="step-title">任务头</div>
+      <div class="step-desc">分类 / 检测 / 分割<br>按任务定制</div>
+    </div>
+  </div>
+
+  <p>层次越深表达力越强,于是大家拼命堆深:LeNet(5 层,1998)→ AlexNet(8 层,2012,深度学习爆发的起点)→ VGG(19 层,证明"小核堆深"优于大核:两层 3×3 的视野等于一层 5×5,参数更少、非线性多一次)。但堆到几十层时撞了墙:<strong>更深的网络训练误差反而更高</strong>。不是过拟合,是训练本身失败了——回想第 01 课:梯度要经过几十层连乘往回传,信号越传越弱(梯度消失),浅层参数几乎收不到更新指令。</p>
+
+  <h3>残差连接:给梯度修一条直通路</h3>
+  <p>2015 年的 ResNet 用一个极简的改动解决了它。原来每一段网络直接学输出 H(x);ResNet 让它改学<em>残差</em> F(x),然后把输入原封不动加回来:</p>
+
+  <div class="code-block">     ┌─────── 恒等捷径(skip)────────┐
+     │                              ↓
+x ──→┴──[ 卷积 → ReLU → 卷积 ]──→(+)──→ 输出 = F(x) + x</div>
+
+  <p>两个立竿见影的效果:① 反向传播时,梯度可以沿"+x"这条捷径<strong>无衰减地直达浅层</strong>,连乘链条被加法旁路打断,百层网络照样训得动;② 如果某一段没什么可学的,它只需把 F(x) 压到 0,整段自动退化为恒等映射——<strong>加深永远不会变得更差</strong>。ResNet-18/50 从此成为视觉任务的默认<em>骨干网络</em>(backbone)。</p>
+
+  <div class="further-reading-inline">
+    <span class="fr-icon">📖</span>
+    <span>想亲眼看一个 CNN 逐层处理图像的全过程?→ <a href="https://poloclub.github.io/cnn-explainer/" target="_blank" rel="noopener">CNN Explainer</a>(佐治亚理工出品,浏览器里逐层展开一个真实小型 CNN,每个数字都能点开看计算过程,是本课交互演示的"全尺寸版")</span>
+  </div>
+</section>
+
+<!-- ============ §8 ============ -->
+<section>
+  <h2><span class="num">8</span> 预训练与迁移学习:站在 ImageNet 的肩膀上</h2>
+
+  <p>训练一个 ResNet-50 需要百万级标注图像。工业现场只有几百张零件图,怎么办?答案是本课最重要、也是通往后面课程的一个概念:<em>迁移学习</em>(transfer learning)。</p>
+
+  <p>做法:拿一个在 <strong>ImageNet</strong>(130 万张自然图像、1000 类)上训练好的网络,把它学到的参数作为起点,而不是从随机数开始。它为什么可行?回看 §7 的特征层次——<strong>浅层和中层学到的边缘、纹理、形状探测器,是"通用视觉词汇",和具体任务无关</strong>。识别猫狗练出来的边缘核,检测零件划痕照样能用;只有最深层的"猫头探测器"才是任务专属的。</p>
+
+  <p>迁移的三种典型姿势,按"动多少参数"排列:</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>① 微调(fine-tune)</h4>
+      <p>换掉任务头,用自己的数据以小学习率继续训练全部或部分层。</p>
+      <p>数据几百张起步即可,是有监督缺陷检测(第 5、6 课)的标准做法。</p>
+    </div>
+    <div class="compare-box">
+      <h4>② 冻结特征 + 轻量头</h4>
+      <p>骨干完全不动,只训练新接的小输出层。</p>
+      <p>数据更少时用,防止把预训练特征"训坏"。</p>
+    </div>
+    <div class="compare-box">
+      <h4>③ 纯特征提取(零训练)</h4>
+      <p>骨干冻结,连头都不接——直接抽中间层特征图,在上面做统计建模。</p>
+      <p><strong>一次训练都不做。</strong>这是第 8 课 PaDiM / PatchCore 的全部前提。</p>
+    </div>
+  </div>
+
+  <div class="insight-box">
+    <div class="insight-label">种子发芽</div>
+    <p>第 01 课埋的种子——"深层特征是带语义的表示"——现在长出了具体形状:<strong>一个 ImageNet 预训练的 ResNet,其中间层特征图是一部现成的'视觉词典',查词典不需要再训练。</strong>当今工业界最主流的无监督缺陷检测方法(第 8 课),就是给正常样本查词典、建档案,再看新样本查出来的词偏不偏。记住姿势③,到第 8 课它就是主角。</p>
+  </div>
+</section>
+
+<!-- ============ 测验 ============ -->
+<section>
+  <h2><span class="num">✓</span> 自我检验</h2>
+  <p>四道题,检查本课的核心概念是否立住了。</p>
+
+  <div class="quiz" id="quiz1">
+    <div class="quiz-q">Q1 · 卷积层的参数量远小于全连接层,最根本的原因是?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">A. 卷积层的输入图像分辨率更低</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz1')">B. 局部连接 + 权重共享:每个输出只看 3×3 窗口,且全图复用同一组核参数</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">C. 卷积层不需要偏置项</button>
+    <div class="quiz-feedback ok" id="quiz1-correct">✔ 正确。§3 的算例:3×3×3×64+64=1,792 个参数就能处理任意尺寸的图像,因为同一组核滑遍全图(共享),且每次只连局部窗口(局部性)。</div>
+    <div class="quiz-feedback no" id="quiz1-wrong">✘ 回看 §1 的"两个先验"和 §3 结尾的参数量算例——关键在于连接方式,不在分辨率或偏置。</div>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-q">Q2 · 32×32 的输入,用 3×3 卷积核、padding=1、stride=1,输出尺寸是?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">A. 30×30</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz2')">B. 32×32</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">C. 16×16</button>
+    <div class="quiz-feedback ok" id="quiz2-correct">✔ 正确。⌊(32−3+2×1)/1⌋+1 = 32,这就是保持尺寸不变的 "same" 配置——3×3 核配 P=1 是最常见的组合。</div>
+    <div class="quiz-feedback no" id="quiz2-wrong">✘ 代入 §3 的公式:⌊(N−K+2P)/S⌋+1 = ⌊(32−3+2)/1⌋+1 = 32。P=1 正好补回卷积缩掉的那一圈。</div>
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-q">Q3 · 堆叠两层 3×3 卷积(stride=1,无池化),第二层每个格子在原图上的感受野是?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">A. 3×3,和一层一样</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">B. 9×9,两层相乘</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz3')">C. 5×5,每加一层向外扩一圈</button>
+    <div class="quiz-feedback ok" id="quiz3-correct">✔ 正确。第二层的格子看第一层的 3×3,那 9 个格子在原图上合计覆盖 5×5(去 §6 的交互里点给自己看)。这也是 VGG"两层 3×3 替代一层 5×5"的依据:视野相同,参数更少,非线性多一次。</div>
+    <div class="quiz-feedback no" id="quiz3-wrong">✘ 感受野是逐层"向外扩一圈"地长,不是不变也不是相乘。回到 §6 的交互演示,点一个第 2 层格子看它的视野展开。</div>
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-q">Q4 · ResNet 的残差连接(y = F(x) + x)主要解决了什么问题?</div>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz4')">A. 深层网络训练时梯度经多层连乘而消失,+x 捷径让梯度直达浅层</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">B. 减少了网络的参数量</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">C. 消除了对激活函数的需求</button>
+    <div class="quiz-feedback ok" id="quiz4-correct">✔ 正确。反向传播的链式连乘在深网络里会把梯度衰减到接近 0(第 01 课的伏笔);加法捷径给梯度开了条不衰减的旁路,同时保证"加深不会更差"。</div>
+    <div class="quiz-feedback no" id="quiz4-wrong">✘ 残差连接不减参数也不取代激活函数——它救的是"深层网络训不动"这个训练问题。回看 §7 的捷径示意图和梯度消失的解释。</div>
+  </div>
+</section>
+
+<!-- ============ 延伸阅读 ============ -->
+<section class="further-reading">
+  <h2><span class="num">✦</span> 延伸阅读</h2>
+  <p>按"动手直觉 → 系统学习 → 深入观察"排序:</p>
+  <div class="reading-list">
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://poloclub.github.io/cnn-explainer/" target="_blank" rel="noopener">CNN Explainer</a></div>
+      <div class="reading-meta">Georgia Tech / Oregon State · 交互式网页</div>
+      <div class="reading-desc">在浏览器里逐层拆解一个真实的小型 CNN:每张特征图、每次卷积、每个 ReLU 都可以点开看数值计算。本课 §2 演示的"全尺寸版",强烈建议花 15 分钟玩一遍。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://zh.d2l.ai/chapter_convolutional-neural-networks/index.html" target="_blank" rel="noopener">《动手学深度学习》第 6 章:卷积神经网络</a></div>
+      <div class="reading-meta">d2l.ai · 免费在线教材(中文)</div>
+      <div class="reading-desc">本课 §1-§5 的系统化版本,从全连接的局限推导出卷积,公式与可运行代码并排;第 7 章紧接着讲 VGG/ResNet 等现代架构。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://cs231n.github.io/convolutional-networks/" target="_blank" rel="noopener">CS231n 讲义:Convolutional Networks</a></div>
+      <div class="reading-meta">斯坦福 CS231n · 课程讲义(英文)</div>
+      <div class="reading-desc">对卷积层、池化层、尺寸计算最严谨清晰的讲义,§3 的公式在这里有完整推导和大量例题式讲解。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://distill.pub/2017/feature-visualization/" target="_blank" rel="noopener">Distill:Feature Visualization</a></div>
+      <div class="reading-meta">Distill.pub · 交互式论文(英文)</div>
+      <div class="reading-desc">用可视化直接"看见"训练好的网络每一层在探测什么——§7 说的"边缘 → 纹理 → 部件"层次,这篇文章让你亲眼看到证据。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 配套练习 ============ -->
+<section id="code-exercise">
+  <h2><span class="num">✎</span> 配套代码练习</h2>
+  <div class="exercise-card">
+    <h3>exercise.py:从零实现卷积,并抓到一道划痕</h3>
+    <p>本课目录下的 <code>exercise.py</code> 用纯 Python(零依赖)实现 CNN 的三大件。运行 <code>python exercise.py</code>,完成 5 个递进的 TODO:</p>
+    <ol class="todo-list">
+      <li><strong>TODO 1</strong> · 实现二维卷积 <code>conv2d</code>(滑动窗口 + 对位相乘求和)—— 对应 §2</li>
+      <li><strong>TODO 2</strong> · 实现零填充 <code>zero_pad</code> —— 对应 §3</li>
+      <li><strong>TODO 3</strong> · 实现输出尺寸公式 <code>conv_output_size</code> —— 对应 §3</li>
+      <li><strong>TODO 4</strong> · 实现 2×2 最大池化 <code>max_pool2x2</code> —— 对应 §5</li>
+      <li><strong>TODO 5</strong> · 串联全部:<code>conv → ReLU → pool</code> 三件套扫一张 8×8 工件图,自动定位划痕所在区域 —— 一个最小可用的"缺陷检测器"</li>
+    </ol>
+    <p style="margin-top:12px">做完 TODO 5 你会发现:边缘核 + ReLU + 池化,就足以把"划痕在图像右侧"这个结论从像素里挤出来——这正是深度 CNN 每一层都在做的事,只是它有几百个学出来的核。</p>
+  </div>
+</section>
+
+<div class="lesson-nav">
+  <a href="../01-neural-networks/lesson.html">← 上一课:神经网络是怎么学会的</a>
+  <a href="../03-training-methodology/lesson.html">下一课:训练模型的方法论 →</a>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ============ §2 卷积滑动步进 ============ */
+(function() {
+  var INPUT = [
+    [3,0,0,0,0],
+    [3,3,0,0,0],
+    [0,3,3,0,0],
+    [0,0,3,3,0],
+    [0,0,0,3,3]
+  ];
+  var KERNEL = [[1,0,-1],[1,0,-1],[1,0,-1]];
+  var OUT = [];
+  for (var r = 0; r < 3; r++) {
+    OUT.push([]);
+    for (var c = 0; c < 3; c++) {
+      var s = 0;
+      for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) s += INPUT[r+i][c+j] * KERNEL[i][j];
+      OUT[r].push(s);
+    }
+  }
+  var inEl = document.getElementById('cv-input');
+  var kEl = document.getElementById('cv-kernel');
+  var outEl = document.getElementById('cv-output');
+  var calcEl = document.getElementById('cv-calc');
+  var nextBtn = document.getElementById('cv-next');
+  var autoBtn = document.getElementById('cv-auto');
+  var inCells = [], outCells = [];
+  INPUT.forEach(function(row, r) {
+    row.forEach(function(v, c) {
+      var d = document.createElement('div');
+      d.className = 'mat-cell' + (v === 3 ? ' v3' : '');
+      d.textContent = v;
+      inEl.appendChild(d);
+      inCells.push(d);
+    });
+  });
+  KERNEL.forEach(function(row) {
+    row.forEach(function(v) {
+      var d = document.createElement('div');
+      d.className = 'mat-cell ' + (v > 0 ? 'kpos' : (v < 0 ? 'kneg' : 'kzero'));
+      d.textContent = v;
+      kEl.appendChild(d);
+    });
+  });
+  OUT.forEach(function(row) {
+    row.forEach(function() {
+      var d = document.createElement('div');
+      d.className = 'mat-cell';
+      d.textContent = '·';
+      outEl.appendChild(d);
+      outCells.push(d);
+    });
+  });
+  var step = -1, timer = null;
+  function render() {
+    inCells.forEach(function(d) { d.classList.remove('win'); });
+    outCells.forEach(function(d, i) {
+      d.classList.remove('cur-out');
+      var done = i <= step;
+      d.classList.toggle('filled', done);
+      d.textContent = done ? OUT[Math.floor(i/3)][i%3] : '·';
+    });
+    if (step < 0) { calcEl.innerHTML = '点「下一步」开始滑动。'; return; }
+    var r = Math.floor(step / 3), c = step % 3;
+    for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) inCells[(r+i)*5 + (c+j)].classList.add('win');
+    outCells[step].classList.add('cur-out');
+    var parts = [];
+    for (var i2 = 0; i2 < 3; i2++) for (var j2 = 0; j2 < 3; j2++) {
+      var iv = INPUT[r+i2][c+j2], kv = KERNEL[i2][j2];
+      parts.push(iv + '×' + (kv < 0 ? '(' + kv + ')' : kv));
+    }
+    calcEl.innerHTML = '位置 (' + r + ',' + c + '):' + parts.join(' + ') + ' = <span class="hl">' + OUT[r][c] + '</span>';
+  }
+  function next() {
+    if (step >= 8) { stopAuto(); return; }
+    step++;
+    render();
+    if (step >= 8) {
+      stopAuto();
+      calcEl.innerHTML += '   <span class="hl">✔ 完成!值大的位置 = 边缘所在的位置</span>';
+    }
+  }
+  function stopAuto() { if (timer) { clearInterval(timer); timer = null; autoBtn.textContent = '自动播放'; } }
+  nextBtn.addEventListener('click', function() { stopAuto(); next(); });
+  autoBtn.addEventListener('click', function() {
+    if (timer) { stopAuto(); return; }
+    autoBtn.textContent = '暂停';
+    timer = setInterval(next, 900);
+  });
+  document.getElementById('cv-reset').addEventListener('click', function() {
+    stopAuto(); step = -1; render();
+  });
+  render();
+})();
+
+/* ============ §4 实时滤波演示 ============ */
+(function() {
+  var W = 96, H = 96;
+  // 程序生成"金属圆盘 + 划痕 + 凹坑"灰度图
+  function genImage() {
+    var img = [];
+    var seed = 7;
+    function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    for (var y = 0; y < H; y++) {
+      img.push([]);
+      for (var x = 0; x < W; x++) {
+        var v = 70 + (rnd() - 0.5) * 10;                     // 背景
+        var dx = x - 48, dy = y - 48;
+        var d = Math.sqrt(dx*dx + dy*dy);
+        if (d < 36) v = 168 - d * 0.55 + (rnd() - 0.5) * 12; // 圆盘
+        if (d > 33 && d < 36) v -= 28;                       // 边缘暗环
+        img[y].push(v);
+      }
+    }
+    // 斜向划痕:从 (30,26) 到 (68,64)
+    for (var t = 0; t <= 1; t += 0.01) {
+      var sx = Math.round(30 + t * 38), sy = Math.round(26 + t * 38);
+      for (var o = -1; o <= 1; o++) {
+        if (img[sy] && img[sy][sx+o] !== undefined) {
+          var dd = Math.sqrt((sx-48)*(sx-48) + (sy-48)*(sy-48));
+          if (dd < 35) img[sy][sx+o] = o === 0 ? 42 : 90;
+        }
+      }
+    }
+    // 凹坑 (62, 34)
+    for (var py = -2; py <= 2; py++) for (var px = -2; px <= 2; px++) {
+      if (px*px + py*py <= 4) img[34+py][62+px] = 48;
+    }
+    return img;
+  }
+  var KERNELS = {
+    identity: { k: [[0,0,0],[0,1,0],[0,0,0]], abs: false, gain: 1, name: '原图(恒等核)', tip: '中心 1、其余 0:每个像素原样通过,什么都不改变。' },
+    sobelx: { k: [[-1,0,1],[-2,0,2],[-1,0,1]], abs: true, gain: 0.8, name: '垂直边缘(Sobel-x)', tip: '左负右正:只在亮度左右变化的地方有响应——圆盘左右轮廓和斜划痕被点亮,平坦区域全黑。' },
+    sobely: { k: [[-1,-2,-1],[0,0,0],[1,2,1]], abs: true, gain: 0.8, name: '水平边缘(Sobel-y)', tip: '上负下正:只响应上下方向的亮度变化——圆盘上下轮廓最亮,注意和垂直边缘核"看见"的部分互补。' },
+    sharpen: { k: [[0,-1,0],[-1,5,-1],[0,-1,0]], abs: false, gain: 1, name: '锐化', tip: '中心加强、四邻抑制:放大和邻域的差异,划痕与噪点都变得更扎眼。' },
+    blur: { k: [[1/9,1/9,1/9],[1/9,1/9,1/9],[1/9,1/9,1/9]], abs: false, gain: 1, name: '均值模糊', tip: '9 格取平均:抹平噪声,也抹平细节——注意细划痕变淡了,这就是"平滑"的代价。' }
+  };
+  var img = genImage();
+  function drawGray(canvas, mat) {
+    var ctx = canvas.getContext('2d');
+    var id = ctx.createImageData(W, H);
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+      var v = Math.max(0, Math.min(255, mat[y][x]));
+      var i = (y * W + x) * 4;
+      id.data[i] = id.data[i+1] = id.data[i+2] = v;
+      id.data[i+3] = 255;
+    }
+    ctx.putImageData(id, 0, 0);
+  }
+  function convolve(mat, spec) {
+    var out = [];
+    for (var y = 0; y < H; y++) {
+      out.push([]);
+      for (var x = 0; x < W; x++) {
+        var s = 0;
+        for (var i = -1; i <= 1; i++) for (var j = -1; j <= 1; j++) {
+          var yy = Math.max(0, Math.min(H-1, y+i));
+          var xx = Math.max(0, Math.min(W-1, x+j));
+          s += mat[yy][xx] * spec.k[i+1][j+1];
+        }
+        out[y].push(spec.abs ? Math.abs(s) * spec.gain : s);
+      }
+    }
+    return out;
+  }
+  var src = document.getElementById('ft-src');
+  var dst = document.getElementById('ft-dst');
+  var cap = document.getElementById('ft-cap');
+  var status = document.getElementById('ft-status');
+  var btns = document.getElementById('ft-btns').querySelectorAll('.demo-btn');
+  drawGray(src, img);
+  function apply(key) {
+    var spec = KERNELS[key];
+    drawGray(dst, convolve(img, spec));
+    cap.textContent = spec.name;
+    status.textContent = spec.tip;
+    btns.forEach(function(b) { b.classList.toggle('primary', b.dataset.k === key); });
+  }
+  btns.forEach(function(b) { b.addEventListener('click', function() { apply(b.dataset.k); }); });
+  apply('sobelx');
+})();
+
+/* ============ §6 感受野可视化 ============ */
+(function() {
+  var l0 = document.getElementById('rf-l0');
+  var l1 = document.getElementById('rf-l1');
+  var l2 = document.getElementById('rf-l2');
+  var status = document.getElementById('rf-status');
+  var cells = { 0: [], 1: [], 2: [] };
+  function build(el, n, layer) {
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) {
+      var d = document.createElement('div');
+      d.className = 'rf-cell';
+      d.dataset.r = r; d.dataset.c = c; d.dataset.layer = layer;
+      el.appendChild(d);
+      cells[layer].push(d);
+    }
+  }
+  build(l0, 7, 0); build(l1, 5, 1); build(l2, 3, 2);
+  function clearAll() {
+    [0,1,2].forEach(function(L) { cells[L].forEach(function(d) { d.classList.remove('src','mid','field'); }); });
+  }
+  function mark(layer, r, c, n, cls) {
+    if (r < 0 || c < 0 || r >= n || c >= n) return;
+    cells[layer][r*n + c].classList.add(cls);
+  }
+  function select(layer, r, c) {
+    clearAll();
+    if (layer === 2) {
+      mark(2, r, c, 3, 'src');
+      for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) mark(1, r+i, c+j, 5, 'mid');
+      for (var i2 = 0; i2 < 5; i2++) for (var j2 = 0; j2 < 5; j2++) mark(0, r+i2, c+j2, 7, 'field');
+      status.textContent = '第 2 层格子 (' + r + ',' + c + '):看第 1 层的 3×3 → 在输入上的感受野 5×5。再加一层就是 7×7 —— 每层向外扩一圈。';
+    } else if (layer === 1) {
+      mark(1, r, c, 5, 'src');
+      for (var i3 = 0; i3 < 3; i3++) for (var j3 = 0; j3 < 3; j3++) mark(0, r+i3, c+j3, 7, 'field');
+      status.textContent = '第 1 层格子 (' + r + ',' + c + '):感受野只有输入的 3×3 —— 浅层只能看见局部小图案。';
+    }
+  }
+  [1,2].forEach(function(L) {
+    cells[L].forEach(function(d) {
+      d.addEventListener('click', function() { select(L, +d.dataset.r, +d.dataset.c); });
+    });
+  });
+  select(2, 1, 1);
+})();
+
+/* ============ 测验 ============ */
+function checkQuiz(btn, quizId) {
+  const quiz = document.getElementById(quizId);
+  const options = quiz.querySelectorAll('.quiz-option');
+  const isCorrect = btn.dataset.correct === 'true';
+  options.forEach(o => {
+    o.disabled = true;
+    o.style.pointerEvents = 'none';
+    o.style.opacity = '0.5';
+  });
+  btn.style.opacity = '1';
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  document.getElementById(
+    quizId + (isCorrect ? '-correct' : '-wrong')
+  ).classList.add('show');
+}
+
+/* ============ 配套练习开关 ============ */
+(function() {
+  const KEY = 'course-show-exercises';
+  const toggle = document.getElementById('code-toggle');
+  const section = document.getElementById('code-exercise');
+  if (!toggle || !section) return;
+  const saved = localStorage.getItem(KEY);
+  let show = saved === null ? true : saved === '1';
+  function apply() {
+    toggle.classList.toggle('active', show);
+    section.classList.toggle('hidden', !show);
+  }
+  apply();
+  toggle.addEventListener('click', () => {
+    show = !show;
+    localStorage.setItem(KEY, show ? '1' : '0');
+    apply();
+  });
+})();
+</script>
+
+<script>
+(function() {
+  'use strict';
+  var LESSON_TITLE = '第 02 课:卷积神经网络:让机器看见';
+  var COURSE_NAME  = '缺陷检测:从深度学习基础到主流方法全景';
+  var toolbar, overlay, toastEl;
+  var hideToolbarTimer = null;
+  var selectedAnchorNode = null;
+  function init() {
+    createToolbar();
+    createDialog();
+    bindEvents();
+    restoreNotes();
+  }
+  function createToolbar() {
+    toolbar = document.createElement('div');
+    toolbar.className = 'selection-toolbar';
+    toolbar.innerHTML =
+      '<button class="sel-btn sel-btn-ask" data-action="ask">\u{1F4AC} 问 LLM</button>' +
+      '<button class="sel-btn sel-btn-modify" data-action="modify">\u{270F}\u{FE0F} 修改</button>' +
+      '<button class="sel-btn sel-btn-note" data-action="note">\u{1F4DD} 划线笔记</button>';
+    document.body.appendChild(toolbar);
+    toolbar.querySelector('[data-action="ask"]').onclick = onAsk;
+    toolbar.querySelector('[data-action="modify"]').onclick = onModify;
+    toolbar.querySelector('[data-action="note"]').onclick = onNote;
+  }
+  function createDialog() {
+    overlay = document.createElement('div');
+    overlay.className = 'sel-dialog-overlay';
+    overlay.innerHTML =
+      '<div class="sel-dialog">' +
+        '<h3 class="sel-dialog-title">\u{270F}\u{FE0F} 修改选中内容</h3>' +
+        '<div class="sel-dialog-field"><label class="sel-dialog-label">选中的原文:</label>' +
+          '<div class="sel-dialog-source" id="sel-source-text"></div></div>' +
+        '<div class="sel-dialog-field">' +
+          '<label class="sel-dialog-label" for="sel-modify-instruction">你希望改成什么样?</label>' +
+          '<textarea id="sel-modify-instruction" rows="4" placeholder="例如:把这段写得更容易理解一些 / 用更生动的比喻 / 补充细节…"></textarea></div>' +
+        '<div class="sel-dialog-actions">' +
+          '<button class="sel-btn-cancel" id="sel-cancel">取消</button>' +
+          '<button class="sel-btn-confirm" id="sel-copy-modify">\u{1F4CB} 复制到剪贴板</button></div></div>';
+    document.body.appendChild(overlay);
+    document.getElementById('sel-cancel').onclick = hideDialog;
+    document.getElementById('sel-copy-modify').onclick = onCopyModify;
+    overlay.onclick = function(e) { if (e.target === overlay) hideDialog(); };
+  }
+  function getSelectedText() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return '';
+    if (!document.body.contains(sel.getRangeAt(0).commonAncestorContainer)) return '';
+    return sel.toString().trim();
+  }
+  function getSectionLabel(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    while (el && el !== document.body) {
+      if (el.tagName === 'SECTION' || el.tagName === 'DIV') {
+        var h2 = el.querySelector(':scope > h2, :scope > h3');
+        if (h2) {
+          var txt = h2.textContent.replace(/\s+/g, ' ').trim();
+          return txt.length > 50 ? txt.substring(0, 50) + '…' : txt;
+        }
+      }
+      el = el.parentElement;
+    }
+    return '';
+  }
+  var NOTES_KEY = 'note-underlines::' + location.pathname;
+  function getContainerSections() {
+    return Array.prototype.slice.call(document.querySelectorAll('.container > section'));
+  }
+  function getSectionIndex(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    var container = document.querySelector('.container');
+    while (el && el.parentElement !== container) { el = el.parentElement; }
+    if (!el) return -1;
+    return getContainerSections().indexOf(el);
+  }
+  function loadNotes() {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveNoteEntry(entry) {
+    var notes = loadNotes();
+    notes.push(entry);
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function deleteNoteEntry(id) {
+    var notes = loadNotes().filter(function(n) { return n.id !== id; });
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function getTextNodesIn(root) {
+    var nodes = [];
+    (function walk(n) {
+      if (n.nodeType === Node.TEXT_NODE) { nodes.push(n); return; }
+      for (var i = 0; i < n.childNodes.length; i++) walk(n.childNodes[i]);
+    })(root);
+    return nodes;
+  }
+  function countOccurrenceIndex(root, range, text) {
+    var textNodes = getTextNodesIn(root);
+    var full = '', startAbs = -1, pos = 0;
+    for (var i = 0; i < textNodes.length; i++) {
+      if (textNodes[i] === range.startContainer) startAbs = pos + range.startOffset;
+      full += textNodes[i].nodeValue;
+      pos += textNodes[i].nodeValue.length;
+    }
+    if (startAbs === -1) return 0;
+    var idx = -1, count = 0;
+    while (true) {
+      var next = full.indexOf(text, idx + 1);
+      if (next === -1 || next >= startAbs) break;
+      idx = next;
+      count++;
+    }
+    return count;
+  }
+  function findRangeByOccurrence(root, text, occurrence) {
+    var textNodes = getTextNodesIn(root);
+    var full = textNodes.map(function(t) { return t.nodeValue; }).join('');
+    var idx = -1;
+    for (var c = 0; c <= occurrence; c++) {
+      idx = full.indexOf(text, idx + 1);
+      if (idx === -1) return null;
+    }
+    var startOffset = idx, endOffset = idx + text.length, pos = 0;
+    var range = document.createRange(), startSet = false, endSet = false;
+    for (var i = 0; i < textNodes.length; i++) {
+      var len = textNodes[i].nodeValue.length;
+      if (!startSet && startOffset <= pos + len) { range.setStart(textNodes[i], startOffset - pos); startSet = true; }
+      if (!endSet && endOffset <= pos + len) { range.setEnd(textNodes[i], endOffset - pos); endSet = true; break; }
+      pos += len;
+    }
+    return (startSet && endSet) ? range : null;
+  }
+  function wrapRangeAsNote(range, id) {
+    var span = document.createElement('span');
+    span.className = 'note-underline';
+    span.dataset.noteId = id;
+    var frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  function onNote() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (!document.body.contains(range.commonAncestorContainer)) return;
+    var text = getSelectedText();
+    if (!text) return;
+    var sectionIdx = selectedAnchorNode ? getSectionIndex(selectedAnchorNode) : -1;
+    var sections = getContainerSections();
+    var section = sectionIdx >= 0 ? sections[sectionIdx] : null;
+    var occurrence = section ? countOccurrenceIndex(section, range, text) : 0;
+    var id = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    try {
+      wrapRangeAsNote(range, id);
+      sel.removeAllRanges();
+      if (sectionIdx >= 0) saveNoteEntry({ id: id, sectionIdx: sectionIdx, text: text, occurrence: occurrence });
+      showToast('\u{1F4DD} 已添加划线笔记,再点一下可以取消');
+    } catch (e) {
+      showToast('⚠️ 这段选区暂时无法划线,换一段试试');
+    }
+    hideToolbar();
+  }
+  function removeNote(span) {
+    var id = span.dataset.noteId;
+    var parent = span.parentNode;
+    if (!parent) return;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
+    parent.normalize();
+    deleteNoteEntry(id);
+    showToast('\u{1F5D1}️ 已取消这条划线笔记');
+  }
+  function restoreNotes() {
+    var notes = loadNotes();
+    var sections = getContainerSections();
+    notes.forEach(function(n) {
+      var section = sections[n.sectionIdx];
+      if (!section) return;
+      var range = findRangeByOccurrence(section, n.text, n.occurrence);
+      if (!range) return;
+      try { wrapRangeAsNote(range, n.id); } catch (e) {}
+    });
+  }
+  function positionToolbar(cx, cy) {
+    clearTimeout(hideToolbarTimer);
+    toolbar.classList.add('visible');
+    var tw = toolbar.offsetWidth, th = toolbar.offsetHeight;
+    var left = cx - tw / 2, top = cy + 12;
+    if (left < 12) left = 12;
+    if (left + tw > innerWidth - 12) left = innerWidth - tw - 12;
+    if (top + th > innerHeight - 12) top = cy - th - 12;
+    toolbar.style.left = left + 'px';
+    toolbar.style.top = top + 'px';
+  }
+  function hideToolbar() {
+    clearTimeout(hideToolbarTimer);
+    hideToolbarTimer = setTimeout(function() { toolbar.classList.remove('visible'); }, 200);
+  }
+  function buildContext(section) {
+    var lines = ['## 课程上下文'];
+    lines.push('- 课程:' + COURSE_NAME);
+    lines.push('- 课时:' + LESSON_TITLE);
+    if (section) lines.push('- 章节:' + section);
+    lines.push('');
+    return lines.join('\n');
+  }
+  function onAsk() {
+    var text = getSelectedText();
+    if (!text) return;
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 我选中的内容\n\n' + text + '\n\n## 我的提问\n\n';
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并提问吧!');
+    hideToolbar();
+  }
+  function onModify() {
+    var text = getSelectedText();
+    if (!text) return;
+    document.getElementById('sel-source-text').textContent = text;
+    document.getElementById('sel-modify-instruction').value = '';
+    overlay.classList.add('visible');
+    hideToolbar();
+    setTimeout(function() { document.getElementById('sel-modify-instruction').focus(); }, 100);
+  }
+  function onCopyModify() {
+    var src = document.getElementById('sel-source-text').textContent;
+    var inst = document.getElementById('sel-modify-instruction').value.trim();
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 选中的原文\n\n' + src + '\n\n## 修改要求\n\n' +
+      (inst || '(用户未指定具体要求,请自行判断合理修改方向)');
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并请求修改吧!');
+    hideDialog();
+  }
+  function copyToClipboard(text, msg) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast(msg || '✅ 已复制到剪贴板'); }
+    catch (e) { showToast('⚠\u{FE0F} 未能自动复制,请按 Cmd+C 手动复制'); }
+    document.body.removeChild(ta);
+  }
+  function showToast(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'sel-toast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg;
+    toastEl.classList.add('visible');
+    clearTimeout(toastEl._hideTimer);
+    toastEl._hideTimer = setTimeout(function() { toastEl.classList.remove('visible'); }, 3500);
+  }
+  function hideDialog() { overlay.classList.remove('visible'); }
+  function bindEvents() {
+    document.addEventListener('mouseup', function(e) {
+      if (toolbar.contains(e.target) || overlay.contains(e.target)) return;
+      var text = getSelectedText();
+      if (text.length > 5) {
+        selectedAnchorNode = window.getSelection() ? window.getSelection().anchorNode : null;
+        positionToolbar(e.clientX, e.clientY);
+      } else { hideToolbar(); }
+    });
+    document.addEventListener('scroll', function() { toolbar.classList.remove('visible'); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { hideDialog(); toolbar.classList.remove('visible'); }
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!toolbar.contains(e.target) && !overlay.contains(e.target)) hideToolbar();
+    });
+    document.addEventListener('click', function(e) {
+      var note = e.target.closest && e.target.closest('.note-underline');
+      if (!note) return;
+      var sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().length > 0) return;
+      removeNote(note);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+</script>
+</body>
+</html>

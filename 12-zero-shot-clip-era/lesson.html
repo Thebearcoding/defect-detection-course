@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 12 课 · 零样本时代:CLIP 与大模型 | 缺陷检测课程</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" media="print" onload="this.media='all'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<style>
+:root {
+  /* Anthropic 官方 Token(来自 anthropic-style-cn skill) */
+  --bg: #ECE9E0;
+  --surface: #F5F3EC;
+  --surface2: #E7E3D8;
+  --border: #D8D5CC;
+  --text: #141413;
+  --text-dim: #6B6860;
+  --accent: #D97757;
+  --accent2: #6A9BCC;
+  --good: #6A8A4F;
+  --bad: #C0453A;
+  --ink: #141413;
+  --ink-text: #F0EEE6;
+  --font-display: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-heading: 'Poppins', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217,119,87,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 15%, rgba(106,155,204,0.05) 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.85;
+  font-size: 16.5px;
+  text-spacing-trim: trim-start allow-end;
+  overflow-wrap: break-word;
+}
+
+/* ---- Hero ---- */
+.hero {
+  padding: 88px 24px 56px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero .lesson-tag {
+  display: inline-block;
+  padding: 7px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-bottom: 26px;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.3;
+  margin-bottom: 18px;
+  word-break: keep-all;
+}
+.hero .subtitle {
+  color: var(--text-dim);
+  font-size: 17px;
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ---- Settings bar ---- */
+.settings-bar {
+  max-width: 860px;
+  margin: 20px auto 0;
+  padding: 0 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-dim);
+  user-select: none;
+}
+.toggle-track {
+  width: 40px; height: 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.25s var(--ease);
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: all 0.25s var(--ease);
+}
+.toggle-wrap.active .toggle-track { background: var(--accent); border-color: var(--accent); }
+.toggle-wrap.active .toggle-track::after { left: 20px; background: #fff; }
+.toggle-wrap.active { color: var(--text); }
+
+/* ---- Layout ---- */
+.container { max-width: 860px; margin: 0 auto; padding: 24px 24px 96px; }
+section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+section:last-of-type { border-bottom: none; }
+h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  word-break: keep-all;
+}
+h2 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 28px 0 12px;
+}
+p { margin-bottom: 15px; }
+strong { color: var(--text); font-weight: 700; }
+em { color: var(--accent); font-style: normal; font-weight: 500; }
+ul, ol { margin: 0 0 15px 24px; }
+li { margin-bottom: 8px; }
+
+/* ---- Story card ---- */
+.story-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 20px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.05);
+}
+.story-card .story-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent2);
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+.story-card p:last-child { margin-bottom: 0; }
+
+/* ---- Insight box ---- */
+.insight-box {
+  background: linear-gradient(135deg, rgba(217,119,87,0.09), rgba(217,119,87,0.04));
+  border: 1px solid rgba(217,119,87,0.35);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.insight-box .insight-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+.insight-box p:last-child { margin-bottom: 0; }
+
+/* ---- Code block ---- */
+.code-block {
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.9;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--ink-text);
+}
+.code-block .cm { color: #9C9A92; }
+.code-block .kw { color: #E8A188; }
+.code-block .st { color: #A8C090; }
+
+/* ---- Compare grid ---- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.compare-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.compare-box h4 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.compare-box p { font-size: 14.5px; color: var(--text-dim); margin-bottom: 6px; }
+.compare-box p:last-child { margin-bottom: 0; }
+
+/* ---- Pipeline ---- */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 22px 0;
+}
+.pipeline-step {
+  flex: 1 1 130px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+}
+.pipeline-step .step-num {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-title {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+.pipeline-arrow { display: flex; align-items: center; color: var(--accent); font-size: 18px; }
+
+/* ---- Interactive demo shell ---- */
+.demo-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.06);
+}
+.demo-box .demo-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.demo-box .demo-hint { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.8; }
+.demo-status {
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-family: var(--font-heading);
+}
+.demo-btns { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.demo-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.demo-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.demo-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.demo-btn.primary:hover { filter: brightness(1.07); color: #fff; }
+.demo-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ---- Matrix grids (conv stepper) ---- */
+.mat-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 16px 0;
+}
+.mat-block { text-align: center; }
+.mat-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.mat-grid { display: grid; gap: 4px; justify-content: center; }
+.mat-cell {
+  width: 42px; height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: all 0.2s var(--ease);
+}
+.mat-cell.v3 { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
+.mat-cell.kpos { background: rgba(217,119,87,0.14); color: #B05C3F; border-color: rgba(217,119,87,0.45); font-weight: 700; }
+.mat-cell.kneg { background: rgba(106,155,204,0.14); color: #4A7BA8; border-color: rgba(106,155,204,0.5); font-weight: 700; }
+.mat-cell.kzero { color: var(--text-dim); }
+.mat-cell.win { box-shadow: 0 0 0 3px var(--accent); }
+.mat-cell.filled { background: rgba(217,119,87,0.13); color: var(--text); font-weight: 700; border-color: rgba(217,119,87,0.4); }
+.mat-cell.cur-out { box-shadow: 0 0 0 3px var(--accent); }
+.mat-op {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--text-dim);
+  padding-top: 60px;
+}
+.conv-calc {
+  background: var(--ink);
+  color: var(--ink-text);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.9;
+  min-height: 46px;
+}
+.conv-calc .hl { color: #E8A188; font-weight: 700; }
+
+/* ---- Filter demo ---- */
+.filter-canvases {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 14px 0;
+}
+.fc-block { text-align: center; }
+.fc-block canvas {
+  width: 264px; height: 264px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+  image-rendering: pixelated;
+  display: block;
+}
+.fc-cap {
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+.fc-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+/* ---- Receptive field viz ---- */
+.rf-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.rf-block { text-align: center; }
+.rf-grid { display: grid; gap: 3px; justify-content: center; }
+.rf-cell {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.rf-cell:hover { border-color: var(--accent); }
+.rf-cell.src { background: var(--accent); border-color: var(--accent); }
+.rf-cell.mid { background: rgba(217,119,87,0.5); border-color: rgba(217,119,87,0.5); }
+.rf-cell.field { background: rgba(217,119,87,0.18); border-color: rgba(217,119,87,0.3); }
+.rf-arrow {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  min-width: 64px;
+  line-height: 1.5;
+}
+.rf-arrow b { color: var(--accent); font-size: 16px; display: block; }
+
+/* ---- Quiz ---- */
+.quiz {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 18px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.quiz .quiz-q { font-family: var(--font-heading); font-weight: 500; margin-bottom: 14px; }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  line-height: 1.7;
+}
+.quiz-option:hover { border-color: var(--accent); transform: translateY(-1px); }
+.quiz-option.correct { border-color: var(--good); background: rgba(106,138,79,0.1); }
+.quiz-option.wrong { border-color: var(--bad); background: rgba(192,69,58,0.08); }
+.quiz-feedback {
+  display: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  margin-top: 6px;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok { background: rgba(106,138,79,0.09); border: 1px solid rgba(106,138,79,0.4); color: #4F6A3B; }
+.quiz-feedback.no { background: rgba(192,69,58,0.07); border: 1px solid rgba(192,69,58,0.35); color: var(--bad); }
+
+/* ---- Further reading ---- */
+.further-reading { padding: 44px 0; }
+.reading-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.reading-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 22px;
+  transition: all 0.2s var(--ease);
+}
+.reading-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+.reading-title a {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 15.5px;
+}
+.reading-title a:hover { text-decoration: underline; }
+.reading-meta {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.reading-desc { font-size: 14.5px; color: var(--text-dim); margin-top: 6px; }
+.further-reading-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 14.5px;
+}
+.further-reading-inline .fr-icon { flex-shrink: 0; }
+.further-reading-inline a { color: var(--accent); font-weight: 500; }
+
+/* ---- Exercise section ---- */
+#code-exercise.hidden { display: none; }
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 16px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.exercise-card h3 { margin-top: 0; }
+.todo-list { margin-top: 10px; }
+.todo-list li { font-size: 15px; }
+.todo-list code, p code, li code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #B05C3F;
+}
+
+/* ---- Lesson nav ---- */
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+}
+.lesson-nav a, .lesson-nav span {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+}
+.lesson-nav span { color: var(--text-dim); }
+.lesson-nav a:hover { text-decoration: underline; }
+
+/* ---- Selection toolbar ---- */
+.selection-toolbar {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.15);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.selection-toolbar.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.sel-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.sel-btn:hover { border-color: var(--accent); background: var(--bg); }
+.sel-btn:active { transform: scale(0.96); }
+.sel-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(20,20,19,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sel-dialog-overlay.visible { opacity: 1; pointer-events: auto; }
+.sel-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(20,20,19,0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sel-dialog-title { font-family: var(--font-heading); font-size: 20px; font-weight: 500; margin-bottom: 20px; }
+.sel-dialog-field { margin-bottom: 16px; }
+.sel-dialog-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.sel-dialog-source {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.sel-dialog textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+}
+.sel-dialog textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,87,0.2); }
+.sel-dialog textarea::placeholder { color: var(--text-dim); }
+.sel-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.sel-btn-cancel {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+.sel-btn-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-confirm:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.sel-btn-confirm:active { transform: scale(0.97); }
+.sel-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 100001;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--ink-text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 24px rgba(20,20,19,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+}
+.sel-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.note-underline {
+  background: rgba(255, 212, 59, 0.45);
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.note-underline:hover { background: rgba(255, 212, 59, 0.65); }
+
+/* ---- 本课新增:CLIP 图文匹配模拟器 ---- */
+.clip-wrap {
+  display: flex;
+  gap: 24px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+}
+.clip-imgs {
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 12px;
+}
+.clip-img-btn {
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  background: #FAF9F5;
+  padding: 8px 8px 5px;
+  cursor: pointer;
+  text-align: center;
+  font-family: var(--font-heading);
+  transition: all 0.2s var(--ease);
+}
+.clip-img-btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+.clip-img-btn.sel { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,87,0.25); }
+.clip-img-btn canvas {
+  width: 104px; height: 104px;
+  border-radius: 8px;
+  background: #FAF9F5;
+  image-rendering: pixelated;
+  display: block;
+}
+.clip-img-cap {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 5px;
+  letter-spacing: 1px;
+}
+.clip-txts {
+  flex: 1 1 300px;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.clip-txt-row {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  padding: 10px 14px;
+  transition: all 0.2s var(--ease);
+}
+.clip-txt-row.best {
+  border-color: var(--accent);
+  background: rgba(217,119,87,0.10);
+  box-shadow: 0 0 0 2px rgba(217,119,87,0.25);
+}
+.clip-txt-label {
+  font-size: 14px;
+  margin-bottom: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+.clip-prob {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.clip-txt-row.best .clip-prob { color: #B05C3F; font-weight: 700; }
+.clip-bar-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.clip-bar-fill {
+  height: 100%;
+  width: 0;
+  border-radius: 999px;
+  background: var(--accent2);
+  transition: width 0.45s var(--ease);
+}
+.clip-txt-row.best .clip-bar-fill { background: var(--accent); }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 26px; }
+  .pipeline-arrow { display: none; }
+  .mat-cell { width: 34px; height: 34px; font-size: 12px; }
+  .rf-cell { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ===== mobile adaptation (injected, uniform across course) ===== */
+@media (max-width: 640px) {
+  body { font-size: 15.5px; }
+  .container { padding: 16px 16px 72px; }
+  .hero { padding: 52px 18px 38px; }
+  .hero .subtitle { font-size: 15.5px; }
+  section { padding: 32px 0; }
+  h2 { font-size: 22px; }
+  h2 .num { width: 30px; height: 30px; font-size: 14px; }
+  .demo-box { padding: 16px 14px; }
+  canvas { max-width: 100%; height: auto !important; }
+  .fc-block canvas { width: 100% !important; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .code-block { font-size: 11.5px; padding: 13px 14px; line-height: 1.75; }
+  .slider-row { flex-wrap: wrap; }
+  .slider-row label { min-width: 0; flex: 1 1 100%; }
+  .lesson-nav { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .quiz { padding: 16px 16px; }
+  .quiz-option { font-size: 14px; padding: 11px 12px; }
+  .demo-btns .demo-btn, .demo-btn { padding: 9px 15px; font-size: 13px; }
+  .story-card, .insight-box, .exercise-card { padding: 16px 16px; }
+  .settings-bar { padding: 0 16px; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bp-diagram { font-size: 12px; }
+  .bp-node { min-width: 66px; padding: 8px 8px; }
+  .mat-op { padding-top: 40px; }
+  .selection-toolbar { max-width: calc(100vw - 16px); flex-wrap: wrap; }
+}
+@media (max-width: 400px) {
+  .mat-cell { width: 30px; height: 30px; font-size: 11px; }
+  .rf-cell { width: 17px; height: 17px; }
+  .mat-grid { gap: 3px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="lesson-tag">缺陷检测课程 · 第 12 课</div>
+  <h1>零样本时代:CLIP 与大模型</h1>
+  <p class="subtitle">一张训练样本都没有,靠一句话描述就能检缺陷——语言先验如何改写这个领域的游戏规则。</p>
+</div>
+
+<div class="settings-bar">
+  <label class="toggle-wrap active" id="code-toggle">
+    <span>配套练习</span>
+    <div class="toggle-track"></div>
+  </label>
+</div>
+
+<div class="container">
+
+<!-- ============ §0 ============ -->
+<section>
+  <h2><span class="num">0</span> 快速回顾</h2>
+  <p>第 7 到第 11 课,我们把无监督缺陷检测的四大家族走了一遍:重构类(第 7 课)、特征嵌入类(第 8 课)、师生蒸馏类(第 9 课)、合成缺陷类(第 10 课)、归一化流类(第 11 课)。它们的思路各不相同,但有一个共同的地基:<strong>都需要一批正常样本来"学什么是正常"</strong>——建重构器、建 memory bank、教学生网络、估概率密度,原料全是正常图。</p>
+  <p>现实里恰恰有一类场景,连这点原料都凑不齐:</p>
+  <ul>
+    <li><strong>新产线冷启动</strong>:产线今天刚投产,一张历史图像都没有,但质检明天就要上线;</li>
+    <li><strong>多品种小批量</strong>:一条产线轮着做几十种零件,每种只跑几百件——为每个品种单独攒数据、训模型、调阈值,成本算不过来。</li>
+  </ul>
+  <p>可是想想人类质检员:新员工第一天上岗,没见过这条产线的任何样品,也能挑出明显的缺陷。为什么?因为他带着<em>语言先验</em>——"划痕是细长的暗线"、"凹坑是局部的凹陷"、"完好的表面应该均匀光洁"。这些知识不来自这条产线,来自他一辈子的语言和视觉经验。</p>
+  <p>本课要做的事,就是把这种先验搬给模型:<strong>让模型听懂"划痕"这个词,然后用一句话代替一批训练样本</strong>。故事从 2021 年的 CLIP 开始。</p>
+</section>
+
+<!-- ============ §1 ============ -->
+<section>
+  <h2><span class="num">1</span> CLIP 原子拆解:图和文住进同一个空间</h2>
+
+  <p>CLIP(Contrastive Language-Image Pre-training,OpenAI,2021)要解决的问题听起来很朴素:<strong>让一张图和一句话可以直接比相似度</strong>。图是像素,话是字符,它们原本住在两个毫不相干的世界里——CLIP 用一个训练目标把它们搬进了同一个向量空间。</p>
+
+  <h3>双塔结构:两个编码器,一个空间</h3>
+  <p>CLIP 由两座"塔"组成:一个<em>图像编码器</em>(ResNet 或 ViT)把图像映成一个向量,一个<em>文本编码器</em>(Transformer)把句子映成一个向量。关键设计是:<strong>两个向量维度相同(例如 512 维),且都做 L2 归一化</strong>——于是任意一张图和任意一句话之间,都可以算余弦相似度:</p>
+
+  <div class="code-block">图像 ──→ [ 图像编码器 ] ──→ 图像向量 v ─┐
+                                        ├──→ 相似度 = cos(v, t) = v·t
+文本 ──→ [ 文本编码器 ] ──→ 文本向量 t ─┘
+<span class="cm"># 两个向量同在一个 512 维空间,都已 L2 归一化,余弦 = 点积</span></div>
+
+  <p>回忆第 8 课:我们在特征空间里用距离衡量"这个 patch 正常不正常"。CLIP 做的是同一件事的跨模态版——只是现在,<strong>空间里既有图、也有话</strong>。</p>
+
+  <h3>训练目标:4 亿图文对上的"连连看"</h3>
+  <p>怎么把两座塔训练到"说到一起去"?CLIP 从互联网收集了约 <strong>4 亿对(图像, 描述文字)</strong>,用<em>对比学习</em>训练:配对的(图, 文)在空间里拉近,错配的推远。具体做法是,每个 batch 取 N 对图文,算出 N×N 的相似度矩阵——对角线上是真正配对的正样本,其余全是错配的负样本:</p>
+
+  <div class="code-block">          文本1    文本2    文本3    文本4
+图像1    <span class="kw">★0.9</span>     0.2      0.1      0.3      <span class="cm">★ = 配对 → 拉近</span>
+图像2     0.1     <span class="kw">★0.8</span>     0.2      0.2      <span class="cm">其余 = 错配 → 推远</span>
+图像3     0.3      0.1     <span class="kw">★0.9</span>     0.1
+图像4     0.2      0.3      0.2     <span class="kw">★0.7</span>
+<span class="cm"># InfoNCE 损失:对每一行(和每一列)做 softmax + 交叉熵,</span>
+<span class="cm"># 目标 = 让对角线的概率最大 —— 一场 batch 内的"连连看"</span></div>
+
+  <p>这个损失函数叫 <em>InfoNCE</em>,拆开看一点都不神秘:对矩阵的每一行做 softmax,把"图像 i 配文本 i"当成正确类别算交叉熵——正是第 1 课的老朋友,只是"类别"换成了"batch 里的哪句话"。再回忆第 10 课的自监督:这里同样<strong>没有人工标注</strong>,"哪张图配哪句话"这个配对关系本身就是免费的监督信号。</p>
+
+  <p>4 亿对数据练完,奇迹发生了:<strong>图像和文字第一次"住进"了同一个语义空间</strong>。"一张猫的照片"这句话的向量,就落在猫图片向量的旁边;"划痕"这个词的向量,离带划痕的图像更近。相似度 = 余弦,跨模态检索、比对,一把尺子量到底。</p>
+
+  <h3>zero-shot 分类:分类器是"写"出来的</h3>
+  <p>这个空间最惊人的用法,是<strong>不训练任何东西就做分类</strong>。想分猫/狗/飞机?把每个类别写成一句 prompt,过一遍文本编码器:</p>
+
+  <div class="code-block">prompts = [<span class="st">"a photo of a cat"</span>, <span class="st">"a photo of a dog"</span>, <span class="st">"a photo of a plane"</span>]
+<span class="cm"># 文本编码器 → 3 个文本向量,它们就是 3 个"类别中心"</span>
+<span class="cm"># 新图像 → 图像编码器 → 图像向量</span>
+<span class="cm"># 看图像向量和哪句话的余弦最大 → softmax → 分类完成</span></div>
+
+  <p>传统分类器的权重要靠标注数据训出来;这里,<strong>每句 prompt 的文本向量直接充当了分类器的权重</strong>。想换类别?改字符串就行,一秒生效。这就是 <em>zero-shot(零样本)分类</em>:对目标任务零训练样本、零训练过程。</p>
+
+  <div class="insight-box">
+    <div class="insight-label">范式转变</div>
+    <p>过去:定类别 → 采数据 → 标标签 → 训模型 → 才有分类器。<br>
+    现在:<strong>分类器 = 一组句子</strong>。对缺陷检测,这意味着"正常 / 划痕 / 凹坑 / 污染"也可以只是四句话——不需要缺陷样本,甚至不需要正常样本。下一节亲手玩一遍。</p>
+  </div>
+</section>
+
+<!-- ============ §2 ============ -->
+<section>
+  <h2><span class="num">2</span> 亲手玩:图文匹配模拟器</h2>
+
+  <p>空说不如上手。下面是一个"纸上 CLIP":左边 4 张程序生成的金属盘工件图,右边 4 句文本 prompt。内置的 4×4 相似度矩阵取自真实 CLIP 的典型量级(余弦约 0.2~0.35,配对的最高)。点一张图,看它和每句话的相似度,以及 softmax 之后的分类概率:</p>
+
+  <div class="demo-box">
+    <div class="demo-title">🔍 交互:点一张图,让四句话来"认领"它</div>
+    <div class="demo-hint">依次点 4 张图,观察两件事:① 蓝色相似度条的差距其实<strong>不大</strong>(0.21 vs 0.33 的量级);② softmax(除以温度 τ=0.05 再归一)把这点差距放大成了<strong>悬殊的概率</strong>,最高的一句高亮为橙色。这 4 张图没有参与过任何训练——分类它们的,是右边那四句话。</div>
+    <div class="clip-wrap" id="clip-demo">
+      <div class="clip-imgs" id="clip-imgs">
+        <button class="clip-img-btn" data-i="0">
+          <canvas id="clip-c0" width="72" height="72"></canvas>
+          <span class="clip-img-cap">A · 完好盘</span>
+        </button>
+        <button class="clip-img-btn" data-i="1">
+          <canvas id="clip-c1" width="72" height="72"></canvas>
+          <span class="clip-img-cap">B · 划痕盘</span>
+        </button>
+        <button class="clip-img-btn" data-i="2">
+          <canvas id="clip-c2" width="72" height="72"></canvas>
+          <span class="clip-img-cap">C · 凹坑盘</span>
+        </button>
+        <button class="clip-img-btn" data-i="3">
+          <canvas id="clip-c3" width="72" height="72"></canvas>
+          <span class="clip-img-cap">D · 污渍盘</span>
+        </button>
+      </div>
+      <div class="clip-txts" id="clip-txts">
+        <div class="clip-txt-row" id="clip-t0">
+          <div class="clip-txt-label"><span>「一张完好金属零件的照片」</span><span class="clip-prob" id="clip-p0">—</span></div>
+          <div class="clip-bar-track"><div class="clip-bar-fill" id="clip-b0"></div></div>
+        </div>
+        <div class="clip-txt-row" id="clip-t1">
+          <div class="clip-txt-label"><span>「一张带划痕的金属零件照片」</span><span class="clip-prob" id="clip-p1">—</span></div>
+          <div class="clip-bar-track"><div class="clip-bar-fill" id="clip-b1"></div></div>
+        </div>
+        <div class="clip-txt-row" id="clip-t2">
+          <div class="clip-txt-label"><span>「一张有凹坑的金属零件照片」</span><span class="clip-prob" id="clip-p2">—</span></div>
+          <div class="clip-bar-track"><div class="clip-bar-fill" id="clip-b2"></div></div>
+        </div>
+        <div class="clip-txt-row" id="clip-t3">
+          <div class="clip-txt-label"><span>「一张被污染的金属零件照片」</span><span class="clip-prob" id="clip-p3">—</span></div>
+          <div class="clip-bar-track"><div class="clip-bar-fill" id="clip-b3"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="demo-status" id="clip-status">点击左侧任意一张工件图。</div>
+  </div>
+
+  <p>注意模拟器里的两个细节,它们都是真实 CLIP 的行为:</p>
+  <ul>
+    <li><strong>没有一条相似度是 0</strong>:四句话都提到"金属零件",语义本来就重叠。CLIP 的余弦从不给出干脆的 0/1,决策靠的是<em>相对</em>大小;</li>
+    <li><strong>温度把小差距放大成大概率</strong>:softmax 前把相似度除以一个小温度(真实 CLIP 用约 1/100),0.1 的余弦差距就能变成 50 个百分点的概率差距。练习的 TODO 3 会让你亲手实现带温度的 softmax,感受"温度越低,分布越尖"。</li>
+  </ul>
+
+  <div class="insight-box">
+    <div class="insight-label">这就是全部</div>
+    <p>刚才发生的事,就是 zero-shot 分类的<strong>全部</strong>:没有训练循环,没有梯度,没有标注——只有"问对问题"。四句话就是四个分类器;想识别新的缺陷类型,写第五句话就行。</p>
+  </div>
+</section>
+
+<!-- ============ §3 ============ -->
+<section>
+  <h2><span class="num">3</span> 用到缺陷检测:WinCLIP 的三板斧</h2>
+
+  <p>把 zero-shot 分类搬进缺陷检测,第一个动脑筋的问题是:<strong>类别怎么定?</strong>缺陷千奇百怪,逐一列举不现实。WinCLIP(CVPR 2023)给出的答案朴素而有效:不列举缺陷,只对垒两个阵营——<strong>正常 vs 异常</strong>。</p>
+
+  <h3>第一板斧:两组 prompt 对垒</h3>
+  <p>为"正常"和"异常"各写一组 prompt,让图像在两个阵营之间"站队":</p>
+
+  <div class="code-block">normal 组:   <span class="st">"a photo of a flawless {object}"</span>
+             <span class="st">"a photo of a perfect {object}"</span>
+             <span class="st">"a photo of a {object} without defect"</span> …
+anomaly 组:  <span class="st">"a photo of a damaged {object}"</span>
+             <span class="st">"a photo of a {object} with a defect"</span>
+             <span class="st">"a photo of a broken {object}"</span> …
+
+异常分 = softmax( [sim_normal, sim_anomaly] / τ ) 里 anomaly 侧的概率
+<span class="cm"># {object} 填产品名:metal plate / cable / pill …</span>
+<span class="cm"># 异常分 ∈ (0,1),天然就是一个可设阈值的分数</span></div>
+
+  <p>这正是 §2 模拟器的两队版:图像和 normal 组、anomaly 组各算相似度,softmax 之后 anomaly 侧的占比就是异常分数。练习的 TODO 5 会让你实现一个两句话的最小版。</p>
+
+  <h3>第二板斧:prompt ensemble,降低措辞敏感</h3>
+  <p>为什么每组要写<em>很多句</em>而不是一句?因为 CLIP 对措辞敏感:"damaged"和"broken"在向量空间的位置不同,单句 prompt 的分数会随用词波动。WinCLIP 的做法是<strong>状态词 × 句式模板做组合,把每组几十句话的文本向量取平均</strong>,再拿平均向量去比——多句话互相抵消各自的偏差,分数稳定得多。这招叫 <em>prompt ensemble</em>(集成),成本几乎为零,是所有 CLIP 系方法的标配。</p>
+
+  <h3>第三板斧:窗口化,从"有没有"到"在哪里"</h3>
+  <p>整图和文本比相似度,只能回答图像级的"有没有缺陷"。可是第 4 课就讲过,工业质检往往还要"在哪里"。WinCLIP 的解法回收了第 8 课的 patch 思想:<strong>把图像切成多尺度的滑动窗口,每个窗口单独和两组文本对垒打分</strong>,再把各尺度的分数图对齐、聚合,就得到一张粗定位热力图:</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">STEP 1</div>
+      <div class="step-title">多尺度滑窗</div>
+      <div class="step-desc">小 / 中 / 大窗口<br>扫过整张图</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 2</div>
+      <div class="step-title">逐窗对垒</div>
+      <div class="step-desc">每个窗口和 normal /<br>anomaly 两组比相似度</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 3</div>
+      <div class="step-title">聚合热力图</div>
+      <div class="step-desc">多尺度分数对齐取优<br>→ 粗定位缺陷区域</div>
+    </div>
+  </div>
+
+  <p>对照第 8 课:PatchCore 拿每个 patch 的特征去查"正常样本库"里的最近邻;WinCLIP 拿每个窗口的特征去问"两组话"哪边更像。<strong>套路没变,"库"换成了"话"</strong>——正常样本库需要采集数据才能建,两组话现在就能写出来。这就是零样本的全部代价与全部收益。</p>
+</section>
+
+<!-- ============ §4 ============ -->
+<section>
+  <h2><span class="num">4</span> AnomalyCLIP:把 prompt 也交给学习</h2>
+
+  <p>WinCLIP 好用,但用过的人很快会遇到两个烦恼,根源都在"prompt 是手写的":</p>
+  <ul>
+    <li><strong>措辞敏感</strong>:"damaged"换成"broken",分数可能差一截;prompt ensemble 能缓解,不能根治。写 prompt 变成了一门碰运气的手艺;</li>
+    <li><strong>要为每类产品想词</strong>:金属件该说 scratch(划痕),布料该说 tear(破洞),药片该说 crack(裂纹)——产品一多,prompt 工程本身就成了新的人工成本,和"零样本省人力"的初衷背道而驰。</li>
+  </ul>
+
+  <p>AnomalyCLIP(ICLR 2024)的解法直截了当:<strong>既然措辞难挑,就别挑了——把 prompt 变成可学习的向量</strong>。prompt 不再是英文单词序列,而是一串可以被梯度更新的嵌入向量(想象成"意义可调的假词"):</p>
+
+  <div class="code-block">手写 prompt:   <span class="st">"a photo of a damaged metal plate"</span>   <span class="cm"># 词是死的,还绑定产品</span>
+可学习 prompt:  [V1][V2]…[Vn] + <span class="st">"object"</span>              <span class="cm"># V 是可训练向量</span>
+<span class="cm"># 只学两条:一条代表"正常物体",一条代表"异常物体"</span>
+<span class="cm"># 不出现任何具体产品名 → object-agnostic(物体无关)</span></div>
+
+  <p>最关键的设计是 <em>object-agnostic</em>(物体无关):这两条 prompt 向量学的不是"正常的金属盘"或"异常的电缆",而是<strong>"正常"和"异常"这两个抽象概念本身</strong>。训练只需要在少量带标注的辅助数据上做一次(辅助数据来自其他产品、其他数据集),学到的"正常/异常"概念就能直接迁移:换一种从未见过的产品,不用重写 prompt、不用重新训练,拿来就用——<strong>对目标产品,依然是零样本</strong>。</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>WinCLIP:手写 prompt</h4>
+      <p>零训练,开箱即用;</p>
+      <p>但措辞敏感,且要为每类产品设计 {object} 和状态词。</p>
+    </div>
+    <div class="compare-box">
+      <h4>AnomalyCLIP:可学习 prompt</h4>
+      <p>在辅助数据上训一次 prompt 向量(编码器全程冻结);</p>
+      <p>object-agnostic,跨产品零样本泛化,措辞问题从根上消失。</p>
+    </div>
+  </div>
+
+  <p>一句话总结这一步演化:<strong>WinCLIP 证明"话"能当分类器,AnomalyCLIP 证明这句"话"本身也可以被学出来</strong>——而且学的是放之四海皆准的"正常/异常"概念,不是某个产品的专属描述。</p>
+</section>
+
+<!-- ============ §5 ============ -->
+<section>
+  <h2><span class="num">5</span> SAM 与分割精修:基础模型乐高</h2>
+
+  <p>CLIP 系方法的热力图有个先天短板:滑窗打分,<strong>定位是"块状"的粗定位</strong>,缺陷的精确轮廓画不出来。而第 6 课讲过,有些场景需要像素级的缺陷面积、长度来判定是否超标。补上这块拼图的,是另一个基础模型:SAM。</p>
+
+  <h3>SAM:万物分割</h3>
+  <p>SAM(Segment Anything Model,Meta,2023)是分割界的"基础模型":在 1100 万张图像、11 亿个 mask 上训练,学会了一件通用的事——<strong>给一个提示(在图上点一个点,或框一个框),就把提示所指的物体精确抠出来</strong>。它不认识"划痕"、不知道"缺陷"是什么,但只要你指到那里,它就能沿着边界画出像素级的 mask,对没见过的物体照样有效。</p>
+
+  <h3>组合拳:CLIP 找,SAM 抠</h3>
+  <p>一个不知道缺陷在哪但能精确抠图的模型,和一个知道缺陷大概在哪但抠不准的模型——把它们拼起来,正好互补:</p>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">STEP 1</div>
+      <div class="step-title">CLIP 系粗定位</div>
+      <div class="step-desc">WinCLIP / AnomalyCLIP<br>输出异常热力图</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 2</div>
+      <div class="step-title">取峰值当提示</div>
+      <div class="step-desc">热力图最热的位置<br>变成一个提示点</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 3</div>
+      <div class="step-title">SAM 精修</div>
+      <div class="step-desc">从提示点出发<br>抠出精确 mask</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">输出</div>
+      <div class="step-title">像素级轮廓</div>
+      <div class="step-desc">缺陷面积 / 长度<br>可量化、可判超标</div>
+    </div>
+  </div>
+
+  <p>注意这个系统的工作方式:<strong>没有从头训练任何东西</strong>。CLIP 出"图文对齐打分"的能力,SAM 出"指哪抠哪"的能力,像乐高一样拼起来,就是一条完整的零样本检测 + 分割流水线。这种<em>基础模型乐高</em>正在成为新的工程范式:与其为每个任务造轮子,不如把几个通用能力块组合起来——每块都站在海量数据的肩膀上。</p>
+</section>
+
+<!-- ============ §6 ============ -->
+<section>
+  <h2><span class="num">6</span> 多模态大模型:从分数到对话</h2>
+
+  <p>沿着"语言进入质检"的路再往前一步,是把整个大语言模型请进来。AnomalyGPT(AAAI 2024)把工业异常检测模块接进多模态大模型:图像编码器负责看,LLM 负责想和说。于是质检系统第一次<strong>不止输出一个分数,还能回答问题</strong>:</p>
+
+  <div class="story-card">
+    <div class="story-label">一段对话</div>
+    <p>质检员:这个零件有什么问题?<br>
+    模型:图像左上角区域检测到一道约 3mm 的细长划痕,置信度较高;其余表面未见明显异常。建议对该区域复检。</p>
+  </div>
+
+  <p>别小看这一步。传统方法给出"异常分 0.87 + 一张热力图"之后,仍然需要工程师去解读:是什么缺陷?严不严重?要不要停线?<strong>解释,是检测报告里隐藏的人力成本</strong>。多模态大模型把这部分也吃掉了:定位、描述、严重程度评估、处置建议,一句话问出来。而且对话是双向的——还可以追问"和上一批相比呢?"、"这种划痕常见的成因是什么?"。</p>
+
+  <p>工业质检的输出形态,正在从"分数"走向"对话"。这条线刚刚开始,但方向已经清晰:<strong>检测模型负责看得准,语言模型负责说得清</strong>。</p>
+</section>
+
+<!-- ============ §7 ============ -->
+<section>
+  <h2><span class="num">7</span> 冷静一页:zero-shot 的真实水位</h2>
+
+  <p>讲了一整课的"游戏规则改写",这一页泼点冷水——工程决策需要知道水位到底在哪。</p>
+
+  <p><strong>数字说话</strong>:在 MVTec AD 基准上,WinCLIP 的零样本图像级 AUROC 约在 <em>91~95%</em> 区间;而第 8 课的 PatchCore,用几百张正常样本能稳定做到 <em>99%+</em>。四到八个点的差距,在误检率上可能是数倍的差别——<strong>零样本方法目前打不过喂饱了正常样本的特征嵌入方法</strong>,这个结论到今天依然成立。</p>
+
+  <p>难啃的硬骨头也很明确:</p>
+  <ul>
+    <li><strong>细粒度纹理缺陷</strong>:布料上织错的一根线、金属表面轻微的橘皮纹——这类缺陷在语言里很难描述清楚,CLIP 的语义空间也分辨不了这么细的粒度;</li>
+    <li><strong>语义模糊的"缺陷"</strong>:同样一道印痕,A 产品算合格、B 产品算报废——"算不算缺陷"取决于工艺标准,而工艺标准写不进一句通用的 prompt。</li>
+  </ul>
+
+  <div class="insight-box">
+    <div class="insight-label">务实姿势</div>
+    <p>把零样本当<strong>冷启动工具</strong>,而不是终点:产线第一天,用 WinCLIP / AnomalyCLIP 零样本顶上,先把最明显的缺陷拦住;<strong>攒到几十张正常样本,就切换到 PatchCore 这类特征嵌入方法</strong>,把精度提到工业水位。两者之间还有一座桥:<em>few-shot(少样本)</em>——WinCLIP 的少样本版本只要 1~4 张正常参考图,分数就能明显上一个台阶。"零样本兜底、少样本过渡、够样本切主力"——这条选型路线,下一课的决策树会正式画出来。</p>
+  </div>
+</section>
+
+<!-- ============ 测验 ============ -->
+<section>
+  <h2><span class="num">✓</span> 自我检验</h2>
+  <p>四道题,检查本课的核心概念是否立住了。</p>
+
+  <div class="quiz" id="quiz1">
+    <div class="quiz-q">Q1 · CLIP 在 4 亿图文对上的训练目标是?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">A. 给每张图像预测一个固定的类别标签</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz1')">B. 对比学习:配对的(图, 文)在向量空间拉近,错配的推远</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">C. 先单独训练图像分类器,再单独训练文本分类器,最后拼接</button>
+    <div class="quiz-feedback ok" id="quiz1-correct">✔ 正确。§1 的"连连看":一个 batch 里 N 对图文形成 N×N 相似度矩阵,InfoNCE(softmax + 交叉熵)让对角线上的配对胜出——配对拉近、错配推远,图和文因此住进同一个语义空间。</div>
+    <div class="quiz-feedback no" id="quiz1-wrong">✘ 回看 §1 的训练目标:CLIP 没有类别标签,监督信号就是"哪张图配哪句话"这个配对关系本身——配对拉近、错配推远,这就是对比学习。</div>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-q">Q2 · zero-shot 分类时,"分类器"从哪里来?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">A. 在目标数据集上微调图像编码器得到</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">B. 不需要分类器,直接在像素层面比较图像</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz2')">C. 把每个类别写成一句 prompt,文本编码器算出的向量就是分类器,看图像向量和哪句最近</button>
+    <div class="quiz-feedback ok" id="quiz2-correct">✔ 正确。§1 结尾和 §2 的模拟器演示的正是这件事:每句 prompt 的文本向量充当类别中心,图像向量和它们比余弦、做 softmax——分类器是"写"出来的,不是训出来的,换类别只需改字符串。</div>
+    <div class="quiz-feedback no" id="quiz2-wrong">✘ 回看 §1 结尾与 §2 的模拟器:全程没有任何训练与微调,比较的也不是像素,而是编码器输出的语义向量——四句话就是四个分类器。</div>
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-q">Q3 · WinCLIP 的异常分数是怎么算出来的?</div>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz3')">A. 图像与 normal / anomaly 两组 prompt 分别算相似度,softmax 后取 anomaly 侧的概率占比</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">B. 统计图像里缺陷像素的个数,再除以总像素数</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">C. 计算图像特征与正常样本库中最近邻的距离</button>
+    <div class="quiz-feedback ok" id="quiz3-correct">✔ 正确。§3 第一板斧:normal 组与 anomaly 组两队 prompt 对垒,图像和两组的相似度做 softmax,anomaly 侧的概率就是异常分——练习 TODO 5 实现的就是它的两句话最小版。</div>
+    <div class="quiz-feedback no" id="quiz3-wrong">✘ 最近邻距离是第 8 课 PatchCore 的做法(需要正常样本库),数像素则需要先有分割结果。回看 §3:WinCLIP 的异常分来自 normal / anomaly 两组 prompt 的 softmax 对垒,零样本、零库存。</div>
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-q">Q4 · AnomalyCLIP 相对 WinCLIP 的核心改进是什么?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">A. 把图像编码器换成了参数量更大的模型</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz4')">B. 把手写 prompt 换成可学习的、物体无关(object-agnostic)的 prompt 向量</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">C. 彻底抛弃文本,只用图像特征做异常检测</button>
+    <div class="quiz-feedback ok" id="quiz4-correct">✔ 正确。§4:prompt 从手写英文变成可被梯度更新的嵌入向量,而且只学"正常/异常"两个抽象概念、不绑定具体物体——辅助数据上训一次,对没见过的产品依然零样本可用,措辞敏感问题从根上消失。</div>
+    <div class="quiz-feedback no" id="quiz4-wrong">✘ 回看 §4:AnomalyCLIP 动的是文本这一侧——手写 prompt 措辞敏感、要为每类产品想词,于是把 prompt 换成可学习的 object-agnostic 向量;编码器本身是冻结的,文本也没有被抛弃。</div>
+  </div>
+</section>
+
+<!-- ============ 延伸阅读 ============ -->
+<section class="further-reading">
+  <h2><span class="num">✦</span> 延伸阅读</h2>
+  <p>五篇原始论文,按本课出场顺序排列:</p>
+  <div class="reading-list">
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2103.00020" target="_blank" rel="noopener">Learning Transferable Visual Models From Natural Language Supervision(CLIP)</a></div>
+      <div class="reading-meta">OpenAI · ICML 2021 · arXiv 2103.00020</div>
+      <div class="reading-desc">CLIP 原论文:4 亿图文对 + 对比学习,让图像和语言住进同一个向量空间。§1 的全部内容出自这里;方法图(Figure 1)一张图讲完双塔与相似度矩阵,值得反复看。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2303.14814" target="_blank" rel="noopener">WinCLIP: Zero-/Few-Shot Anomaly Classification and Segmentation</a></div>
+      <div class="reading-meta">CVPR 2023 · arXiv 2303.14814</div>
+      <div class="reading-desc">零/少样本缺陷检测代表作:两组 prompt 对垒 + prompt ensemble + 多尺度滑窗定位(§3 的三板斧)。文中的 prompt 模板列表可以直接抄来用。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2310.18961" target="_blank" rel="noopener">AnomalyCLIP: Object-agnostic Prompt Learning for Zero-shot Anomaly Detection</a></div>
+      <div class="reading-meta">ICLR 2024 · arXiv 2310.18961</div>
+      <div class="reading-desc">把手写 prompt 换成可学习的 object-agnostic prompt 向量(§4):辅助数据上训一次,在 17 个跨领域数据集上零样本泛化,措辞工程从此退场。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2304.02643" target="_blank" rel="noopener">Segment Anything(SAM)</a></div>
+      <div class="reading-meta">Meta AI · ICCV 2023 · arXiv 2304.02643</div>
+      <div class="reading-desc">"万物分割"基础模型:1100 万张图、11 亿个 mask 训出的可提示分割(§5)。点/框提示 → 精确轮廓,是缺陷检测流水线里负责精修 mask 的那块乐高。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/2308.15366" target="_blank" rel="noopener">AnomalyGPT: Detecting Industrial Anomalies Using Large Vision-Language Models</a></div>
+      <div class="reading-meta">AAAI 2024 · arXiv 2308.15366</div>
+      <div class="reading-desc">把异常检测接进多模态大模型(§6):不止给分数,还能用自然语言回答"这个零件哪里有问题"。工业质检从"分数"走向"对话"的起点。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 配套练习 ============ -->
+<section id="code-exercise">
+  <h2><span class="num">✎</span> 配套代码练习</h2>
+  <div class="exercise-card">
+    <h3>exercise.py:亲手实现 zero-shot 缺陷判定</h3>
+    <p>本课目录下的 <code>exercise.py</code> 用纯 Python(只 <code>import math</code>)把 §1-§3 的推理机制完整走一遍。运行 <code>python exercise.py</code>,完成 5 个递进的 TODO:</p>
+    <ol class="todo-list">
+      <li><strong>TODO 1</strong> · 点积 <code>dot</code> —— 一切相似度的原材料(对应 §1)</li>
+      <li><strong>TODO 2</strong> · 余弦相似度 <code>cosine_sim</code> —— CLIP 空间里的那把"距离尺"(对应 §1)</li>
+      <li><strong>TODO 3</strong> · 带温度的 <code>softmax</code> —— 把相似度放大成概率,亲手验证"温度越低,分布越尖"(对应 §2)</li>
+      <li><strong>TODO 4</strong> · <code>clip_zero_shot</code> —— 串起前三步,完成一次完整的 zero-shot 分类(对应 §2)</li>
+      <li><strong>TODO 5</strong> · <code>anomaly_probability</code> —— normal / damaged 两句 prompt 对垒打异常分,一个两句话的最小 WinCLIP(对应 §3)</li>
+    </ol>
+    <p style="margin-top:12px">做完 TODO 5 你会看到:同一段代码,不改任何参数,既判对了完好盘、也判对了划痕盘——因为"分类器"只是两句话。难度 ⭐⭐,适合边玩 §2 的模拟器边写。</p>
+  </div>
+</section>
+
+<div class="lesson-nav">
+  <a href="../11-normalizing-flows/lesson.html">← 上一课:归一化流类方法</a>
+  <a href="../13-engineering-practice/lesson.html">下一课:工程实践与方法选型 →</a>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ============ §2 图文匹配模拟器 ============ */
+(function() {
+  var S = 72;
+  var PROMPTS = [
+    '一张完好金属零件的照片',
+    '一张带划痕的金属零件照片',
+    '一张有凹坑的金属零件照片',
+    '一张被污染的金属零件照片'
+  ];
+  var LABELS = ['图 A(完好盘)', '图 B(划痕盘)', '图 C(凹坑盘)', '图 D(污渍盘)'];
+  // 内置 4×4 余弦相似度矩阵(行 = 图像,列 = 文本;量级参考真实 CLIP,对角线最高)
+  var SIM = [
+    [0.31, 0.22, 0.23, 0.21],
+    [0.24, 0.33, 0.26, 0.23],
+    [0.25, 0.27, 0.34, 0.24],
+    [0.22, 0.24, 0.25, 0.35]
+  ];
+  var TEMP = 0.05; // softmax 温度:真实 CLIP 约 0.01,这里取温和一些便于观察
+  var EXPLAIN = [
+    '注意其余三条并不是 0:四句话都提到"金属零件",语义本来就有重叠,决策靠的是相对大小。',
+    '没有人给这张图打过标签,"划痕"这个答案完全来自语言先验。',
+    '凹坑和划痕在像素上都是"暗斑",但在文本空间里被分开了——这就是语言先验的分辨力。',
+    '污渍面积大、边界散,和"被污染"的描述最近。四选一,分类器只是四句话。'
+  ];
+  function makeRnd(seed) {
+    var s = seed;
+    return function() { s = (s * 16807) % 2147483647; return s / 2147483647; };
+  }
+  // 程序生成"金属圆盘"底图(参考第 02 课 §4 的 genImage,简化到 72×72)
+  function baseDisc(rnd) {
+    var img = [];
+    for (var y = 0; y < S; y++) {
+      img.push([]);
+      for (var x = 0; x < S; x++) {
+        var v = 70 + (rnd() - 0.5) * 10;                       // 背景
+        var dx = x - 36, dy = y - 36;
+        var d = Math.sqrt(dx * dx + dy * dy);
+        if (d < 27) v = 168 - d * 0.7 + (rnd() - 0.5) * 12;    // 圆盘
+        if (d > 24.5 && d < 27) v -= 26;                       // 边缘暗环
+        img[y].push(v);
+      }
+    }
+    return img;
+  }
+  function addScratch(img) { // 斜向划痕:从 (21,19) 到 (49,49)
+    for (var t = 0; t <= 1; t += 0.01) {
+      var sx = Math.round(21 + t * 28), sy = Math.round(19 + t * 30);
+      for (var o = -1; o <= 1; o++) {
+        if (img[sy] && img[sy][sx + o] !== undefined) {
+          var dd = Math.sqrt((sx - 36) * (sx - 36) + (sy - 36) * (sy - 36));
+          if (dd < 25) img[sy][sx + o] = (o === 0 ? 40 : 92);
+        }
+      }
+    }
+  }
+  function addPit(img) { // 凹坑:中心 (44,26)
+    for (var py = -3; py <= 3; py++) for (var px = -3; px <= 3; px++) {
+      var rr = px * px + py * py;
+      if (rr <= 9) img[26 + py][44 + px] = (rr <= 4 ? 46 : 84);
+    }
+  }
+  function addStain(img, rnd) { // 大面积污渍:椭圆形暗斑,中心 (40,42)
+    for (var y = 0; y < S; y++) for (var x = 0; x < S; x++) {
+      var ex = (x - 40) / 13, ey = (y - 42) / 9;
+      var e = ex * ex + ey * ey;
+      var dd = Math.sqrt((x - 36) * (x - 36) + (y - 36) * (y - 36));
+      if (e < 1 && dd < 25) img[y][x] = Math.min(img[y][x], 96 + (rnd() - 0.5) * 18 + e * 26);
+    }
+  }
+  function drawGray(canvas, mat) {
+    var ctx = canvas.getContext('2d');
+    var id = ctx.createImageData(S, S);
+    for (var y = 0; y < S; y++) for (var x = 0; x < S; x++) {
+      var v = Math.max(0, Math.min(255, mat[y][x]));
+      var i = (y * S + x) * 4;
+      id.data[i] = id.data[i + 1] = id.data[i + 2] = v;
+      id.data[i + 3] = 255;
+    }
+    ctx.putImageData(id, 0, 0);
+  }
+  function softmax(xs, t) {
+    var zs = xs.map(function(x) { return x / t; });
+    var m = Math.max.apply(null, zs);
+    var es = zs.map(function(z) { return Math.exp(z - m); });
+    var sum = es.reduce(function(a, b) { return a + b; }, 0);
+    return es.map(function(e) { return e / sum; });
+  }
+  var canvases = [];
+  for (var ci = 0; ci < 4; ci++) canvases.push(document.getElementById('clip-c' + ci));
+  var m0 = baseDisc(makeRnd(7));
+  var m1 = baseDisc(makeRnd(19)); addScratch(m1);
+  var m2 = baseDisc(makeRnd(29)); addPit(m2);
+  var r3 = makeRnd(41);
+  var m3 = baseDisc(r3); addStain(m3, r3);
+  [m0, m1, m2, m3].forEach(function(m, i) { drawGray(canvases[i], m); });
+  var btns = document.querySelectorAll('#clip-imgs .clip-img-btn');
+  var status = document.getElementById('clip-status');
+  function select(i) {
+    btns.forEach(function(b) { b.classList.toggle('sel', +b.dataset.i === i); });
+    var sims = SIM[i];
+    var probs = softmax(sims, TEMP);
+    var best = 0;
+    probs.forEach(function(p, j) { if (p > probs[best]) best = j; });
+    for (var j = 0; j < 4; j++) {
+      document.getElementById('clip-t' + j).classList.toggle('best', j === best);
+      document.getElementById('clip-b' + j).style.width = Math.round(sims[j] / 0.4 * 100) + '%';
+      document.getElementById('clip-p' + j).textContent = 'cos ' + sims[j].toFixed(2) + ' → ' + (probs[j] * 100).toFixed(1) + '%';
+    }
+    status.innerHTML = '<strong>' + LABELS[i] + '</strong>:最匹配的是「' + PROMPTS[best] + '」,softmax 概率 ' + (probs[best] * 100).toFixed(1) + '%。' + EXPLAIN[i];
+  }
+  btns.forEach(function(b) {
+    b.addEventListener('click', function() { select(+b.dataset.i); });
+  });
+  select(0);
+})();
+
+/* ============ 测验 ============ */
+function checkQuiz(btn, quizId) {
+  const quiz = document.getElementById(quizId);
+  const options = quiz.querySelectorAll('.quiz-option');
+  const isCorrect = btn.dataset.correct === 'true';
+  options.forEach(o => {
+    o.disabled = true;
+    o.style.pointerEvents = 'none';
+    o.style.opacity = '0.5';
+  });
+  btn.style.opacity = '1';
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  document.getElementById(
+    quizId + (isCorrect ? '-correct' : '-wrong')
+  ).classList.add('show');
+}
+
+/* ============ 配套练习开关 ============ */
+(function() {
+  const KEY = 'course-show-exercises';
+  const toggle = document.getElementById('code-toggle');
+  const section = document.getElementById('code-exercise');
+  if (!toggle || !section) return;
+  const saved = localStorage.getItem(KEY);
+  let show = saved === null ? true : saved === '1';
+  function apply() {
+    toggle.classList.toggle('active', show);
+    section.classList.toggle('hidden', !show);
+  }
+  apply();
+  toggle.addEventListener('click', () => {
+    show = !show;
+    localStorage.setItem(KEY, show ? '1' : '0');
+    apply();
+  });
+})();
+</script>
+
+<script>
+(function() {
+  'use strict';
+  var LESSON_TITLE = '第 12 课:零样本时代:CLIP 与大模型';
+  var COURSE_NAME  = '缺陷检测:从深度学习基础到主流方法全景';
+  var toolbar, overlay, toastEl;
+  var hideToolbarTimer = null;
+  var selectedAnchorNode = null;
+  function init() {
+    createToolbar();
+    createDialog();
+    bindEvents();
+    restoreNotes();
+  }
+  function createToolbar() {
+    toolbar = document.createElement('div');
+    toolbar.className = 'selection-toolbar';
+    toolbar.innerHTML =
+      '<button class="sel-btn sel-btn-ask" data-action="ask">\u{1F4AC} 问 LLM</button>' +
+      '<button class="sel-btn sel-btn-modify" data-action="modify">\u{270F}\u{FE0F} 修改</button>' +
+      '<button class="sel-btn sel-btn-note" data-action="note">\u{1F4DD} 划线笔记</button>';
+    document.body.appendChild(toolbar);
+    toolbar.querySelector('[data-action="ask"]').onclick = onAsk;
+    toolbar.querySelector('[data-action="modify"]').onclick = onModify;
+    toolbar.querySelector('[data-action="note"]').onclick = onNote;
+  }
+  function createDialog() {
+    overlay = document.createElement('div');
+    overlay.className = 'sel-dialog-overlay';
+    overlay.innerHTML =
+      '<div class="sel-dialog">' +
+        '<h3 class="sel-dialog-title">\u{270F}\u{FE0F} 修改选中内容</h3>' +
+        '<div class="sel-dialog-field"><label class="sel-dialog-label">选中的原文:</label>' +
+          '<div class="sel-dialog-source" id="sel-source-text"></div></div>' +
+        '<div class="sel-dialog-field">' +
+          '<label class="sel-dialog-label" for="sel-modify-instruction">你希望改成什么样?</label>' +
+          '<textarea id="sel-modify-instruction" rows="4" placeholder="例如:把这段写得更容易理解一些 / 用更生动的比喻 / 补充细节…"></textarea></div>' +
+        '<div class="sel-dialog-actions">' +
+          '<button class="sel-btn-cancel" id="sel-cancel">取消</button>' +
+          '<button class="sel-btn-confirm" id="sel-copy-modify">\u{1F4CB} 复制到剪贴板</button></div></div>';
+    document.body.appendChild(overlay);
+    document.getElementById('sel-cancel').onclick = hideDialog;
+    document.getElementById('sel-copy-modify').onclick = onCopyModify;
+    overlay.onclick = function(e) { if (e.target === overlay) hideDialog(); };
+  }
+  function getSelectedText() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return '';
+    if (!document.body.contains(sel.getRangeAt(0).commonAncestorContainer)) return '';
+    return sel.toString().trim();
+  }
+  function getSectionLabel(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    while (el && el !== document.body) {
+      if (el.tagName === 'SECTION' || el.tagName === 'DIV') {
+        var h2 = el.querySelector(':scope > h2, :scope > h3');
+        if (h2) {
+          var txt = h2.textContent.replace(/\s+/g, ' ').trim();
+          return txt.length > 50 ? txt.substring(0, 50) + '…' : txt;
+        }
+      }
+      el = el.parentElement;
+    }
+    return '';
+  }
+  var NOTES_KEY = 'note-underlines::' + location.pathname;
+  function getContainerSections() {
+    return Array.prototype.slice.call(document.querySelectorAll('.container > section'));
+  }
+  function getSectionIndex(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    var container = document.querySelector('.container');
+    while (el && el.parentElement !== container) { el = el.parentElement; }
+    if (!el) return -1;
+    return getContainerSections().indexOf(el);
+  }
+  function loadNotes() {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveNoteEntry(entry) {
+    var notes = loadNotes();
+    notes.push(entry);
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function deleteNoteEntry(id) {
+    var notes = loadNotes().filter(function(n) { return n.id !== id; });
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function getTextNodesIn(root) {
+    var nodes = [];
+    (function walk(n) {
+      if (n.nodeType === Node.TEXT_NODE) { nodes.push(n); return; }
+      for (var i = 0; i < n.childNodes.length; i++) walk(n.childNodes[i]);
+    })(root);
+    return nodes;
+  }
+  function countOccurrenceIndex(root, range, text) {
+    var textNodes = getTextNodesIn(root);
+    var full = '', startAbs = -1, pos = 0;
+    for (var i = 0; i < textNodes.length; i++) {
+      if (textNodes[i] === range.startContainer) startAbs = pos + range.startOffset;
+      full += textNodes[i].nodeValue;
+      pos += textNodes[i].nodeValue.length;
+    }
+    if (startAbs === -1) return 0;
+    var idx = -1, count = 0;
+    while (true) {
+      var next = full.indexOf(text, idx + 1);
+      if (next === -1 || next >= startAbs) break;
+      idx = next;
+      count++;
+    }
+    return count;
+  }
+  function findRangeByOccurrence(root, text, occurrence) {
+    var textNodes = getTextNodesIn(root);
+    var full = textNodes.map(function(t) { return t.nodeValue; }).join('');
+    var idx = -1;
+    for (var c = 0; c <= occurrence; c++) {
+      idx = full.indexOf(text, idx + 1);
+      if (idx === -1) return null;
+    }
+    var startOffset = idx, endOffset = idx + text.length, pos = 0;
+    var range = document.createRange(), startSet = false, endSet = false;
+    for (var i = 0; i < textNodes.length; i++) {
+      var len = textNodes[i].nodeValue.length;
+      if (!startSet && startOffset <= pos + len) { range.setStart(textNodes[i], startOffset - pos); startSet = true; }
+      if (!endSet && endOffset <= pos + len) { range.setEnd(textNodes[i], endOffset - pos); endSet = true; break; }
+      pos += len;
+    }
+    return (startSet && endSet) ? range : null;
+  }
+  function wrapRangeAsNote(range, id) {
+    var span = document.createElement('span');
+    span.className = 'note-underline';
+    span.dataset.noteId = id;
+    var frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  function onNote() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (!document.body.contains(range.commonAncestorContainer)) return;
+    var text = getSelectedText();
+    if (!text) return;
+    var sectionIdx = selectedAnchorNode ? getSectionIndex(selectedAnchorNode) : -1;
+    var sections = getContainerSections();
+    var section = sectionIdx >= 0 ? sections[sectionIdx] : null;
+    var occurrence = section ? countOccurrenceIndex(section, range, text) : 0;
+    var id = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    try {
+      wrapRangeAsNote(range, id);
+      sel.removeAllRanges();
+      if (sectionIdx >= 0) saveNoteEntry({ id: id, sectionIdx: sectionIdx, text: text, occurrence: occurrence });
+      showToast('\u{1F4DD} 已添加划线笔记,再点一下可以取消');
+    } catch (e) {
+      showToast('⚠️ 这段选区暂时无法划线,换一段试试');
+    }
+    hideToolbar();
+  }
+  function removeNote(span) {
+    var id = span.dataset.noteId;
+    var parent = span.parentNode;
+    if (!parent) return;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
+    parent.normalize();
+    deleteNoteEntry(id);
+    showToast('\u{1F5D1}️ 已取消这条划线笔记');
+  }
+  function restoreNotes() {
+    var notes = loadNotes();
+    var sections = getContainerSections();
+    notes.forEach(function(n) {
+      var section = sections[n.sectionIdx];
+      if (!section) return;
+      var range = findRangeByOccurrence(section, n.text, n.occurrence);
+      if (!range) return;
+      try { wrapRangeAsNote(range, n.id); } catch (e) {}
+    });
+  }
+  function positionToolbar(cx, cy) {
+    clearTimeout(hideToolbarTimer);
+    toolbar.classList.add('visible');
+    var tw = toolbar.offsetWidth, th = toolbar.offsetHeight;
+    var left = cx - tw / 2, top = cy + 12;
+    if (left < 12) left = 12;
+    if (left + tw > innerWidth - 12) left = innerWidth - tw - 12;
+    if (top + th > innerHeight - 12) top = cy - th - 12;
+    toolbar.style.left = left + 'px';
+    toolbar.style.top = top + 'px';
+  }
+  function hideToolbar() {
+    clearTimeout(hideToolbarTimer);
+    hideToolbarTimer = setTimeout(function() { toolbar.classList.remove('visible'); }, 200);
+  }
+  function buildContext(section) {
+    var lines = ['## 课程上下文'];
+    lines.push('- 课程:' + COURSE_NAME);
+    lines.push('- 课时:' + LESSON_TITLE);
+    if (section) lines.push('- 章节:' + section);
+    lines.push('');
+    return lines.join('\n');
+  }
+  function onAsk() {
+    var text = getSelectedText();
+    if (!text) return;
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 我选中的内容\n\n' + text + '\n\n## 我的提问\n\n';
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并提问吧!');
+    hideToolbar();
+  }
+  function onModify() {
+    var text = getSelectedText();
+    if (!text) return;
+    document.getElementById('sel-source-text').textContent = text;
+    document.getElementById('sel-modify-instruction').value = '';
+    overlay.classList.add('visible');
+    hideToolbar();
+    setTimeout(function() { document.getElementById('sel-modify-instruction').focus(); }, 100);
+  }
+  function onCopyModify() {
+    var src = document.getElementById('sel-source-text').textContent;
+    var inst = document.getElementById('sel-modify-instruction').value.trim();
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 选中的原文\n\n' + src + '\n\n## 修改要求\n\n' +
+      (inst || '(用户未指定具体要求,请自行判断合理修改方向)');
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并请求修改吧!');
+    hideDialog();
+  }
+  function copyToClipboard(text, msg) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast(msg || '✅ 已复制到剪贴板'); }
+    catch (e) { showToast('⚠\u{FE0F} 未能自动复制,请按 Cmd+C 手动复制'); }
+    document.body.removeChild(ta);
+  }
+  function showToast(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'sel-toast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg;
+    toastEl.classList.add('visible');
+    clearTimeout(toastEl._hideTimer);
+    toastEl._hideTimer = setTimeout(function() { toastEl.classList.remove('visible'); }, 3500);
+  }
+  function hideDialog() { overlay.classList.remove('visible'); }
+  function bindEvents() {
+    document.addEventListener('mouseup', function(e) {
+      if (toolbar.contains(e.target) || overlay.contains(e.target)) return;
+      var text = getSelectedText();
+      if (text.length > 5) {
+        selectedAnchorNode = window.getSelection() ? window.getSelection().anchorNode : null;
+        positionToolbar(e.clientX, e.clientY);
+      } else { hideToolbar(); }
+    });
+    document.addEventListener('scroll', function() { toolbar.classList.remove('visible'); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { hideDialog(); toolbar.classList.remove('visible'); }
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!toolbar.contains(e.target) && !overlay.contains(e.target)) hideToolbar();
+    });
+    document.addEventListener('click', function(e) {
+      var note = e.target.closest && e.target.closest('.note-underline');
+      if (!note) return;
+      var sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().length > 0) return;
+      removeNote(note);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+</script>
+</body>
+</html>

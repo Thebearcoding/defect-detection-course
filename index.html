@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>缺陷检测:从深度学习基础到主流方法全景 | 交互式课程</title>
+<meta name="description" content="13 课交互式课程:从神经网络零基础讲起,原子粒度拆解工业缺陷检测的所有主流方法族——重构、特征嵌入、师生蒸馏、合成缺陷、归一化流、CLIP 零样本与工程实践。">
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" media="print" onload="this.media='all'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+:root {
+  --bg: #ECE9E0;
+  --surface: #F5F3EC;
+  --surface2: #E7E3D8;
+  --border: #D8D5CC;
+  --text: #141413;
+  --text-dim: #6B6860;
+  --accent: #D97757;
+  --accent2: #6A9BCC;
+  --ink: #141413;
+  --ink-text: #F0EEE6;
+  --font-display: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-heading: 'Poppins', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217,119,87,0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 15%, rgba(106,155,204,0.05) 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.85;
+  font-size: 16.5px;
+  text-spacing-trim: trim-start allow-end;
+  overflow-wrap: break-word;
+}
+
+/* ---- Hero ---- */
+.hero {
+  padding: 96px 24px 64px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero .course-tag {
+  display: inline-block;
+  padding: 7px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-bottom: 28px;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5.5vw, 3.4rem);
+  font-weight: 400;
+  line-height: 1.3;
+  margin-bottom: 20px;
+  word-break: keep-all;
+}
+.hero .subtitle {
+  color: var(--text-dim);
+  font-size: 17.5px;
+  max-width: 640px;
+  margin: 0 auto 30px;
+  line-height: 1.95;
+}
+.hero-chips {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.hero-chip {
+  padding: 7px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.hero-chip b { color: var(--accent); font-weight: 500; }
+
+/* ---- Layout ---- */
+.container { max-width: 900px; margin: 0 auto; padding: 24px 24px 96px; }
+.part { padding: 44px 0 8px; }
+.part-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+.part-head .part-no {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  color: var(--accent);
+}
+.part-head h2 {
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 400;
+  word-break: keep-all;
+}
+.part-desc { color: var(--text-dim); font-size: 15px; margin-bottom: 22px; }
+
+.lesson-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.lesson-card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px 22px;
+  text-decoration: none;
+  color: var(--text);
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+  transition: all 0.25s var(--ease);
+}
+.lesson-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(20,20,19,0.08);
+}
+.lc-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.lc-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+.lc-title {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.lc-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.lc-tag {
+  font-family: var(--font-heading);
+  font-size: 11.5px;
+  color: var(--text-dim);
+  background: var(--surface2);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.lc-go {
+  margin-top: 12px;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+/* ---- How to use ---- */
+.howto {
+  margin-top: 56px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 26px 30px;
+}
+.howto h3 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 400;
+  margin-bottom: 14px;
+}
+.howto ol { margin: 0 0 0 22px; }
+.howto li { margin-bottom: 9px; font-size: 15px; }
+.howto code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 8px;
+  font-family: 'JetBrains Mono', Consolas, monospace;
+  font-size: 12.5px;
+  color: #B05C3F;
+}
+.footer {
+  margin-top: 40px;
+  text-align: center;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  line-height: 2;
+}
+
+@media (max-width: 640px) {
+  .hero { padding: 60px 18px 44px; }
+  .container { padding: 16px 16px 72px; }
+  .lesson-grid { grid-template-columns: 1fr; }
+  .part-head h2 { font-size: 21px; }
+  .howto { padding: 20px 18px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="course-tag">交互式课程 · 全 13 课</div>
+  <h1>缺陷检测<br>从深度学习基础到主流方法全景</h1>
+  <p class="subtitle">从一个神经元讲到 CLIP 零样本检测——原子粒度拆解每个概念,不做论文架构堆砌。每课自带可玩的交互演示、测验与零依赖 Python 练习。</p>
+  <div class="hero-chips">
+    <span class="hero-chip"><b>13</b> 课时</span>
+    <span class="hero-chip"><b>30+</b> 交互演示</span>
+    <span class="hero-chip"><b>65</b> 个编程 TODO</span>
+    <span class="hero-chip"><b>40+</b> 篇原始论文</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <div class="part">
+    <div class="part-head"><span class="part-no">PART 1</span><h2>深度学习地基</h2></div>
+    <p class="part-desc">零基础起步:神经网络怎么学、CNN 怎么看、模型怎么训——后面一切方法的公共地基。</p>
+    <div class="lesson-grid">
+      <a class="lesson-card" href="01-neural-networks/lesson.html">
+        <div class="lc-top"><span class="lc-num">01</span><span class="lc-title">神经网络是怎么学会的</span></div>
+        <div class="lc-tags"><span class="lc-tag">神经元</span><span class="lc-tag">激活函数</span><span class="lc-tag">损失函数</span><span class="lc-tag">梯度下降</span><span class="lc-tag">反向传播</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+      <a class="lesson-card" href="02-cnn/lesson.html">
+        <div class="lc-top"><span class="lc-num">02</span><span class="lc-title">卷积神经网络:让机器看见</span></div>
+        <div class="lc-tags"><span class="lc-tag">卷积核</span><span class="lc-tag">池化</span><span class="lc-tag">感受野</span><span class="lc-tag">残差连接</span><span class="lc-tag">迁移学习</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+      <a class="lesson-card" href="03-training-methodology/lesson.html">
+        <div class="lc-top"><span class="lc-num">03</span><span class="lc-title">训练模型的方法论</span></div>
+        <div class="lc-tags"><span class="lc-tag">数据划分</span><span class="lc-tag">过拟合</span><span class="lc-tag">正则化</span><span class="lc-tag">数据增强</span><span class="lc-tag">学习率</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-head"><span class="part-no">PART 2</span><h2>问题地图与有监督路线</h2></div>
+    <p class="part-desc">先钉好整个领域的地图,再走完"有标注就能用"的两条经典路线。</p>
+    <div class="lesson-grid">
+      <a class="lesson-card" href="04-defect-detection-landscape/lesson.html">
+        <div class="lc-top"><span class="lc-num">04</span><span class="lc-title">缺陷检测全景地图</span></div>
+        <div class="lc-tags"><span class="lc-tag">三种粒度</span><span class="lc-tag">范式光谱</span><span class="lc-tag">MVTec AD</span><span class="lc-tag">AUROC / PRO</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+      <a class="lesson-card" href="05-object-detection/lesson.html">
+        <div class="lc-top"><span class="lc-num">05</span><span class="lc-title">有监督路线 I:目标检测</span></div>
+        <div class="lc-tags"><span class="lc-tag">IoU</span><span class="lc-tag">anchor</span><span class="lc-tag">YOLO</span><span class="lc-tag">NMS</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+      <a class="lesson-card" href="06-semantic-segmentation/lesson.html">
+        <div class="lc-top"><span class="lc-num">06</span><span class="lc-title">有监督路线 II:语义分割</span></div>
+        <div class="lc-tags"><span class="lc-tag">U-Net</span><span class="lc-tag">skip connection</span><span class="lc-tag">空洞卷积</span><span class="lc-tag">Dice / Focal</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-head"><span class="part-no">PART 3</span><h2>无监督五大方法族</h2></div>
+    <p class="part-desc">工业现场的主战场:只用正常样本,让异常自己现形——五条路线各有各的聪明。</p>
+    <div class="lesson-grid">
+      <a class="lesson-card" href="07-reconstruction-methods/lesson.html">
+        <div class="lc-top"><span class="lc-num">07</span><span class="lc-title">无监督入门与重构类方法</span></div>
+        <div class="lc-tags"><span class="lc-tag">AutoEncoder</span><span class="lc-tag">隐空间</span><span class="lc-tag">重构误差</span><span class="lc-tag">AnoGAN</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+      <a class="lesson-card" href="08-feature-embedding-methods/lesson.html">
+        <div class="lc-top"><span class="lc-num">08</span><span class="lc-title">特征嵌入类方法(工业主流)</span></div>
+        <div class="lc-tags"><span class="lc-tag">patch 特征</span><span class="lc-tag">马氏距离</span><span class="lc-tag">PaDiM</span><span class="lc-tag">PatchCore</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+      <a class="lesson-card" href="09-teacher-student-distillation/lesson.html">
+        <div class="lc-top"><span class="lc-num">09</span><span class="lc-title">师生蒸馏类方法</span></div>
+        <div class="lc-tags"><span class="lc-tag">知识蒸馏</span><span class="lc-tag">STFPM</span><span class="lc-tag">反向蒸馏</span><span class="lc-tag">EfficientAD</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+      <a class="lesson-card" href="10-synthetic-defects-self-supervised/lesson.html">
+        <div class="lc-top"><span class="lc-num">10</span><span class="lc-title">合成缺陷与自监督方法</span></div>
+        <div class="lc-tags"><span class="lc-tag">自监督</span><span class="lc-tag">CutPaste</span><span class="lc-tag">DRAEM</span><span class="lc-tag">SimpleNet</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+      <a class="lesson-card" href="11-normalizing-flows/lesson.html">
+        <div class="lc-top"><span class="lc-num">11</span><span class="lc-title">归一化流类方法</span></div>
+        <div class="lc-tags"><span class="lc-tag">概率密度</span><span class="lc-tag">可逆变换</span><span class="lc-tag">FastFlow</span><span class="lc-tag">CFLOW</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-head"><span class="part-no">PART 4</span><h2>零样本时代与工程落地</h2></div>
+    <p class="part-desc">基础模型改写游戏规则,最后一课回答"在你的产线上今天该用哪个"。</p>
+    <div class="lesson-grid">
+      <a class="lesson-card" href="12-zero-shot-clip-era/lesson.html">
+        <div class="lc-top"><span class="lc-num">12</span><span class="lc-title">零样本时代:CLIP 与大模型</span></div>
+        <div class="lc-tags"><span class="lc-tag">对比学习</span><span class="lc-tag">WinCLIP</span><span class="lc-tag">AnomalyCLIP</span><span class="lc-tag">SAM</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+      <a class="lesson-card" href="13-engineering-practice/lesson.html">
+        <div class="lc-top"><span class="lc-num">13</span><span class="lc-title">工程实践与方法选型</span></div>
+        <div class="lc-tags"><span class="lc-tag">anomalib</span><span class="lc-tag">选型决策树</span><span class="lc-tag">阈值与漂移</span><span class="lc-tag">部署</span></div>
+        <div class="lc-go">开始学习 →</div>
+      </a>
+    </div>
+  </div>
+
+  <div class="howto">
+    <h3>怎么使用这套课程</h3>
+    <ol>
+      <li><strong>按顺序学</strong>:课程有严格的递进设计,每课开头会回顾前置概念、结尾埋下一课的伏笔。</li>
+      <li><strong>玩每一个交互</strong>:拖滑块、点步进、亲手把 8 个零件分对——交互里的"啊哈时刻"是这套课的灵魂。</li>
+      <li><strong>做配套练习</strong>:每课目录下有 <code>exercise.py</code>,零依赖纯 Python,本地运行 <code>python3 exercise.py</code>,完成 5 个 TODO 让测试全绿。</li>
+      <li><strong>划线提问</strong>:选中任意文字可以「问 LLM / 请求修改 / 荧光笔笔记」,笔记保存在本地浏览器,刷新不丢。</li>
+      <li><strong>读原始论文</strong>:每课末尾的延伸阅读挂了该方向的奠基论文(全部为验证过的 arXiv/官方链接),读完课再读论文会非常顺。</li>
+    </ol>
+  </div>
+
+  <div class="footer">
+    缺陷检测:从深度学习基础到主流方法全景 · 交互式课程<br>
+    由 Claude 生成 · Anthropic 视觉风格 · 论文链接均经人工验证
+  </div>
+
+</div>
+</body>
+</html>

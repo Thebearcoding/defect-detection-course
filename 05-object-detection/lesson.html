@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>第 05 课 · 有监督路线 I:目标检测 | 缺陷检测课程</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lxgw-wenkai-webfont@1.7.0/style.css" media="print" onload="this.media='all'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<style>
+:root {
+  /* Anthropic 官方 Token(来自 anthropic-style-cn skill) */
+  --bg: #ECE9E0;
+  --surface: #F5F3EC;
+  --surface2: #E7E3D8;
+  --border: #D8D5CC;
+  --text: #141413;
+  --text-dim: #6B6860;
+  --accent: #D97757;
+  --accent2: #6A9BCC;
+  --good: #6A8A4F;
+  --bad: #C0453A;
+  --ink: #141413;
+  --ink-text: #F0EEE6;
+  --font-display: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-heading: 'Poppins', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-body: 'Lora', 'LXGW WenKai', 'Songti SC', 'STSong', 'SimSun', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 0%, rgba(217,119,87,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 50% at 90% 15%, rgba(106,155,204,0.05) 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.85;
+  font-size: 16.5px;
+  text-spacing-trim: trim-start allow-end;
+  overflow-wrap: break-word;
+}
+
+/* ---- Hero ---- */
+.hero {
+  padding: 88px 24px 56px;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+.hero .lesson-tag {
+  display: inline-block;
+  padding: 7px 18px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 3px;
+  margin-bottom: 26px;
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: 400;
+  line-height: 1.3;
+  margin-bottom: 18px;
+  word-break: keep-all;
+}
+.hero .subtitle {
+  color: var(--text-dim);
+  font-size: 17px;
+  max-width: 620px;
+  margin: 0 auto;
+  line-height: 1.9;
+}
+
+/* ---- Settings bar ---- */
+.settings-bar {
+  max-width: 860px;
+  margin: 20px auto 0;
+  padding: 0 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  color: var(--text-dim);
+  user-select: none;
+}
+.toggle-track {
+  width: 40px; height: 22px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  position: relative;
+  transition: background 0.25s var(--ease);
+}
+.toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: all 0.25s var(--ease);
+}
+.toggle-wrap.active .toggle-track { background: var(--accent); border-color: var(--accent); }
+.toggle-wrap.active .toggle-track::after { left: 20px; background: #fff; }
+.toggle-wrap.active { color: var(--text); }
+
+/* ---- Layout ---- */
+.container { max-width: 860px; margin: 0 auto; padding: 24px 24px 96px; }
+section { padding: 44px 0; border-bottom: 1px solid var(--border); }
+section:last-of-type { border-bottom: none; }
+h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 22px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  word-break: keep-all;
+}
+h2 .num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+h3 {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 500;
+  margin: 28px 0 12px;
+}
+p { margin-bottom: 15px; }
+strong { color: var(--text); font-weight: 700; }
+em { color: var(--accent); font-style: normal; font-weight: 500; }
+ul, ol { margin: 0 0 15px 24px; }
+li { margin-bottom: 8px; }
+
+/* ---- Story card ---- */
+.story-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent2);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 20px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.05);
+}
+.story-card .story-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent2);
+  letter-spacing: 3px;
+  margin-bottom: 10px;
+}
+.story-card p:last-child { margin-bottom: 0; }
+
+/* ---- Insight box ---- */
+.insight-box {
+  background: linear-gradient(135deg, rgba(217,119,87,0.09), rgba(217,119,87,0.04));
+  border: 1px solid rgba(217,119,87,0.35);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin: 20px 0;
+}
+.insight-box .insight-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+}
+.insight-box p:last-child { margin-bottom: 0; }
+
+/* ---- Code block ---- */
+.code-block {
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 18px 22px;
+  margin: 18px 0;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.9;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--ink-text);
+}
+.code-block .cm { color: #9C9A92; }
+.code-block .kw { color: #E8A188; }
+.code-block .st { color: #A8C090; }
+
+/* ---- Compare grid ---- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+.compare-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px 22px;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.compare-box h4 {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+.compare-box p { font-size: 14.5px; color: var(--text-dim); margin-bottom: 6px; }
+.compare-box p:last-child { margin-bottom: 0; }
+
+/* ---- Pipeline ---- */
+.pipeline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 8px;
+  margin: 22px 0;
+}
+.pipeline-step {
+  flex: 1 1 130px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+}
+.pipeline-step .step-num {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-title {
+  font-family: var(--font-heading);
+  font-weight: 500;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+.pipeline-step .step-desc { font-size: 12.5px; color: var(--text-dim); line-height: 1.6; }
+.pipeline-arrow { display: flex; align-items: center; color: var(--accent); font-size: 18px; }
+
+/* ---- Interactive demo shell ---- */
+.demo-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin: 24px 0;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.06);
+}
+.demo-box .demo-title {
+  font-family: var(--font-heading);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--accent);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.demo-box .demo-hint { font-size: 14px; color: var(--text-dim); margin-bottom: 16px; line-height: 1.8; }
+.demo-status {
+  margin-top: 14px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-family: var(--font-heading);
+}
+.demo-btns { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+.demo-btn {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+}
+.demo-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+.demo-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.demo-btn.primary:hover { filter: brightness(1.07); color: #fff; }
+.demo-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ---- Matrix grids (conv stepper) ---- */
+.mat-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  align-items: flex-start;
+  justify-content: center;
+  margin: 16px 0;
+}
+.mat-block { text-align: center; }
+.mat-label {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.mat-grid { display: grid; gap: 4px; justify-content: center; }
+.mat-cell {
+  width: 42px; height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  transition: all 0.2s var(--ease);
+}
+.mat-cell.v3 { background: var(--ink); color: var(--ink-text); border-color: var(--ink); }
+.mat-cell.kpos { background: rgba(217,119,87,0.14); color: #B05C3F; border-color: rgba(217,119,87,0.45); font-weight: 700; }
+.mat-cell.kneg { background: rgba(106,155,204,0.14); color: #4A7BA8; border-color: rgba(106,155,204,0.5); font-weight: 700; }
+.mat-cell.kzero { color: var(--text-dim); }
+.mat-cell.win { box-shadow: 0 0 0 3px var(--accent); }
+.mat-cell.filled { background: rgba(217,119,87,0.13); color: var(--text); font-weight: 700; border-color: rgba(217,119,87,0.4); }
+.mat-cell.cur-out { box-shadow: 0 0 0 3px var(--accent); }
+.mat-op {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-heading);
+  font-size: 20px;
+  color: var(--text-dim);
+  padding-top: 60px;
+}
+.conv-calc {
+  background: var(--ink);
+  color: var(--ink-text);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.9;
+  min-height: 46px;
+}
+.conv-calc .hl { color: #E8A188; font-weight: 700; }
+
+/* ---- Filter demo ---- */
+.filter-canvases {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 14px 0;
+}
+.fc-block { text-align: center; }
+.fc-block canvas {
+  width: 264px; height: 264px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: #FAF9F5;
+  image-rendering: pixelated;
+  display: block;
+}
+.fc-cap {
+  font-family: var(--font-heading);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  margin-top: 8px;
+  letter-spacing: 1px;
+}
+.fc-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  font-size: 22px;
+}
+
+/* ---- Receptive field viz ---- */
+.rf-wrap {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.rf-block { text-align: center; }
+.rf-grid { display: grid; gap: 3px; justify-content: center; }
+.rf-cell {
+  width: 26px; height: 26px;
+  border-radius: 6px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s var(--ease);
+}
+.rf-cell:hover { border-color: var(--accent); }
+.rf-cell.src { background: var(--accent); border-color: var(--accent); }
+.rf-cell.mid { background: rgba(217,119,87,0.5); border-color: rgba(217,119,87,0.5); }
+.rf-cell.field { background: rgba(217,119,87,0.18); border-color: rgba(217,119,87,0.3); }
+.rf-arrow {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  text-align: center;
+  min-width: 64px;
+  line-height: 1.5;
+}
+.rf-arrow b { color: var(--accent); font-size: 16px; display: block; }
+
+/* ---- Quiz ---- */
+.quiz {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 18px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.quiz .quiz-q { font-family: var(--font-heading); font-weight: 500; margin-bottom: 14px; }
+.quiz-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 13px 16px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  line-height: 1.7;
+}
+.quiz-option:hover { border-color: var(--accent); transform: translateY(-1px); }
+.quiz-option.correct { border-color: var(--good); background: rgba(106,138,79,0.1); }
+.quiz-option.wrong { border-color: var(--bad); background: rgba(192,69,58,0.08); }
+.quiz-feedback {
+  display: none;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14.5px;
+  margin-top: 6px;
+}
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok { background: rgba(106,138,79,0.09); border: 1px solid rgba(106,138,79,0.4); color: #4F6A3B; }
+.quiz-feedback.no { background: rgba(192,69,58,0.07); border: 1px solid rgba(192,69,58,0.35); color: var(--bad); }
+
+/* ---- Further reading ---- */
+.further-reading { padding: 44px 0; }
+.reading-list { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+.reading-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 22px;
+  transition: all 0.2s var(--ease);
+}
+.reading-item:hover { border-color: var(--accent); transform: translateY(-1px); }
+.reading-title a {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-weight: 500;
+  text-decoration: none;
+  font-size: 15.5px;
+}
+.reading-title a:hover { text-decoration: underline; }
+.reading-meta {
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  letter-spacing: 0.5px;
+}
+.reading-desc { font-size: 14.5px; color: var(--text-dim); margin-top: 6px; }
+.further-reading-inline {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin: 14px 0;
+  font-size: 14.5px;
+}
+.further-reading-inline .fr-icon { flex-shrink: 0; }
+.further-reading-inline a { color: var(--accent); font-weight: 500; }
+
+/* ---- Exercise section ---- */
+#code-exercise.hidden { display: none; }
+.exercise-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 26px;
+  margin: 16px 0;
+  box-shadow: 0 2px 12px rgba(20,20,19,0.04);
+}
+.exercise-card h3 { margin-top: 0; }
+.todo-list { margin-top: 10px; }
+.todo-list li { font-size: 15px; }
+.todo-list code, p code, li code {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 7px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: #B05C3F;
+}
+
+/* ---- Lesson nav ---- */
+.lesson-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 48px;
+  padding-top: 30px;
+  border-top: 1px solid var(--border);
+}
+.lesson-nav a, .lesson-nav span {
+  color: var(--accent);
+  font-family: var(--font-heading);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 15px;
+}
+.lesson-nav span { color: var(--text-dim); }
+.lesson-nav a:hover { text-decoration: underline; }
+
+/* ---- Selection toolbar ---- */
+.selection-toolbar {
+  position: fixed;
+  z-index: 99999;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(20,20,19,0.15);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.selection-toolbar.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+.sel-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface2);
+  color: var(--text);
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.sel-btn:hover { border-color: var(--accent); background: var(--bg); }
+.sel-btn:active { transform: scale(0.96); }
+.sel-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+  background: rgba(20,20,19,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.sel-dialog-overlay.visible { opacity: 1; pointer-events: auto; }
+.sel-dialog {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 560px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(20,20,19,0.2);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.sel-dialog-title { font-family: var(--font-heading); font-size: 20px; font-weight: 500; margin-bottom: 20px; }
+.sel-dialog-field { margin-bottom: 16px; }
+.sel-dialog-label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.sel-dialog-source {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.sel-dialog textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: #FAF9F5;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.6;
+  outline: none;
+  resize: vertical;
+  min-height: 80px;
+  transition: border-color 0.2s;
+}
+.sel-dialog textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(217,119,87,0.2); }
+.sel-dialog textarea::placeholder { color: var(--text-dim); }
+.sel-dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.sel-btn-cancel {
+  padding: 10px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-cancel:hover { border-color: var(--text-dim); color: var(--text); }
+.sel-btn-confirm {
+  padding: 10px 24px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.sel-btn-confirm:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.sel-btn-confirm:active { transform: scale(0.97); }
+.sel-toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  z-index: 100001;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  color: var(--ink-text);
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 24px rgba(20,20,19,0.25);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  white-space: nowrap;
+}
+.sel-toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.note-underline {
+  background: rgba(255, 212, 59, 0.45);
+  border-radius: 3px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.note-underline:hover { background: rgba(255, 212, 59, 0.65); }
+
+/* ---- (新增·本课) 通用画布 ---- */
+.demo-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+/* ---- (新增·本课) §2 IoU 交互 ---- */
+.iou-flex {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin: 14px 0;
+}
+.iou-canvas-block { flex: 1 1 300px; max-width: 400px; }
+.iou-controls { flex: 1 1 240px; min-width: 220px; }
+.iou-slider-row { margin-bottom: 14px; }
+.iou-slider-row label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.demo-range {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.iou-readout {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  margin: 4px 0 10px;
+}
+.iou-readout b {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 700;
+}
+.iou-detail { color: var(--text-dim); font-size: 13px; }
+.iou-meter {
+  position: relative;
+  height: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  margin: 10px 0 4px;
+}
+.iou-meter-fill {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  border-radius: 999px;
+  background: var(--bad);
+  transition: width 0.1s linear, background 0.2s;
+}
+.iou-meter-fill.pass { background: var(--good); }
+.iou-meter-thr {
+  position: absolute;
+  top: -5px; bottom: -5px;
+  left: 50%;
+  width: 2px;
+  background: var(--ink);
+}
+.iou-meter-label {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-heading);
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+/* ---- (新增·本课) §5 NMS 交互 ---- */
+.nms-flex {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  margin: 14px 0;
+}
+.nms-canvas-block { flex: 1 1 300px; max-width: 420px; }
+.nms-list {
+  flex: 1 1 220px;
+  min-width: 210px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nms-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #FAF9F5;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  transition: all 0.2s var(--ease);
+}
+.nms-item .nms-name { font-family: var(--font-heading); font-weight: 500; }
+.nms-item .nms-state { font-family: var(--font-heading); font-size: 12px; color: var(--text-dim); }
+.nms-item.nms-cur { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(217,119,87,0.25); }
+.nms-item.nms-kept { border-color: var(--good); background: rgba(106,138,79,0.10); }
+.nms-item.nms-kept .nms-state { color: var(--good); }
+.nms-item.nms-sup { border-style: dashed; opacity: 0.55; }
+.nms-item.nms-sup .nms-state { color: var(--bad); }
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 26px; }
+  .pipeline-arrow { display: none; }
+  .mat-cell { width: 34px; height: 34px; font-size: 12px; }
+  .rf-cell { width: 20px; height: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* ===== mobile adaptation (injected, uniform across course) ===== */
+@media (max-width: 640px) {
+  body { font-size: 15.5px; }
+  .container { padding: 16px 16px 72px; }
+  .hero { padding: 52px 18px 38px; }
+  .hero .subtitle { font-size: 15.5px; }
+  section { padding: 32px 0; }
+  h2 { font-size: 22px; }
+  h2 .num { width: 30px; height: 30px; font-size: 14px; }
+  .demo-box { padding: 16px 14px; }
+  canvas { max-width: 100%; height: auto !important; }
+  .fc-block canvas { width: 100% !important; }
+  .compare-grid { grid-template-columns: 1fr; }
+  .code-block { font-size: 11.5px; padding: 13px 14px; line-height: 1.75; }
+  .slider-row { flex-wrap: wrap; }
+  .slider-row label { min-width: 0; flex: 1 1 100%; }
+  .lesson-nav { flex-direction: column; gap: 10px; align-items: flex-start; }
+  .quiz { padding: 16px 16px; }
+  .quiz-option { font-size: 14px; padding: 11px 12px; }
+  .demo-btns .demo-btn, .demo-btn { padding: 9px 15px; font-size: 13px; }
+  .story-card, .insight-box, .exercise-card { padding: 16px 16px; }
+  .settings-bar { padding: 0 16px; }
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bp-diagram { font-size: 12px; }
+  .bp-node { min-width: 66px; padding: 8px 8px; }
+  .mat-op { padding-top: 40px; }
+  .selection-toolbar { max-width: calc(100vw - 16px); flex-wrap: wrap; }
+}
+@media (max-width: 400px) {
+  .mat-cell { width: 30px; height: 30px; font-size: 11px; }
+  .rf-cell { width: 17px; height: 17px; }
+  .mat-grid { gap: 3px; }
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="lesson-tag">缺陷检测课程 · 第 05 课</div>
+  <h1>有监督路线 I:目标检测</h1>
+  <p class="subtitle">当你有标注得起的缺陷框时,检测是最直接的路——本课把"框是怎么被找出来的"拆到原子:一把叫 IoU 的尺子、一张叫 anchor 的框网、一次叫 NMS 的去重,以及把这一切串起来的评分逻辑。</p>
+</div>
+
+<div class="settings-bar">
+  <label class="toggle-wrap active" id="code-toggle">
+    <span>配套练习</span>
+    <div class="toggle-track"></div>
+  </label>
+</div>
+
+<div class="container">
+
+<!-- ============ §0 ============ -->
+<section>
+  <h2><span class="num">0</span> 快速回顾</h2>
+  <p>站上第 4 课画出的那张地图,先确认位置,再出发:</p>
+  <ul>
+    <li><strong>我们正走进"全监督"分支</strong>:在第 4 课的监督范式光谱上,本课和下一课位于标注最重的一端——缺陷长什么样、在哪里,全部由人工画框告诉网络。代价是标注成本,回报是最直接、最可控的定位能力。</li>
+    <li><strong>CNN 骨干已经就位</strong>:第 2 课的结论——骨干网络把图像变成一摞越来越小、语义越来越浓的特征图,特征图上每个格子对应原图的一片感受野。本课所有"找框"的机关,都是长在这些特征图上的。</li>
+    <li><strong>你已经会分类和回归</strong>:第 1 课的两种基本输出。先剧透本课主线:检测这个看起来全新的任务,最终会被拆回这两个你已经掌握的原子操作。</li>
+  </ul>
+</section>
+
+<!-- ============ §1 ============ -->
+<section>
+  <h2><span class="num">1</span> 任务定义:输出一张"结果清单"</h2>
+
+  <p>先把任务钉死。<em>目标检测</em>(object detection)的输入是一张图像,输出是一张"结果清单":图里每找到一个目标,清单里就多一行,每行 6 个数——</p>
+
+  <div class="code-block">输入:一张 640×480 的钢材表面图
+输出:[
+  (x1= 88, y1= 40, x2=156, y2= 96, 类别=夹杂, 置信度=0.91),
+  (x1=310, y1=205, x2=420, y2=260, 类别=划痕, 置信度=0.84),
+  (x1=500, y1=380, x2=548, y2=430, 类别=麻点, 置信度=0.57),
+]   <span class="cm"># 下一张图可能是 0 行,也可能是 30 行 —— 数量不定</span></div>
+
+  <p>三个组成部分拆开看:</p>
+  <ul>
+    <li><strong>框(bounding box)</strong>:用左上角 (x1, y1) 和右下角 (x2, y2) 两个点圈住目标。本课与配套练习里的所有框,都统一用 <code>[x1, y1, x2, y2]</code> 这个约定;</li>
+    <li><strong>类别</strong>:框里是什么(划痕/麻点/夹杂……)——这就是第 1 课的分类;</li>
+    <li><strong>置信度</strong>:网络对"这个框里真有这个目标"的把握,0 到 1 的分数。§5 的去重、§6 的评分,全都围着它转。</li>
+  </ul>
+
+  <p>它和分类的本质区别在于<strong>输出的形状</strong>。分类的输出维度是固定的——1000 类就是 1000 个数;检测的输出却是<strong>不定数量的结构化对象</strong>:同一条产线,这张钢板 0 个缺陷,下一张可能 30 个。而神经网络天生只会输出固定尺寸的张量。<em>怎么用固定的输出表示数量不定的框?</em>这个矛盾是检测所有结构设计的总源头——§3 的 anchor 就是对它的回答。</p>
+
+  <p>标注格式一句话说完:训练数据就是"每张图 + 一份框清单",清单里每个缺陷一行 (类别, x1, y1, x2, y2)——用 LabelImg 之类的工具在图上拉框即得(VOC、COCO 是两种最常见的存储格式)。</p>
+</section>
+
+<!-- ============ §2 ============ -->
+<section>
+  <h2><span class="num">2</span> IoU:两个框的重叠度量</h2>
+
+  <p>有了预测框和真值框,第一个问题是:怎么衡量"预测框画得准不准"?中心点距离?面积之差?都不稳——框偏一点、大一圈,这些量的表现完全不同。检测领域的标准答案是<em>交并比</em>(IoU,Intersection over Union):</p>
+
+  <div class="code-block">IoU(A, B) = 交集面积 / 并集面积   <span class="cm"># 范围 [0, 1]:完全不相交 = 0,完全重合 = 1</span></div>
+
+  <p>它同时惩罚"没盖住"(交集小)和"画太大"(并集大),而且对框的绝对尺寸不敏感——大目标小目标一视同仁。手算一遍,体感立刻建立:</p>
+
+  <div class="code-block">A = [0, 0, 10, 10]        B = [5, 5, 15, 15]
+交集 = [5, 5, 10, 10] → 宽 5 × 高 5 = <span class="kw">25</span>
+并集 = 面积A + 面积B − 交集 = 100 + 100 − 25 = <span class="kw">175</span>
+IoU  = 25 / 175 = 1/7 ≈ <span class="kw">0.143</span>   <span class="cm"># 看着重叠不少?其实连七分之一都不到</span></div>
+
+  <div class="demo-box" id="iou-demo">
+    <div class="demo-title">📐 交互:把橙框推向绿框,看 IoU 怎么变</div>
+    <div class="demo-hint">绿色是<strong>真值框 GT</strong>,位置固定;拖动两个滑块,水平/垂直移动橙色<strong>预测框</strong>,蓝色区域是两框的交集。试三件事:① 推到完全重合,IoU = 1;② 拉到完全分离,IoU = 0;③ 找到 IoU 恰好越过 0.5"及格线"的临界位置——注意越线前后进度条的变色。</div>
+    <div class="iou-flex">
+      <div class="iou-canvas-block">
+        <canvas id="iou-canvas" class="demo-canvas" width="720" height="480"></canvas>
+      </div>
+      <div class="iou-controls">
+        <div class="iou-slider-row">
+          <label for="iou-sx">预测框水平位置 x</label>
+          <input type="range" class="demo-range" id="iou-sx" min="0" max="240" step="2" value="170">
+        </div>
+        <div class="iou-slider-row">
+          <label for="iou-sy">预测框垂直位置 y</label>
+          <input type="range" class="demo-range" id="iou-sy" min="0" max="130" step="2" value="100">
+        </div>
+        <div class="iou-readout">IoU = <b id="iou-val">0.000</b><br><span class="iou-detail" id="iou-detail"></span></div>
+        <div class="iou-meter"><div class="iou-meter-fill" id="iou-fill"></div><div class="iou-meter-thr"></div></div>
+        <div class="iou-meter-label"><span>0</span><span>0.5 及格线</span><span>1</span></div>
+      </div>
+    </div>
+    <div class="demo-status" id="iou-status"></div>
+  </div>
+
+  <p>那条 <strong>0.5 的"及格线"</strong>值得单独记住:它是 PASCAL VOC 确立的经典判定阈值——预测框与真值框 IoU ≥ 0.5 才算"命中"。往后你会看到,训练时的正负样本分配(§3)、NMS 的去重判据(§5)、评测时的 TP/FP 判定(§6),用的都是 IoU 这同一把尺子,只是阈值各有取法(COCO 评测甚至同时取 0.5 到 0.95 十档再平均)。</p>
+</section>
+
+<!-- ============ §3 ============ -->
+<section>
+  <h2><span class="num">3</span> 从滑窗到 anchor:找框变成分类 + 回归</h2>
+
+  <h3>朴素方案:滑窗,以及它为什么不行</h3>
+  <p>最直觉的检测方案是把它退化成"无数次分类":拿一个窗口在图上逐位置滑动,每个位置裁下来问分类器"这是不是缺陷";缺陷有大有小、有扁有长,还得每种尺寸、每种长宽比都各滑一遍。位置数 × 尺寸数 × 长宽比数,一张 400×400 的图轻松滑出<strong>上百万个窗口</strong>,每个窗口都独立跑一次网络——天文数字,产线上根本没法用。</p>
+
+  <h3>anchor:把窗口"预铺"在特征图上</h3>
+  <p>anchor 的思想是反着来:不裁图、不重复跑网络,而是在<strong>特征图</strong>的每个位置,预先铺 k 个不同尺寸、不同长宽比的参考框——<em>anchor</em>(锚框)。第 2 课说过,特征图每个格子对应原图的一片感受野,所以这相当于在原图上均匀撒下一张覆盖各种大小形状的"框网"。然后,网络对每个 anchor 只需要回答两件事:</p>
+  <ul>
+    <li><strong>分数(分类)</strong>:这个 anchor 罩住的区域里,有没有目标?</li>
+    <li><strong>微调量(回归)</strong>:目标的真实框相对这个 anchor,要平移多少、缩放多少?——4 个数 (dx, dy, dw, dh)。anchor 只要和目标大致沾边,精确的框由回归量修出来。</li>
+  </ul>
+
+  <div class="pipeline">
+    <div class="pipeline-step">
+      <div class="step-num">STEP 1</div>
+      <div class="step-title">骨干前向</div>
+      <div class="step-desc">图像 → 特征图<br>只跑一次(第 2 课)</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 2</div>
+      <div class="step-title">预铺 anchor</div>
+      <div class="step-desc">每个位置 k 个<br>参考框,免费</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 3</div>
+      <div class="step-title">分类头</div>
+      <div class="step-desc">每个 anchor<br>一个前景分数</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 4</div>
+      <div class="step-title">回归头</div>
+      <div class="step-desc">每个 anchor 四个<br>微调量 (dx,dy,dw,dh)</div>
+    </div>
+    <div class="pipeline-arrow">→</div>
+    <div class="pipeline-step">
+      <div class="step-num">STEP 5</div>
+      <div class="step-title">组装候选</div>
+      <div class="step-desc">高分 anchor 套上微调<br>= 候选框(交给 §5)</div>
+    </div>
+  </div>
+
+  <div class="code-block">骨干输出特征图 25×25(stride=16,对应输入 400×400)
+每个位置预铺 9 种 anchor(3 种尺寸 × 3 种长宽比)
+候选总数 = 25 × 25 × 9 = <span class="kw">5,625 个</span>   <span class="cm"># 全部由同一次前向顺便算完</span>
+每个 anchor 只输出 5 个数:1 个前景分数 + 4 个微调量
+<span class="cm"># 对比朴素滑窗:上百万个窗口 × 每个独立跑一次网络 —— 这就是差距</span></div>
+
+  <h3>训练时 anchor 怎么"领任务":正负样本分配</h3>
+  <p>训练时,哪个 anchor 该学"有目标"?用 §2 的尺子量:与某个真值框 IoU 超过 0.5 的 anchor 记为<strong>正样本</strong>——它负责这个目标,既要把分数打高,也要学会输出正确的微调量;与所有真值框都几乎不沾边的记为<strong>负样本</strong>——只需学会打低分(背景);夹在中间的模糊地带通常直接忽略,不参与损失。配套练习的 TODO 2 会让你亲手做一次这个分配。</p>
+
+  <div class="insight-box">
+    <div class="insight-label">这一步完成了本课最关键的化归</div>
+    <p>盘点 anchor 换来了什么:① 所有 anchor 的分数和微调量由<strong>同一次骨干前向</strong>顺便算出,卷积天然共享了滑窗的重复计算;② §1 留下的"输出数量不定"难题消失了——网络输出永远是"每个 anchor 5 个数"的固定张量,数量不定的只是<em>高分</em> anchor 有几个;③ 最重要的:"在图里找框"被彻底改写成了第 1 课你就会的<strong>分类 + 回归</strong>。深度学习攻克新任务的套路从来如此:不发明新数学,而是把新任务改写成老任务。</p>
+  </div>
+</section>
+
+<!-- ============ §4 ============ -->
+<section>
+  <h2><span class="num">4</span> 两条流派:two-stage 与 one-stage</h2>
+
+  <p>anchor 解决了"候选从哪来",接下来的分岔只有一个问题:<strong>要不要对候选再精修一轮?</strong>由此分出检测的两大流派。</p>
+
+  <h3>two-stage:先海选,再精修(Faster R-CNN)</h3>
+  <p>第一阶段,<em>RPN</em>(区域建议网络)在特征图上按 §3 的方式给所有 anchor 打分、回归,只留下几百个最像"有东西"的候选框;第二阶段,把每个候选框对应的特征单独抠出来,再做一次更精细的分类(具体是哪类)和框回归(二次微调)。两轮筛选、两次回归,框更准、误报更少——代价是第二阶段要对每个候选逐个计算,速度提不上去。</p>
+
+  <h3>one-stage:一次前向,全部出炉(YOLO)</h3>
+  <p>YOLO(You Only Look Once,名字就是宣言)干脆取消第二阶段。它的网格思想值得单独讲透:</p>
+  <p>把整张图划成 S×S 的网格(论文里是 7×7)。分工规则只有一句话:<strong>目标的中心点落在哪个格子,就由哪个格子负责预测它</strong>。每个格子直接输出 B 个框(坐标 + 置信度)和一份类别概率;整张图一次前向,S×S 个格子的所有预测<em>同时</em>出炉,后面只接一个 NMS(§5)收尾。它快的根本原因不是网络小,而是<strong>流程里压根没有"逐候选精修"这一步</strong>。</p>
+  <p>顺带把两派的关系说清:网格与 anchor 并不互斥——"格子"本质就是特征图上的位置,从 YOLOv2 起每个格子上也铺了几种形状的 anchor;SSD 则更进一步,在多个尺度的特征图上都铺 anchor(它管这叫 default box)。两派真正的分水岭只有一个:<strong>有没有第二阶段</strong>。</p>
+
+  <div class="compare-grid">
+    <div class="compare-box">
+      <h4>two-stage(Faster R-CNN 系)</h4>
+      <p><strong>速度</strong>:慢——候选要逐个精修,两阶段串行。</p>
+      <p><strong>精度</strong>:同代对比更高,小目标、密集目标尤其稳。</p>
+      <p><strong>适用场景</strong>:离线抽检、复检仲裁这类"宁慢勿漏"的场合。</p>
+    </div>
+    <div class="compare-box">
+      <h4>one-stage(YOLO / SSD 系)</h4>
+      <p><strong>速度</strong>:快——一次前向直接出全部预测,能跟上实时产线。</p>
+      <p><strong>精度</strong>:早期略逊于 two-stage,现代版本差距已经很小。</p>
+      <p><strong>适用场景</strong>:在线全检、边缘设备部署这类"卡节拍"的场合。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ §5 ============ -->
+<section>
+  <h2><span class="num">5</span> NMS:一个目标只留一个框</h2>
+
+  <p>无论哪派,网络的原始输出都有同一个毛病:anchor(或网格)铺得密,同一个缺陷周围会有一堆 anchor 同时喊"我这有目标"——于是一个目标顶着好几个高度重叠、分数都不低的框。评测时一个真值只认一个预测,多出来的全算误报,必须去重。这就是 <em>NMS</em>(Non-Maximum Suppression,非极大值抑制),检测流水线的最后一步。算法本体只有三行:</p>
+
+  <div class="code-block">1. 把所有候选框按分数从高到低排序,放进候选池
+2. 取池中最高分的框保留;把池里与它 IoU > 阈值(常取 0.5)的框全部删掉
+3. 重复第 2 步,直到候选池取空
+<span class="cm"># 名字直译:"非极大值"(不是局部最高分的框)被"抑制"(删掉)</span></div>
+
+  <div class="demo-box" id="nms-demo">
+    <div class="demo-title">🧹 交互:NMS 步进演示——从 6 个框到 3 个框</div>
+    <div class="demo-hint">网络在左上和右侧两处目标附近各输出了一簇重叠框(A/B/C 与 D/E),右下另有一个独立低分框 F,分数已标在框上。点「下一步」,亲眼看贪心去重的每一步:<strong>排序 → 保留最高分(绿)→ 抑制与它 IoU &gt; 0.5 的框(灰色虚线)→ 重复</strong>。特别注意 F 的命运。</div>
+    <div class="nms-flex">
+      <div class="nms-canvas-block">
+        <canvas id="nms-canvas" class="demo-canvas" width="480" height="400"></canvas>
+      </div>
+      <div class="nms-list" id="nms-list"></div>
+    </div>
+    <div class="demo-status" id="nms-status"></div>
+    <div class="demo-btns">
+      <button class="demo-btn primary" id="nms-next">下一步</button>
+      <button class="demo-btn" id="nms-auto">自动播放</button>
+      <button class="demo-btn" id="nms-reset">重置</button>
+    </div>
+  </div>
+
+  <p>看完演示,把判据抠死:一个框被抑制,必须<strong>同时</strong>满足两个条件——与某个已保留框的 IoU 超过阈值,<em>且</em>它自己的分数更低。F 只有 0.45 分却活到了最后,因为它不和任何已保留框重叠;C 有 0.70 分却被删掉,因为它撞上了 0.92 分的 A。NMS 淘汰的从来不是"低分框",而是"重复框"。</p>
+
+  <p>两个工程注脚:① NMS 是纯后处理,不参与训练,就是网络外面的一段普通代码(练习 TODO 3 你会亲手写出它);② 里面的 IoU 阈值是个手工旋钮——调太低,挨得近的两个真缺陷会被误杀成一个(密集小缺陷场景要格外小心);调太高,重复框删不干净、误报上升。§7 还会回到这个痛点。</p>
+</section>
+
+<!-- ============ §6 ============ -->
+<section>
+  <h2><span class="num">6</span> 检测的评分:mAP 直觉</h2>
+
+  <p>模型输出经过 NMS,得到最终预测。最后一个问题:<strong>怎么给一个检测器打总分?</strong>难点在于每个预测框带着置信度,卡不同的置信度阈值,表现完全不同——阈值高,报得少而准(精确率高、召回率低);阈值低,报得多而全(召回率高、精确率低)。盯着任何一个阈值下的 P 或 R 都有失偏颇。mAP 的思路是:<strong>不选阈值,把所有阈值下的表现一次性积分</strong>。</p>
+
+  <p>流程四步(其中的判定规则,正是练习 TODO 4 要实现的):</p>
+  <ol>
+    <li>把全部预测框按置信度<strong>从高到低</strong>排序;</li>
+    <li>逐个判定:与某个<strong>尚未被认领</strong>的真值框 IoU ≥ 0.5 → 记 TP,并占用该真值(防止一个真值被重复领功);否则记 FP;</li>
+    <li>每走一步,算一对累计(精确率, 召回率),得到 PR 曲线上的一个点;</li>
+    <li>把点连成 PR 曲线,<strong>曲线下面积就是这一类的 AP</strong>;所有类别取平均,就是 <em>mAP</em>。</li>
+  </ol>
+
+  <div class="code-block">例:2 个真值框,3 个预测框,按置信度降序逐个判定
+排名  置信度   判定    累计精确率 P      累计召回率 R
+ 1    0.90    TP      1/1 = 1.00      1/2 = 0.50
+ 2    0.80    FP      1/2 = 0.50      1/2 = 0.50   <span class="cm"># 它瞄的真值已被第 1 名占用</span>
+ 3    0.70    TP      2/3 ≈ 0.67      2/2 = 1.00
+<span class="cm"># 每行给出一个 (R, P) 点 → 连成 PR 曲线 → 曲线下面积 = AP → 各类平均 = mAP</span></div>
+
+  <p>为什么一个数能同时反映"准"和"全"?因为曲线下面积大,意味着<strong>在召回率从 0 爬到 1 的全过程中,精确率都保持得住</strong>。漏检多的检测器,召回率早早到顶,曲线右边直接缺一块,面积上不去;误报多的检测器,高置信度段就混进 FP,整条曲线被压矮。想拿高 mAP,只能又准又全,两头都骗不过去。</p>
+
+  <p>接上第 4 课的指标谱系:mAP 是<strong>有监督检测</strong>的通用总分;而后面无监督异常检测(第 7 课起)常用的 AUROC / PRO 是另一套逻辑,到时候对照着看,你会发现"按分数排序、扫过所有阈值"这个母思想是共通的。</p>
+</section>
+
+<!-- ============ §7 ============ -->
+<section>
+  <h2><span class="num">7</span> 用在缺陷检测上:什么时候选它,坑在哪</h2>
+
+  <h3>什么时候选检测?</h3>
+  <ul>
+    <li><strong>缺陷类别固定、可枚举</strong>:划痕、麻点、夹杂、缺件……类别清单事先写得出来,每类都能攒出足够样本;</li>
+    <li><strong>标注预算撑得起</strong>:每类几百上千个框的标注量。画框比描像素轮廓便宜得多——这是它相对第 6 课语义分割的成本优势;</li>
+    <li><strong>要计数、要定位</strong>:PCB 上查元件缺失、错件,要"哪个位置少了什么"的结论;钢材表面缺陷的经典数据集 NEU-DET(热轧钢带六类缺陷)走的就是这条检测路线。</li>
+  </ul>
+
+  <h3>三个工程痛点</h3>
+  <ul>
+    <li><strong>小目标</strong>:缺陷可能只占几个像素,映到深层特征图上不足一个格子,anchor 与它的 IoU 天生偏低,§3 的正样本分配都凑不齐,想学都没得学。标准解法是 FPN 多尺度特征——把深层语义自顶向下送回高分辨率的浅层,在多个尺度上同时预测。这里先埋一句伏笔,原文在下方。</li>
+    <li><strong>极端类别不平衡</strong>:一张图几千个 anchor,正样本可能只有个位数,损失被海量"背景"支配;不同缺陷类别之间的样本量也常差几个量级——常见病是模型学会了"全报背景"。</li>
+    <li><strong>标注一致性</strong>:"划痕从哪算到哪"、两道相邻划痕算一个框还是两个,不同标注员画出的框可能差很远。IoU 阈值卡在 0.5 时,这种标注抖动会直接变成训练与评测里的噪声。</li>
+  </ul>
+
+  <div class="further-reading-inline">
+    <span class="fr-icon">📖</span>
+    <span>小目标伏笔的原文:<a href="https://arxiv.org/abs/1612.03144" target="_blank" rel="noopener">Feature Pyramid Networks(FPN)</a>——用极小的代价给每个尺度都配上"深层语义 + 高分辨率"的特征,现代检测器几乎人手一份的标准部件。</span>
+  </div>
+
+  <div class="insight-box">
+    <div class="insight-label">什么时候不选它——回到第 4 课的光谱</div>
+    <p>检测的前提是:缺陷长什么样<strong>可以被预先枚举,并且标注得起</strong>。两个条件缺任何一个——缺陷形态开放(什么怪样都可能出现)、或者根本攒不齐带框标注——全监督检测就不是正确的起点,该沿着第 4 课的光谱往另一端走,去第 7-11 课的无监督分支:只用正常样本建模,"不认识的就是异常"。而下一课,先看全监督这条支线的另一站:当"框"不够细、需要像素级轮廓时,怎么做语义分割。</p>
+  </div>
+</section>
+
+<!-- ============ 测验 ============ -->
+<section>
+  <h2><span class="num">✓</span> 自我检验</h2>
+  <p>四道题,检查本课的核心概念是否立住了。</p>
+
+  <div class="quiz" id="quiz1">
+    <div class="quiz-q">Q1 · IoU = 交集面积 ÷ 并集面积。两个完全相同的框,IoU 等于多少?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">A. 0.5</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz1')">B. 1</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz1')">C. 取决于框的面积大小</button>
+    <div class="quiz-feedback ok" id="quiz1-correct">✔ 正确。完全重合时,交集和并集是同一块区域,比值恒为 1——这是 IoU 的上限,与框多大无关。去 §2 的交互里把橙框推到与绿框完全重合,亲眼确认一次。</div>
+    <div class="quiz-feedback no" id="quiz1-wrong">✘ 回看 §2 的定义:IoU = 交集 ÷ 并集。两框完全重合时,交集和并集就是同一块区域,比值只能是 1,和面积大小无关。</div>
+  </div>
+
+  <div class="quiz" id="quiz2">
+    <div class="quiz-q">Q2 · anchor 机制最核心的贡献,是把"在图里找框"转化成了什么问题?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">A. 对每个像素做分割的问题</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz2')">B. 图像重构的问题</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz2')">C. 对每个预铺参考框做"分类(有没有目标)+ 回归(微调框位置)"的问题</button>
+    <div class="quiz-feedback ok" id="quiz2-correct">✔ 正确。§3 的化归:anchor 预铺之后,网络只需对每个 anchor 输出 1 个分数和 4 个微调量——检测被拆回了第 1 课就会的分类 + 回归两个原子操作,"输出数量不定"的难题也随之消失。</div>
+    <div class="quiz-feedback no" id="quiz2-wrong">✘ 回看 §3 结尾的 insight:anchor 的全部意义,是把找框改写成"每个 anchor 的分类 + 回归"。逐像素的分割是第 6 课的事,重构是第 7 课的事。</div>
+  </div>
+
+  <div class="quiz" id="quiz3">
+    <div class="quiz-q">Q3 · NMS 决定"抑制"某个候选框,依据的判据是?</div>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz3')">A. 它与某个已保留的更高分框重叠过多(IoU 超过阈值)</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">B. 它的置信度低于 0.5</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz3')">C. 它的面积比别的框小</button>
+    <div class="quiz-feedback ok" id="quiz3-correct">✔ 正确。被抑制 = 与已保留框 IoU 超阈值、且分数更低——两个条件缺一不可。§5 演示里的 F 是活证据:0.45 的低分照样保留,因为它不和任何已保留框重叠;0.70 的 C 反而被删,因为它撞上了 0.92 的 A。</div>
+    <div class="quiz-feedback no" id="quiz3-wrong">✘ 回看 §5 的步进演示:F 分数只有 0.45 却活到最后,C 有 0.70 却被删掉。NMS 淘汰的不是"低分框"或"小框",而是"与更高分的已保留框重叠过多"的重复框。</div>
+  </div>
+
+  <div class="quiz" id="quiz4">
+    <div class="quiz-q">Q4 · one-stage 检测器(如 YOLO)比 two-stage 快,最根本的原因是?</div>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">A. 它的卷积层数更少,网络规模更小</button>
+    <button class="quiz-option" data-correct="true" onclick="checkQuiz(this,'quiz4')">B. 没有"先出候选、再逐个精修"的第二阶段,一次前向直接输出全部预测</button>
+    <button class="quiz-option" data-correct="false" onclick="checkQuiz(this,'quiz4')">C. 它处理的输入图像分辨率必然更低</button>
+    <div class="quiz-feedback ok" id="quiz4-correct">✔ 正确。§4 的分水岭:two-stage 要对几百个候选逐个做二次分类与回归;one-stage 把这一步整个删掉——所有网格/anchor 的预测在同一次前向里同时出炉,后面只剩一个 NMS 收尾。</div>
+    <div class="quiz-feedback no" id="quiz4-wrong">✘ 网络大小和输入分辨率都是可调的表面因素,两派都能调。回看 §4:结构性的差别只有一个——有没有对候选逐个精修的第二阶段。YOLO 快,是因为它压根没有这一步。</div>
+  </div>
+</section>
+
+<!-- ============ 延伸阅读 ============ -->
+<section class="further-reading">
+  <h2><span class="num">✦</span> 延伸阅读</h2>
+  <p>五篇文献,按"两大流派奠基 → 关键部件 → 全景综述"排序:</p>
+  <div class="reading-list">
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/1506.01497" target="_blank" rel="noopener">Faster R-CNN: Towards Real-Time Object Detection with Region Proposal Networks</a></div>
+      <div class="reading-meta">Ren et al. · NeurIPS 2015 · arXiv 1506.01497(英文)</div>
+      <div class="reading-desc">two-stage 流派的奠基之作:§3 的 anchor 机制和 §4 的 RPN 都在这篇论文里定型。读它,就是看"检测如何第一次变成端到端可训练的网络"。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/1506.02640" target="_blank" rel="noopener">You Only Look Once: Unified, Real-Time Object Detection</a></div>
+      <div class="reading-meta">Redmon et al. · CVPR 2016 · arXiv 1506.02640(英文)</div>
+      <div class="reading-desc">one-stage 流派的开山之作:§4 讲的 S×S 网格和"中心点落在哪格、哪格负责"的分工规则,原始出处就在这里——把检测整个重写成一次回归。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/1512.02325" target="_blank" rel="noopener">SSD: Single Shot MultiBox Detector</a></div>
+      <div class="reading-meta">Liu et al. · ECCV 2016 · arXiv 1512.02325(英文)</div>
+      <div class="reading-desc">在多个尺度的特征图上铺不同大小的 anchor(default box),让 one-stage 第一次在精度上追近 two-stage。和 YOLO 对照读,能看清 one-stage 内部的设计空间。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/1612.03144" target="_blank" rel="noopener">Feature Pyramid Networks for Object Detection</a></div>
+      <div class="reading-meta">Lin et al. · CVPR 2017 · arXiv 1612.03144(英文)</div>
+      <div class="reading-desc">§7 小目标伏笔的正主:自顶向下路径 + 横向连接,把深层语义送回高分辨率浅层。做小缺陷检测,工程上第一个该想到的部件。</div>
+    </div>
+    <div class="reading-item">
+      <div class="reading-title"><a href="https://arxiv.org/abs/1905.05055" target="_blank" rel="noopener">Object Detection in 20 Years: A Survey</a></div>
+      <div class="reading-meta">Zou et al. · 综述 · arXiv 1905.05055(英文)</div>
+      <div class="reading-desc">检测二十年的完整发展地图,从传统方法一路讲到深度学习时代。学完本课用它俯瞰全景:知道自己已经站在哪,还有哪些方向(anchor-free、Transformer 检测器)本课没展开。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 配套练习 ============ -->
+<section id="code-exercise">
+  <h2><span class="num">✎</span> 配套代码练习</h2>
+  <div class="exercise-card">
+    <h3>exercise.py:亲手实现 IoU、anchor 匹配和 NMS</h3>
+    <p>本课目录下的 <code>exercise.py</code> 用纯 Python(零依赖)把检测的"后半程"完整走一遍。运行 <code>python exercise.py</code>,完成 5 个递进的 TODO:</p>
+    <ol class="todo-list">
+      <li><strong>TODO 1</strong> · 实现交并比 <code>iou</code>(两框重叠度量,含 §2 的手算例子)—— 对应 §2</li>
+      <li><strong>TODO 2</strong> · 实现正负样本分配 <code>match_anchors</code>(anchor 按 IoU"领任务")—— 对应 §3</li>
+      <li><strong>TODO 3</strong> · 实现非极大值抑制 <code>nms</code>(分数降序贪心去重)—— 对应 §5,测试数据就是上面步进演示里的 6 个框</li>
+      <li><strong>TODO 4</strong> · 实现评测判定 <code>eval_detections</code>(按置信度逐个判 TP/FP)—— 对应 §6</li>
+      <li><strong>TODO 5</strong> · 串联 <code>detect_pipeline</code>:先 NMS 去重、再对照真值评测,输出 (TP, FP)—— 一条完整的检测后处理 + 评分流水线</li>
+    </ol>
+    <p style="margin-top:12px">做完 TODO 5 你会发现:从网络吐出的一堆重叠框,到"这块工件上有 2 处真缺陷、1 处误报"的结论,中间只隔着你亲手写的几十行纯 Python——IoU 这一把尺子,量出了检测的整个后半程。</p>
+  </div>
+</section>
+
+<div class="lesson-nav">
+  <a href="../04-defect-detection-landscape/lesson.html">← 上一课:缺陷检测全景地图</a>
+  <a href="../06-semantic-segmentation/lesson.html">下一课:有监督路线 II:语义分割 →</a>
+</div>
+
+</div><!-- /container -->
+
+<script>
+/* ============ §2 IoU 交互演示 ============ */
+(function() {
+  var canvas = document.getElementById('iou-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var SC = 2;                       // 内部 2 倍分辨率,画线更清晰
+  var W = 360, H = 240;             // 逻辑画布尺寸
+  var GT = [120, 70, 240, 180];     // 固定真值框(绿)
+  var PW = 120, PH = 110;           // 预测框尺寸(与真值框相同)
+  var sx = document.getElementById('iou-sx');
+  var sy = document.getElementById('iou-sy');
+  var valEl = document.getElementById('iou-val');
+  var detailEl = document.getElementById('iou-detail');
+  var fillEl = document.getElementById('iou-fill');
+  var statusEl = document.getElementById('iou-status');
+
+  function calc(a, b) {
+    var ix1 = Math.max(a[0], b[0]), iy1 = Math.max(a[1], b[1]);
+    var ix2 = Math.min(a[2], b[2]), iy2 = Math.min(a[3], b[3]);
+    var iw = Math.max(0, ix2 - ix1), ih = Math.max(0, iy2 - iy1);
+    var inter = iw * ih;
+    var areaA = (a[2] - a[0]) * (a[3] - a[1]);
+    var areaB = (b[2] - b[0]) * (b[3] - b[1]);
+    var union = areaA + areaB - inter;
+    return { inter: inter, union: union, v: union > 0 ? inter / union : 0, box: [ix1, iy1, ix2, iy2] };
+  }
+  function drawBox(box, stroke, fill, lw, label) {
+    if (fill) {
+      ctx.fillStyle = fill;
+      ctx.fillRect(box[0], box[1], box[2] - box[0], box[3] - box[1]);
+    }
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = lw;
+    ctx.strokeRect(box[0], box[1], box[2] - box[0], box[3] - box[1]);
+    if (label) {
+      ctx.fillStyle = stroke;
+      ctx.font = '500 12px Poppins, "Noto Sans SC", sans-serif';
+      ctx.fillText(label, box[0] + 4, box[1] - 5 > 12 ? box[1] - 5 : box[1] + 14);
+    }
+  }
+  function render() {
+    var px = +sx.value, py = +sy.value;
+    var P = [px, py, px + PW, py + PH];
+    var r = calc(GT, P);
+    ctx.setTransform(SC, 0, 0, SC, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#FAF9F5';
+    ctx.fillRect(0, 0, W, H);
+    drawBox(GT, '#6A8A4F', 'rgba(106,138,79,0.10)', 2.5, '真值 GT');
+    drawBox(P, '#D97757', 'rgba(217,119,87,0.10)', 2.5, '预测框');
+    if (r.inter > 0) {
+      ctx.fillStyle = 'rgba(106,155,204,0.45)';
+      ctx.fillRect(r.box[0], r.box[1], r.box[2] - r.box[0], r.box[3] - r.box[1]);
+      ctx.strokeStyle = '#6A9BCC';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(r.box[0], r.box[1], r.box[2] - r.box[0], r.box[3] - r.box[1]);
+    }
+    var v = r.v;
+    valEl.textContent = v.toFixed(3);
+    valEl.style.color = v >= 0.5 ? '#6A8A4F' : '#C0453A';
+    detailEl.textContent = '交集 ' + r.inter + ' ÷ 并集 ' + r.union;
+    fillEl.style.width = (v * 100).toFixed(1) + '%';
+    fillEl.classList.toggle('pass', v >= 0.5);
+    if (v >= 0.9995) {
+      statusEl.textContent = '两框完全重合:交集 = 并集,IoU = 1 —— 这就是 IoU 的上限。';
+    } else if (v >= 0.5) {
+      statusEl.textContent = 'IoU ≥ 0.5:按最常用的判定标准(PASCAL VOC 约定),这个预测算"命中"。';
+    } else if (v > 0) {
+      statusEl.textContent = 'IoU < 0.5:有重叠但不够,评测时会被记成误报(FP)。继续把橙框往绿框上推。';
+    } else {
+      statusEl.textContent = '两框完全不相交:交集为 0,IoU = 0 —— 这是 IoU 的下限。';
+    }
+  }
+  sx.addEventListener('input', render);
+  sy.addEventListener('input', render);
+  render();
+})();
+
+/* ============ §5 NMS 步进演示 ============ */
+(function() {
+  var canvas = document.getElementById('nms-canvas');
+  if (!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var SC = 2, W = 240, H = 200;
+  var NAMES = ['A', 'B', 'C', 'D', 'E', 'F'];
+  var BOXES = [
+    [20, 20, 80, 80], [26, 24, 86, 84], [30, 30, 85, 88],
+    [140, 40, 200, 100], [146, 44, 206, 104], [90, 130, 130, 170]
+  ];
+  var SCORES = [0.92, 0.85, 0.70, 0.88, 0.66, 0.45];
+  var ORDER = [0, 3, 1, 2, 4, 5]; // 按分数降序:A D B C E F
+  var STEPS = [
+    { st: {}, cur: -1,
+      msg: '初始:6 个候选框全部待定。点「下一步」,先把它们按分数从高到低排序。' },
+    { st: {}, cur: 0,
+      msg: '排序完成:A(0.92) > D(0.88) > B(0.85) > C(0.70) > E(0.66) > F(0.45)。当前池中最高分:A。' },
+    { st: { 0: 'kept' }, cur: -1,
+      msg: '保留 A(绿色)。它从此"代表"左上这个目标;接下来逐一检查池中剩余框与 A 的重叠度。' },
+    { st: { 0: 'kept', 1: 'sup', 2: 'sup' }, cur: -1,
+      msg: 'IoU(A,B)=0.72、IoU(A,C)=0.58,都超过阈值 0.5 → B、C 被抑制(灰色虚线)。D、E、F 与 A 完全不重叠(IoU=0),留在池中。' },
+    { st: { 0: 'kept', 1: 'sup', 2: 'sup', 3: 'kept' }, cur: -1,
+      msg: '剩余池 {D, E, F} 中最高分是 D(0.88) → 保留。' },
+    { st: { 0: 'kept', 1: 'sup', 2: 'sup', 3: 'kept', 4: 'sup' }, cur: -1,
+      msg: 'IoU(D,E)=0.72 > 0.5 → 抑制 E;F 与 D 不重叠,留在池中。' },
+    { st: { 0: 'kept', 1: 'sup', 2: 'sup', 3: 'kept', 4: 'sup', 5: 'kept' }, cur: -1,
+      msg: '池中只剩 F(0.45),没有更高分的框压制它 → 保留。NMS 结束:6 个候选 → 3 个结果(A、D、F),每个目标恰好一个框。✔' }
+  ];
+  var listEl = document.getElementById('nms-list');
+  var statusEl = document.getElementById('nms-status');
+  var nextBtn = document.getElementById('nms-next');
+  var autoBtn = document.getElementById('nms-auto');
+  var items = [];
+  ORDER.forEach(function(i) {
+    var d = document.createElement('div');
+    d.className = 'nms-item';
+    d.innerHTML = '<span class="nms-name">' + NAMES[i] + ' · ' + SCORES[i].toFixed(2) +
+                  '</span><span class="nms-state">待定</span>';
+    listEl.appendChild(d);
+    items[i] = d;
+  });
+  var step = 0, timer = null;
+  var STATE_TXT = { kept: '✔ 保留', sup: '✘ 被抑制' };
+  function drawBoxes(states, cur) {
+    ctx.setTransform(SC, 0, 0, SC, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#FAF9F5';
+    ctx.fillRect(0, 0, W, H);
+    var layers = { sup: [], pend: [], kept: [] };
+    BOXES.forEach(function(b, i) {
+      var s = states[i] || 'pend';
+      layers[s].push(i);
+    });
+    ['sup', 'pend', 'kept'].forEach(function(kind) {
+      layers[kind].forEach(function(i) {
+        var b = BOXES[i], isCur = (i === cur);
+        ctx.setLineDash(kind === 'sup' ? [5, 4] : []);
+        var stroke = kind === 'kept' ? '#6A8A4F' : (kind === 'sup' ? '#6B6860' : '#D97757');
+        var fill = kind === 'kept' ? 'rgba(106,138,79,0.14)'
+                 : (kind === 'sup' ? null : (isCur ? 'rgba(217,119,87,0.20)' : 'rgba(217,119,87,0.07)'));
+        if (fill) {
+          ctx.fillStyle = fill;
+          ctx.fillRect(b[0], b[1], b[2] - b[0], b[3] - b[1]);
+        }
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = kind === 'kept' ? 3 : (isCur ? 3 : 1.6);
+        ctx.strokeRect(b[0], b[1], b[2] - b[0], b[3] - b[1]);
+        ctx.setLineDash([]);
+        ctx.fillStyle = stroke;
+        ctx.font = '600 11px Poppins, "Noto Sans SC", sans-serif';
+        var ly = b[1] - 4;
+        if (ly < 12) ly = b[1] + 13;
+        ctx.fillText(NAMES[i] + ' ' + SCORES[i].toFixed(2), b[0] + 1, ly);
+      });
+    });
+  }
+  function render() {
+    var s = STEPS[step];
+    drawBoxes(s.st, s.cur);
+    NAMES.forEach(function(_, i) {
+      var st = s.st[i], el = items[i];
+      el.classList.toggle('nms-kept', st === 'kept');
+      el.classList.toggle('nms-sup', st === 'sup');
+      el.classList.toggle('nms-cur', i === s.cur);
+      el.querySelector('.nms-state').textContent = st ? STATE_TXT[st] : (i === s.cur ? '→ 当前最高分' : '待定');
+    });
+    statusEl.textContent = s.msg;
+    nextBtn.disabled = step >= STEPS.length - 1;
+  }
+  function next() {
+    if (step >= STEPS.length - 1) { stopAuto(); return; }
+    step++;
+    render();
+    if (step >= STEPS.length - 1) stopAuto();
+  }
+  function stopAuto() { if (timer) { clearInterval(timer); timer = null; autoBtn.textContent = '自动播放'; } }
+  nextBtn.addEventListener('click', function() { stopAuto(); next(); });
+  autoBtn.addEventListener('click', function() {
+    if (timer) { stopAuto(); return; }
+    if (step >= STEPS.length - 1) { step = 0; render(); }
+    autoBtn.textContent = '暂停';
+    timer = setInterval(next, 1600);
+  });
+  document.getElementById('nms-reset').addEventListener('click', function() {
+    stopAuto(); step = 0; render();
+  });
+  render();
+})();
+
+/* ============ 测验 ============ */
+function checkQuiz(btn, quizId) {
+  const quiz = document.getElementById(quizId);
+  const options = quiz.querySelectorAll('.quiz-option');
+  const isCorrect = btn.dataset.correct === 'true';
+  options.forEach(o => {
+    o.disabled = true;
+    o.style.pointerEvents = 'none';
+    o.style.opacity = '0.5';
+  });
+  btn.style.opacity = '1';
+  btn.classList.add(isCorrect ? 'correct' : 'wrong');
+  document.getElementById(
+    quizId + (isCorrect ? '-correct' : '-wrong')
+  ).classList.add('show');
+}
+
+/* ============ 配套练习开关 ============ */
+(function() {
+  const KEY = 'course-show-exercises';
+  const toggle = document.getElementById('code-toggle');
+  const section = document.getElementById('code-exercise');
+  if (!toggle || !section) return;
+  const saved = localStorage.getItem(KEY);
+  let show = saved === null ? true : saved === '1';
+  function apply() {
+    toggle.classList.toggle('active', show);
+    section.classList.toggle('hidden', !show);
+  }
+  apply();
+  toggle.addEventListener('click', () => {
+    show = !show;
+    localStorage.setItem(KEY, show ? '1' : '0');
+    apply();
+  });
+})();
+</script>
+
+<script>
+(function() {
+  'use strict';
+  var LESSON_TITLE = '第 05 课:有监督路线 I:目标检测';
+  var COURSE_NAME  = '缺陷检测:从深度学习基础到主流方法全景';
+  var toolbar, overlay, toastEl;
+  var hideToolbarTimer = null;
+  var selectedAnchorNode = null;
+  function init() {
+    createToolbar();
+    createDialog();
+    bindEvents();
+    restoreNotes();
+  }
+  function createToolbar() {
+    toolbar = document.createElement('div');
+    toolbar.className = 'selection-toolbar';
+    toolbar.innerHTML =
+      '<button class="sel-btn sel-btn-ask" data-action="ask">\u{1F4AC} 问 LLM</button>' +
+      '<button class="sel-btn sel-btn-modify" data-action="modify">\u{270F}\u{FE0F} 修改</button>' +
+      '<button class="sel-btn sel-btn-note" data-action="note">\u{1F4DD} 划线笔记</button>';
+    document.body.appendChild(toolbar);
+    toolbar.querySelector('[data-action="ask"]').onclick = onAsk;
+    toolbar.querySelector('[data-action="modify"]').onclick = onModify;
+    toolbar.querySelector('[data-action="note"]').onclick = onNote;
+  }
+  function createDialog() {
+    overlay = document.createElement('div');
+    overlay.className = 'sel-dialog-overlay';
+    overlay.innerHTML =
+      '<div class="sel-dialog">' +
+        '<h3 class="sel-dialog-title">\u{270F}\u{FE0F} 修改选中内容</h3>' +
+        '<div class="sel-dialog-field"><label class="sel-dialog-label">选中的原文:</label>' +
+          '<div class="sel-dialog-source" id="sel-source-text"></div></div>' +
+        '<div class="sel-dialog-field">' +
+          '<label class="sel-dialog-label" for="sel-modify-instruction">你希望改成什么样?</label>' +
+          '<textarea id="sel-modify-instruction" rows="4" placeholder="例如:把这段写得更容易理解一些 / 用更生动的比喻 / 补充细节…"></textarea></div>' +
+        '<div class="sel-dialog-actions">' +
+          '<button class="sel-btn-cancel" id="sel-cancel">取消</button>' +
+          '<button class="sel-btn-confirm" id="sel-copy-modify">\u{1F4CB} 复制到剪贴板</button></div></div>';
+    document.body.appendChild(overlay);
+    document.getElementById('sel-cancel').onclick = hideDialog;
+    document.getElementById('sel-copy-modify').onclick = onCopyModify;
+    overlay.onclick = function(e) { if (e.target === overlay) hideDialog(); };
+  }
+  function getSelectedText() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return '';
+    if (!document.body.contains(sel.getRangeAt(0).commonAncestorContainer)) return '';
+    return sel.toString().trim();
+  }
+  function getSectionLabel(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    while (el && el !== document.body) {
+      if (el.tagName === 'SECTION' || el.tagName === 'DIV') {
+        var h2 = el.querySelector(':scope > h2, :scope > h3');
+        if (h2) {
+          var txt = h2.textContent.replace(/\s+/g, ' ').trim();
+          return txt.length > 50 ? txt.substring(0, 50) + '…' : txt;
+        }
+      }
+      el = el.parentElement;
+    }
+    return '';
+  }
+  var NOTES_KEY = 'note-underlines::' + location.pathname;
+  function getContainerSections() {
+    return Array.prototype.slice.call(document.querySelectorAll('.container > section'));
+  }
+  function getSectionIndex(node) {
+    var el = node && node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+    var container = document.querySelector('.container');
+    while (el && el.parentElement !== container) { el = el.parentElement; }
+    if (!el) return -1;
+    return getContainerSections().indexOf(el);
+  }
+  function loadNotes() {
+    try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveNoteEntry(entry) {
+    var notes = loadNotes();
+    notes.push(entry);
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function deleteNoteEntry(id) {
+    var notes = loadNotes().filter(function(n) { return n.id !== id; });
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes));
+  }
+  function getTextNodesIn(root) {
+    var nodes = [];
+    (function walk(n) {
+      if (n.nodeType === Node.TEXT_NODE) { nodes.push(n); return; }
+      for (var i = 0; i < n.childNodes.length; i++) walk(n.childNodes[i]);
+    })(root);
+    return nodes;
+  }
+  function countOccurrenceIndex(root, range, text) {
+    var textNodes = getTextNodesIn(root);
+    var full = '', startAbs = -1, pos = 0;
+    for (var i = 0; i < textNodes.length; i++) {
+      if (textNodes[i] === range.startContainer) startAbs = pos + range.startOffset;
+      full += textNodes[i].nodeValue;
+      pos += textNodes[i].nodeValue.length;
+    }
+    if (startAbs === -1) return 0;
+    var idx = -1, count = 0;
+    while (true) {
+      var next = full.indexOf(text, idx + 1);
+      if (next === -1 || next >= startAbs) break;
+      idx = next;
+      count++;
+    }
+    return count;
+  }
+  function findRangeByOccurrence(root, text, occurrence) {
+    var textNodes = getTextNodesIn(root);
+    var full = textNodes.map(function(t) { return t.nodeValue; }).join('');
+    var idx = -1;
+    for (var c = 0; c <= occurrence; c++) {
+      idx = full.indexOf(text, idx + 1);
+      if (idx === -1) return null;
+    }
+    var startOffset = idx, endOffset = idx + text.length, pos = 0;
+    var range = document.createRange(), startSet = false, endSet = false;
+    for (var i = 0; i < textNodes.length; i++) {
+      var len = textNodes[i].nodeValue.length;
+      if (!startSet && startOffset <= pos + len) { range.setStart(textNodes[i], startOffset - pos); startSet = true; }
+      if (!endSet && endOffset <= pos + len) { range.setEnd(textNodes[i], endOffset - pos); endSet = true; break; }
+      pos += len;
+    }
+    return (startSet && endSet) ? range : null;
+  }
+  function wrapRangeAsNote(range, id) {
+    var span = document.createElement('span');
+    span.className = 'note-underline';
+    span.dataset.noteId = id;
+    var frag = range.extractContents();
+    span.appendChild(frag);
+    range.insertNode(span);
+  }
+  function onNote() {
+    var sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.rangeCount) return;
+    var range = sel.getRangeAt(0);
+    if (!document.body.contains(range.commonAncestorContainer)) return;
+    var text = getSelectedText();
+    if (!text) return;
+    var sectionIdx = selectedAnchorNode ? getSectionIndex(selectedAnchorNode) : -1;
+    var sections = getContainerSections();
+    var section = sectionIdx >= 0 ? sections[sectionIdx] : null;
+    var occurrence = section ? countOccurrenceIndex(section, range, text) : 0;
+    var id = 'note-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+    try {
+      wrapRangeAsNote(range, id);
+      sel.removeAllRanges();
+      if (sectionIdx >= 0) saveNoteEntry({ id: id, sectionIdx: sectionIdx, text: text, occurrence: occurrence });
+      showToast('\u{1F4DD} 已添加划线笔记,再点一下可以取消');
+    } catch (e) {
+      showToast('⚠️ 这段选区暂时无法划线,换一段试试');
+    }
+    hideToolbar();
+  }
+  function removeNote(span) {
+    var id = span.dataset.noteId;
+    var parent = span.parentNode;
+    if (!parent) return;
+    while (span.firstChild) parent.insertBefore(span.firstChild, span);
+    parent.removeChild(span);
+    parent.normalize();
+    deleteNoteEntry(id);
+    showToast('\u{1F5D1}️ 已取消这条划线笔记');
+  }
+  function restoreNotes() {
+    var notes = loadNotes();
+    var sections = getContainerSections();
+    notes.forEach(function(n) {
+      var section = sections[n.sectionIdx];
+      if (!section) return;
+      var range = findRangeByOccurrence(section, n.text, n.occurrence);
+      if (!range) return;
+      try { wrapRangeAsNote(range, n.id); } catch (e) {}
+    });
+  }
+  function positionToolbar(cx, cy) {
+    clearTimeout(hideToolbarTimer);
+    toolbar.classList.add('visible');
+    var tw = toolbar.offsetWidth, th = toolbar.offsetHeight;
+    var left = cx - tw / 2, top = cy + 12;
+    if (left < 12) left = 12;
+    if (left + tw > innerWidth - 12) left = innerWidth - tw - 12;
+    if (top + th > innerHeight - 12) top = cy - th - 12;
+    toolbar.style.left = left + 'px';
+    toolbar.style.top = top + 'px';
+  }
+  function hideToolbar() {
+    clearTimeout(hideToolbarTimer);
+    hideToolbarTimer = setTimeout(function() { toolbar.classList.remove('visible'); }, 200);
+  }
+  function buildContext(section) {
+    var lines = ['## 课程上下文'];
+    lines.push('- 课程:' + COURSE_NAME);
+    lines.push('- 课时:' + LESSON_TITLE);
+    if (section) lines.push('- 章节:' + section);
+    lines.push('');
+    return lines.join('\n');
+  }
+  function onAsk() {
+    var text = getSelectedText();
+    if (!text) return;
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 我选中的内容\n\n' + text + '\n\n## 我的提问\n\n';
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并提问吧!');
+    hideToolbar();
+  }
+  function onModify() {
+    var text = getSelectedText();
+    if (!text) return;
+    document.getElementById('sel-source-text').textContent = text;
+    document.getElementById('sel-modify-instruction').value = '';
+    overlay.classList.add('visible');
+    hideToolbar();
+    setTimeout(function() { document.getElementById('sel-modify-instruction').focus(); }, 100);
+  }
+  function onCopyModify() {
+    var src = document.getElementById('sel-source-text').textContent;
+    var inst = document.getElementById('sel-modify-instruction').value.trim();
+    var prompt = buildContext(selectedAnchorNode ? getSectionLabel(selectedAnchorNode) : '') +
+      '## 选中的原文\n\n' + src + '\n\n## 修改要求\n\n' +
+      (inst || '(用户未指定具体要求,请自行判断合理修改方向)');
+    copyToClipboard(prompt, '✅ 已复制到剪贴板,去 LLM 粘贴并请求修改吧!');
+    hideDialog();
+  }
+  function copyToClipboard(text, msg) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); showToast(msg || '✅ 已复制到剪贴板'); }
+    catch (e) { showToast('⚠\u{FE0F} 未能自动复制,请按 Cmd+C 手动复制'); }
+    document.body.removeChild(ta);
+  }
+  function showToast(msg) {
+    if (!toastEl) { toastEl = document.createElement('div'); toastEl.className = 'sel-toast'; document.body.appendChild(toastEl); }
+    toastEl.textContent = msg;
+    toastEl.classList.add('visible');
+    clearTimeout(toastEl._hideTimer);
+    toastEl._hideTimer = setTimeout(function() { toastEl.classList.remove('visible'); }, 3500);
+  }
+  function hideDialog() { overlay.classList.remove('visible'); }
+  function bindEvents() {
+    document.addEventListener('mouseup', function(e) {
+      if (toolbar.contains(e.target) || overlay.contains(e.target)) return;
+      var text = getSelectedText();
+      if (text.length > 5) {
+        selectedAnchorNode = window.getSelection() ? window.getSelection().anchorNode : null;
+        positionToolbar(e.clientX, e.clientY);
+      } else { hideToolbar(); }
+    });
+    document.addEventListener('scroll', function() { toolbar.classList.remove('visible'); });
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') { hideDialog(); toolbar.classList.remove('visible'); }
+    });
+    document.addEventListener('mousedown', function(e) {
+      if (!toolbar.contains(e.target) && !overlay.contains(e.target)) hideToolbar();
+    });
+    document.addEventListener('click', function(e) {
+      var note = e.target.closest && e.target.closest('.note-underline');
+      if (!note) return;
+      var sel = window.getSelection();
+      if (sel && !sel.isCollapsed && sel.toString().length > 0) return;
+      removeNote(note);
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else { init(); }
+})();
+</script>
+</body>
+</html>
