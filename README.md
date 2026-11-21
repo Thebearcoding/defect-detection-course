@@ -2,7 +2,7 @@
 
 一套 **13 课的中文交互式课程**,从神经网络零基础讲起,原子粒度拆解工业缺陷检测的所有主流方法族。
 
-**在线阅读:https://athebear.me/defect-detection-course/(备用:https://thebearcoding.github.io/defect-detection-course/)**
+**[在线阅读](https://athebear.com/defect-detection-course/)**
 
 ## 课程结构
 
